@@ -13,7 +13,7 @@ if st_select_region == '01':
 
     
 
-    data = pd.read_excel(r"D:\ed\rfs\Новый год - новая жизнь!\РЕЕСТР ОФИ\pet карта\adres\01.xlsx")
+    data = pd.read_excel("01.xlsx")
     all_object = data.shape[0]
 
     one_object = data[data['Наличие в реестрах'] == 1].shape[0]
@@ -375,3 +375,4 @@ if st_select_region == '01':
     # Показываем информацию о точках
     valid_points = sum(1 for i in range(len(sirota)) 
                       if pd.notna(sirota.iloc[i]) and pd.notna(dolgota.iloc[i]))
+
