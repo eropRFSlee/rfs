@@ -10,7 +10,92 @@ st_select_region = st.sidebar.selectbox("Выберите свой регион"
 
 if st_select_region == '01':
 
-    data = pd.read_excel(r"01.xlsx")
+
+    
+
+    data = pd.read_excel(r"D:\ed\rfs\Новый год - новая жизнь!\РЕЕСТР ОФИ\pet карта\adres\01.xlsx")
+    all_object = data.shape[0]
+
+    one_object = data[data['Наличие в реестрах'] == 1].shape[0]
+    two_object = data[data['Наличие в реестрах'] == 2].shape[0]
+    three_object = data[data['Наличие в реестрах'] == 3].shape[0]
+
+    cnt_tablo = data[data['Наличие табло'].isin(['Да', 'Имеется'])].shape[0]
+    cnt_drinage = data[data['Наличие дренажа'].isin(['Да','Имеется'])].shape[0]
+    cnt_dress_room = data[data['Наличие раздевалок'] == 'Да'].shape[0]
+    cnt_heat = data[data['Наличие подогрева'].isin(['Да', 'Имеется'])].shape[0]
+
+
+    condition_reestr = ['Все']
+    for x in sorted(data['Наличие в реестрах'].unique()):
+        condition_reestr.append(x)
+    
+
+
+    conditional_size = ['Все']
+    for x in sorted(data['Дисциплина_2'].unique()):
+        conditional_size.append(x)
+    
+
+    conditional_dop = []
+    #'''if cnt_tablo > 0:
+    #    conditional_dop.append('Наличие табло')
+    #if cnt_drinage > 0:
+    #    conditional_dop.append('Наличие дренажа')
+    #if cnt_tablo > 0:
+    #    conditional_dop.append('Наличие раздевалок')
+    #if cnt_heat > 0:
+    #    conditional_dop.append('Наличие подогрева')'''
+    conditional_dop.append('Наличие табло')
+    conditional_dop.append('Наличие дренажа')
+    conditional_dop.append('Наличие раздевалок')
+    conditional_dop.append('Наличие подогрева')
+
+
+    
+    # -------------------------------------------------------------------------------------------------------------
+
+    st_select_desciplyne = st.sidebar.selectbox("Выбор дисциплины", conditional_size)
+    st_select_reestr = st.sidebar.selectbox("Наличие в реестрах", condition_reestr)
+    st_select_dop_info = st.sidebar.multiselect("Фильтр по особенностям", conditional_dop,placeholder="Поле с..")
+
+    # -------------------------------------------------------------------------------------------------------------
+
+    if st_select_reestr == 1:
+        data = data[data['Наличие в реестрах'] == 1]
+    if st_select_reestr == 2:
+        data = data[data['Наличие в реестрах'] == 2]
+    if st_select_reestr == 3:
+        data = data[data['Наличие в реестрах'] == 3]
+
+
+    
+    if st_select_desciplyne != 'Все':
+        data = data[data['Дисциплина_2'] == st_select_desciplyne]
+
+
+    if bool(st_select_dop_info):
+       data = data[data[st_select_dop_info].apply(
+    lambda row: all(val in ['Да', 'Имеется'] for val in row),
+    axis=1)]
+   
+
+
+        
+    # -------------------------------------------------------------------------------------------------------------
+    st.sidebar.write(f'Всего объектов: {all_object}')
+    st.sidebar.write('По типам реестра:')
+    st.sidebar.write(f'Тип 1: {one_object}')
+    st.sidebar.write(f'Тип 2: {two_object}')
+    st.sidebar.write(f'Тип 3: {three_object}')
+
+    st.sidebar.write(f'Дополнительно:')
+    st.sidebar.write(f'С табло: {cnt_tablo}')
+    st.sidebar.write(f'С подогревом: {cnt_heat}')
+    st.sidebar.write(f'С раздевалками: {cnt_dress_room}')
+    st.sidebar.write(f'С дренажом: {cnt_drinage}')
+    # -------------------------------------------------------------------------------------------------------------
+
     sirota = data['Широта']
     dolgota = data['Долгота']
     full_name = data['Полное (официальное) название объекта'] # 0
@@ -35,7 +120,8 @@ if st_select_region == '01':
     dress_room = data['Наличие раздевалок'] # 18
     year = data['Год ввода в эксплуатацию/год капитального ремонта'] # 19
     year = year.astype(str)
-    in_reestr = data['Наличие в реестрах']
+    in_reestr = data['Наличие в реестрах'].to_list()
+    disp_2 = data['Дисциплина_2']
     id_egora = data['id_egora']
 
     YANDEX_API_KEY = "7fe74d5b-be45-47d1-9fc0-a0765598a4d7"
@@ -43,6 +129,7 @@ if st_select_region == '01':
     # Создаем точки для адресов ----------------------------------------------------------------------------------------------
     points_js = ""
     for i in range(len(sirota)):
+    
 
         adres_to_map = [str(full_name.iloc[i]).replace('"', '').replace('nan','-'),
                         str(short_name.iloc[i]).replace('"', '').replace('nan','-'),
@@ -53,7 +140,7 @@ if st_select_region == '01':
                         str(user.iloc[i]).replace('"', '').replace('nan','-'),
                         str(rfs_id.iloc[i]).replace('"', '').replace('nan','-'),
                         str(type_objectt.iloc[i]).replace('"', '').replace('nan','-'),
-                        str(disciplyne.iloc[i]).replace('"', '').replace('nan','-'),
+                        str(disp_2.iloc[i]).replace('"', '').replace('nan','-'),
                         str(length.iloc[i]).replace('"', '').replace('nan','-'),
                         str(width.iloc[i]).replace('"', '').replace('nan','-'),
                         str(design_feature.iloc[i]).replace('"', '').replace('nan','-'),
@@ -66,7 +153,7 @@ if st_select_region == '01':
                         str(year.iloc[i]).replace('"', '').replace('nan','-').replace('.0','')
                         ]
         
-        # Создаем компактный HTML с чекбоксами
+        # Упрощенный HTML без чекбоксов
         balloon_text = json.dumps(
             f'''<div style="font-size: 12px; max-width: 500px; padding: 8px; line-height: 1.4;">
                 <div style="margin-bottom: 6px;">
@@ -88,9 +175,9 @@ if st_select_region == '01':
                     <div><strong>👥 Пользователь(ОГРН):</strong><br><span>{adres_to_map[6]}</span></div>
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
-                    <div><strong>РФС ID:</strong><br><span>{adres_to_map[7]}</span></div>
+                    <div><strong>🌐 РФС ID:</strong><br><span>{adres_to_map[7]}</span></div>
                     <div><strong>Тип:</strong><br><span>{adres_to_map[8]}</span></div>
-                    <div><strong>Дисциплина:</strong><br><span>{adres_to_map[9]}</span></div>
+                    <div><strong>👥 Дисциплина:</strong><br><span>{adres_to_map[9]}</span></div>
                     <div><strong>Размер:</strong><br><span>{adres_to_map[10]}×{adres_to_map[11]}</span></div>
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
@@ -104,20 +191,6 @@ if st_select_region == '01':
                     <div><strong>Раздевалки:</strong><br><span>{adres_to_map[18]}</span></div>
                     <div><strong>Год:</strong><br><span>{adres_to_map[19]}</span></div>
                 </div>
-                <div style="margin-top: 12px; padding-top: 12px; border-top: 2px solid #e5e7eb;">
-                    <div style="display: flex; gap: 20px; justify-content: center;">
-                        <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
-                            <input type="checkbox" class="feedback-checkbox" data-type="confirm" 
-                                   onclick="handleCheckboxClick(this, 'confirm')" style="cursor: pointer;">
-                            <span style="color: #10b981; font-weight: bold;">✅ Подтвердить</span>
-                        </label>
-                        <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
-                            <input type="checkbox" class="feedback-checkbox" data-type="reject" 
-                                   onclick="handleCheckboxClick(this, 'reject')" style="cursor: pointer;">
-                            <span style="color: #ef4444; font-weight: bold;">❌ Опровергнуть</span>
-                        </label>
-                    </div>
-                </div>
             </div>''',
             ensure_ascii=False
         )
@@ -127,11 +200,17 @@ if st_select_region == '01':
             icon_color = '#F59E0B'  # Желтый
         else:
             icon_color = '#10B981'  # Зеленый
+        
+        # Добавляем id_egora[i] в свойства точки
+        current_id_egora = str(id_egora.iloc[i]) if pd.notna(id_egora.iloc[i]) else ""
+        
         points_js += f"""
-            new ymaps.Placemark([{sirota[i]}, {dolgota[i]}], {{
+            new ymaps.Placemark([{sirota.iloc[i]}, {dolgota.iloc[i]}], {{
                 balloonContent: {balloon_text},
                 balloonMaxWidth: 520,
-                balloonMinWidth: 450
+                balloonMinWidth: 450,
+                id_egora: "{current_id_egora}",
+                index: {i}
             }}, {{
                 preset: 'islands#circleDotIcon',
                 iconColor : '{icon_color}',
@@ -215,17 +294,20 @@ if st_select_region == '01':
 
         <script>
             ymaps.ready(init);
+            
+            // Глобальная переменная для карты
+            let globalMap;
 
             function init() {{
                 // Центрируем на средних координатах
-                const map = new ymaps.Map("map", {{
+                globalMap = new ymaps.Map("map", {{
                     center: [{center_lat}, {center_lon}],
                     zoom: 10,
                     type: 'yandex#satellite'
                 }});
 
                 // Добавляем поиск на карту
-                map.controls.add(new ymaps.control.SearchControl({{
+                globalMap.controls.add(new ymaps.control.SearchControl({{
                     options: {{
                         provider: 'yandex#search',
                         noPlacemark: false
@@ -234,11 +316,10 @@ if st_select_region == '01':
 
                 // ДОБАВЛЯЕМ ТОЧКИ АДРЕСОВ
                 const points = [{points_js}];
-                console.log("Всего точек:", points.length);
-                points.forEach(point => map.geoObjects.add(point));
+                points.forEach(point => globalMap.geoObjects.add(point));
 
                 // Обработка клика на карте
-                map.events.add('click', function(e) {{
+                globalMap.events.add('click', function(e) {{
                     const coords = e.get('coords');
                     const pixelCoords = e.get('pagePixels');
                     
@@ -282,30 +363,6 @@ if st_select_region == '01':
                         }}, 10);
                     }});
                 }});
-                
-                // Функция для чекбоксов в balloon
-                function handleCheckboxClick(clickedCheckbox, type) {{
-                    // Находим все чекбоксы в текущем balloon
-                    const balloon = clickedCheckbox.closest('.ymaps-balloon');
-                    const checkboxes = balloon.querySelectorAll('.feedback-checkbox');
-                    
-                    // Если нажат чекбокс
-                    if (clickedCheckbox.checked) {{
-                        // Проходим по всем чекбоксам
-                        checkboxes.forEach(checkbox => {{
-                            if (checkbox !== clickedCheckbox) {{
-                                // Снимаем все другие чекбоксы
-                                checkbox.checked = false;
-                            }}
-                        }});
-                        
-                        // Здесь можно добавить логику отправки выбора
-                        console.log('Выбрано:', type);
-                    }} else {{
-                        // Если чекбокс снят, ничего не делаем
-                        console.log('Снято:', type);
-                    }}
-                }}
             }}
         </script>
     </body>
@@ -317,4 +374,4 @@ if st_select_region == '01':
     
     # Показываем информацию о точках
     valid_points = sum(1 for i in range(len(sirota)) 
-                      if pd.notna(sirota[i]) and pd.notna(dolgota[i]))
+                      if pd.notna(sirota.iloc[i]) and pd.notna(dolgota.iloc[i]))
