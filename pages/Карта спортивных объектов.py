@@ -5,15 +5,26 @@ import json
 # Настройка страницы
 st.set_page_config(layout="wide", page_title="Реестр ОФИ")
 
+# Глобальный массив для полных данных баллунов
+FULL_BALLOONS_DATA = []
+
 # Сайдбар
-st_select_region = st.sidebar.selectbox("Выберите свой регион", ['Регионы','01','02','03'])
+st_select_region = st.sidebar.selectbox("Выберите свой регион", ['Регионы','01 Республика Адыгея', \
+                                                                 '04 Республика Алтай',\
+                                                                    '03 Республика Бурятия', \
+                                                                        '17 Республика Тыва',\
+                                                                            '19 Республика Хакасия',\
+                                                                                '22 Алтайский  край',\
+                                                                                    '24 Краснодарский край',\
+                                                                                        '38 Иркутская область',\
+                                                                                            '42 Кемеровская область',\
+                                                                                                '54 Новосибирская область',\
+                                                                                                    '70 Томская область',\
+                                                                                                        '75 Забайкальский край'])
 
-if st_select_region == '01':
-
-
+if st_select_region != 'Регионы':
+    data = pd.read_excel(r"D:\ed\rfs\Новый год - новая жизнь!\РЕЕСТР ОФИ\pet карта\adres\{}.xlsx".format(st_select_region[:2]))
     
-
-    data = pd.read_excel("01.xlsx")
     all_object = data.shape[0]
 
     one_object = data[data['Наличие в реестрах'] == 1].shape[0]
@@ -38,14 +49,6 @@ if st_select_region == '01':
     
 
     conditional_dop = []
-    #'''if cnt_tablo > 0:
-    #    conditional_dop.append('Наличие табло')
-    #if cnt_drinage > 0:
-    #    conditional_dop.append('Наличие дренажа')
-    #if cnt_tablo > 0:
-    #    conditional_dop.append('Наличие раздевалок')
-    #if cnt_heat > 0:
-    #    conditional_dop.append('Наличие подогрева')'''
     conditional_dop.append('Наличие табло')
     conditional_dop.append('Наличие дренажа')
     conditional_dop.append('Наличие раздевалок')
@@ -83,17 +86,12 @@ if st_select_region == '01':
 
         
     # -------------------------------------------------------------------------------------------------------------
-    st.sidebar.write(f'Всего объектов: {all_object}')
-    st.sidebar.write('По типам реестра:')
-    st.sidebar.write(f'Тип 1: {one_object}')
-    st.sidebar.write(f'Тип 2: {two_object}')
-    st.sidebar.write(f'Тип 3: {three_object}')
-
-    st.sidebar.write(f'Дополнительно:')
-    st.sidebar.write(f'С табло: {cnt_tablo}')
-    st.sidebar.write(f'С подогревом: {cnt_heat}')
-    st.sidebar.write(f'С раздевалками: {cnt_dress_room}')
-    st.sidebar.write(f'С дренажом: {cnt_drinage}')
+    with st.sidebar:
+        st.components.v1.iframe(
+            src="https://school-eev.bitrix24site.ru/crm_form_1rlgr/",
+            height=500,
+            scrolling=True
+        )
     # -------------------------------------------------------------------------------------------------------------
 
     sirota = data['Широта']
@@ -153,47 +151,38 @@ if st_select_region == '01':
                         str(year.iloc[i]).replace('"', '').replace('nan','-').replace('.0','')
                         ]
         
-        # Упрощенный HTML без чекбоксов
+        # ЛЁГКИЙ баллун для быстрой загрузки
         balloon_text = json.dumps(
-            f'''<div style="font-size: 12px; max-width: 500px; padding: 8px; line-height: 1.4;">
-                <div style="margin-bottom: 6px;">
-                    <strong style="color: #2563eb;">📋 Полное название:</strong><br>
-                    <span>{adres_to_map[0]}</span>
-                </div>
-                <div style="margin-bottom: 6px; padding-top: 6px; border-top: 1px solid #e5e7eb;">
-                    <strong style="color: #10b981;">⚽ Короткое название:</strong><br>
-                    <span>{adres_to_map[1]}</span>
-                </div>
-                <div style="margin-bottom: 6px; padding-top: 6px; border-top: 1px solid #e5e7eb;">
-                    <strong>📍 Адрес:</strong><br>
-                    <span>{adres_to_map[2]}</span>
-                </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
-                    <div><strong>📞 Контакт:</strong><br><span>{adres_to_map[3]}</span></div>
-                    <div><strong>👤 Собственник(ОГРН):</strong><br><span>{adres_to_map[4]}</span></div>
-                    <div><strong>🏢 Управляющая(ОГРН):</strong><br><span>{adres_to_map[5]}</span></div>
-                    <div><strong>👥 Пользователь(ОГРН):</strong><br><span>{adres_to_map[6]}</span></div>
-                </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
-                    <div><strong>🌐 РФС ID:</strong><br><span>{adres_to_map[7]}</span></div>
-                    <div><strong>Тип:</strong><br><span>{adres_to_map[8]}</span></div>
-                    <div><strong>👥 Дисциплина:</strong><br><span>{adres_to_map[9]}</span></div>
-                    <div><strong>Размер:</strong><br><span>{adres_to_map[10]}×{adres_to_map[11]}</span></div>
-                </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
-                    <div><strong>Покрытие:</strong><br><span>{adres_to_map[13]}</span></div>
-                    <div><strong>Мест:</strong><br><span>{adres_to_map[14]}</span></div>
-                    <div><strong>Дренаж:</strong><br><span>{adres_to_map[15]}</span></div>
-                    <div><strong>Подогрев:</strong><br><span>{adres_to_map[16]}</span></div>
-                </div>
-                <div style="display: flex; justify-content: space-between; margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
-                    <div><strong>Табло:</strong><br><span>{adres_to_map[17]}</span></div>
-                    <div><strong>Раздевалки:</strong><br><span>{adres_to_map[18]}</span></div>
-                    <div><strong>Год:</strong><br><span>{adres_to_map[19]}</span></div>
-                </div>
+            f'''<div style="font-size:12px;padding:5px">
+                <b>Загрузка информации...</b><br>
+                📍 {adres_to_map[2][:50]}...
             </div>''',
             ensure_ascii=False
         )
+        
+        # Сохраняем ПОЛНЫЕ данные для ленивой загрузки
+        full_data = {
+            'full_name': adres_to_map[0],
+            'short_name': adres_to_map[1],
+            'address': adres_to_map[2],
+            'contact': adres_to_map[3],
+            'owner': adres_to_map[4],
+            'manager': adres_to_map[5],
+            'user': adres_to_map[6],
+            'rfs_id': adres_to_map[7],
+            'type': adres_to_map[8],
+            'discipline': adres_to_map[9],
+            'size': f"{adres_to_map[10]}×{adres_to_map[11]}",
+            'coverage': adres_to_map[13],
+            'capacity': adres_to_map[14],
+            'drainage': adres_to_map[15],
+            'heating': adres_to_map[16],
+            'scoreboard': adres_to_map[17],
+            'dressing': adres_to_map[18],
+            'year': adres_to_map[19]
+        }
+        FULL_BALLOONS_DATA.append(full_data)
+        
         if in_reestr[i] == 1:
             icon_color = '#3B82F6'  # Синий
         elif in_reestr[i] == 2:
@@ -201,7 +190,6 @@ if st_select_region == '01':
         else:
             icon_color = '#10B981'  # Зеленый
         
-        # Добавляем id_egora[i] в свойства точки
         current_id_egora = str(id_egora.iloc[i]) if pd.notna(id_egora.iloc[i]) else ""
         
         points_js += f"""
@@ -229,6 +217,7 @@ if st_select_region == '01':
     else:
         center_lat, center_lon = 44.6, 40.1  
 
+    # HTML карты с ленивой загрузкой баллунов
     map_html = f"""
     <!DOCTYPE html>
     <html>
@@ -293,33 +282,85 @@ if st_select_region == '01':
         <div id="map"></div>
 
         <script>
+            // Передаём полные данные в JavaScript
+            const FULL_BALLOONS = {json.dumps(FULL_BALLOONS_DATA, ensure_ascii=False)};
+            
             ymaps.ready(init);
             
-            // Глобальная переменная для карты
-            let globalMap;
-
             function init() {{
-                // Центрируем на средних координатах
-                globalMap = new ymaps.Map("map", {{
+                // Создаём карту
+                var map = new ymaps.Map("map", {{
                     center: [{center_lat}, {center_lon}],
                     zoom: 10,
                     type: 'yandex#satellite'
                 }});
 
                 // Добавляем поиск на карту
-                globalMap.controls.add(new ymaps.control.SearchControl({{
+                map.controls.add(new ymaps.control.SearchControl({{
                     options: {{
                         provider: 'yandex#search',
                         noPlacemark: false
                     }}
                 }}));
 
-                // ДОБАВЛЯЕМ ТОЧКИ АДРЕСОВ
+                // Добавляем точки на карту
                 const points = [{points_js}];
-                points.forEach(point => globalMap.geoObjects.add(point));
+                
+                // При клике на точку загружаем полный баллун
+                points.forEach(function(point, index) {{
+                    point.events.add('click', function(e) {{
+                        var fullData = FULL_BALLOONS[index];
+                        
+                        // Создаём полный HTML баллун
+                        var fullBalloon = `
+                            <div style="font-size: 12px; max-width: 500px; padding: 8px; line-height: 1.4;">
+                                <div style="margin-bottom: 6px;">
+                                    <strong style="color: #2563eb;">📋 Полное название:</strong><br>
+                                    <span>${{fullData.full_name}}</span>
+                                </div>
+                                <div style="margin-bottom: 6px; padding-top: 6px; border-top: 1px solid #e5e7eb;">
+                                    <strong style="color: #10b981;">⚽ Короткое название:</strong><br>
+                                    <span>${{fullData.short_name}}</span>
+                                </div>
+                                <div style="margin-bottom: 6px; padding-top: 6px; border-top: 1px solid #e5e7eb;">
+                                    <strong>📍 Адрес:</strong><br>
+                                    <span>${{fullData.address}}</span>
+                                </div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
+                                    <div><strong>📞 Контакт:</strong><br><span>${{fullData.contact}}</span></div>
+                                    <div><strong>👤 Собственник:</strong><br><span>${{fullData.owner}}</span></div>
+                                    <div><strong>🏢 Управляющая:</strong><br><span>${{fullData.manager}}</span></div>
+                                    <div><strong>👥 Пользователь:</strong><br><span>${{fullData.user}}</span></div>
+                                </div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
+                                    <div><strong>🌐 РФС ID:</strong><br><span>${{fullData.rfs_id}}</span></div>
+                                    <div><strong>Тип:</strong><br><span>${{fullData.type}}</span></div>
+                                    <div><strong>Дисциплина:</strong><br><span>${{fullData.discipline}}</span></div>
+                                    <div><strong>Размер:</strong><br><span>${{fullData.size}} м</span></div>
+                                </div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
+                                    <div><strong>Покрытие:</strong><br><span>${{fullData.coverage}}</span></div>
+                                    <div><strong>Мест:</strong><br><span>${{fullData.capacity}}</span></div>
+                                    <div><strong>Дренаж:</strong><br><span>${{fullData.drainage}}</span></div>
+                                    <div><strong>Подогрев:</strong><br><span>${{fullData.heating}}</span></div>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
+                                    <div><strong>Табло:</strong><br><span>${{fullData.scoreboard}}</span></div>
+                                    <div><strong>Раздевалки:</strong><br><span>${{fullData.dressing}}</span></div>
+                                    <div><strong>Год:</strong><br><span>${{fullData.year}}</span></div>
+                                </div>
+                            </div>
+                        `;
+                        
+                        // Обновляем баллун точки
+                        e.get('target').properties.set('balloonContent', fullBalloon);
+                    }});
+                    
+                    map.geoObjects.add(point);
+                }});
 
-                // Обработка клика на карте
-                globalMap.events.add('click', function(e) {{
+                // Обработка клика на карте (для адреса по координатам)
+                map.events.add('click', function(e) {{
                     const coords = e.get('coords');
                     const pixelCoords = e.get('pagePixels');
                     
@@ -371,8 +412,15 @@ if st_select_region == '01':
     
     # Показываем карту
     st.components.v1.html(map_html, height=800)
-    
-    # Показываем информацию о точках
-    valid_points = sum(1 for i in range(len(sirota)) 
-                      if pd.notna(sirota.iloc[i]) and pd.notna(dolgota.iloc[i]))
+     # -------------------------------------------------------------------------------------------------------------
+    st.write(f'Всего объектов: {all_object}')
+    st.write('По типам реестра:')
+    st.write(f'Тип 1: {one_object}')
+    st.write(f'Тип 2: {two_object}')
+    st.write(f'Тип 3: {three_object}')
 
+    st.write(f'Дополнительно:')
+    st.write(f'С табло: {cnt_tablo}')
+    st.write(f'С подогревом: {cnt_heat}')
+    st.write(f'С раздевалками: {cnt_dress_room}')
+    st.write(f'С дренажом: {cnt_drinage}')
