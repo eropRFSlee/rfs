@@ -2,13 +2,13 @@ import streamlit as st
 import pandas as pd
 import json
 
-
+# Настройка страницы
 st.set_page_config(layout="wide", page_title="Реестр ОФИ")
 
-
+# Глобальный массив для полных данных баллунов
 FULL_BALLOONS_DATA = []
 
-
+# Сайдбар
 st_select_region = st.sidebar.selectbox("Выберите свой регион", ['Регионы','01 Республика Адыгея', \
                                                                  '04 Республика Алтай',\
                                                                     '03 Республика Бурятия', \
@@ -86,13 +86,6 @@ if st_select_region != 'Регионы':
 
         
     # -------------------------------------------------------------------------------------------------------------
-    with st.sidebar:
-        st.components.v1.iframe(
-            src="https://school-eev.bitrix24site.ru/crm_form_1rlgr/",
-            height=500,
-            scrolling=True
-        )
-    # -------------------------------------------------------------------------------------------------------------
 
     sirota = data['Широта']
     dolgota = data['Долгота']
@@ -124,7 +117,7 @@ if st_select_region != 'Регионы':
 
     YANDEX_API_KEY = "7fe74d5b-be45-47d1-9fc0-a0765598a4d7"
 
-    #
+    # Создаем точки для адресов ----------------------------------------------------------------------------------------------
     points_js = ""
     for i in range(len(sirota)):
     
@@ -151,7 +144,7 @@ if st_select_region != 'Регионы':
                         str(year.iloc[i]).replace('"', '').replace('nan','-').replace('.0','')
                         ]
         
-        # 
+        # ЛЁГКИЙ баллун для быстрой загрузки
         balloon_text = json.dumps(
             f'''<div style="font-size:12px;padding:5px">
                 <b>Загрузка информации...</b><br>
@@ -160,7 +153,7 @@ if st_select_region != 'Регионы':
             ensure_ascii=False
         )
         
-        # 
+        # Сохраняем ПОЛНЫЕ данные для ленивой загрузки
         full_data = {
             'full_name': adres_to_map[0],
             'short_name': adres_to_map[1],
@@ -206,18 +199,21 @@ if st_select_region != 'Регионы':
             }})
         """
         
-        # 
+        # Добавляем запятую между точками, кроме последней
         if i < len(sirota) - 1:
             points_js += ","
     
-    # 
+    # Центр карты - средние координаты
     if len(sirota) > 0 and not sirota.isna().all():
         center_lat = sirota.mean()
         center_lon = dolgota.mean()
     else:
         center_lat, center_lon = 44.6, 40.1  
 
-    # 
+    # HTML карты с ленивой загрузкой баллунов
+    zoom = 4 if st_select_region == '24 Красноярский край' else 6
+    zoom = 5 if st_select_region == '75 Забайкальский край' else 6
+
     map_html = f"""
     <!DOCTYPE html>
     <html>
@@ -282,8 +278,14 @@ if st_select_region != 'Регионы':
         <div id="map"></div>
 
         <script>
-            // 
+            // Передаём полные данные в JavaScript
             const FULL_BALLOONS = {json.dumps(FULL_BALLOONS_DATA, ensure_ascii=False)};
+            
+            // Функция для обработки клика на кнопку Подтвердить
+            function handleConfirmClick(index) {{
+                // Открываем форму в новой вкладке
+                window.open("https://school-eev.bitrix24site.ru/crm_form_1rlgr/", "_blank");
+            }}
             
             ymaps.ready(init);
             
@@ -291,11 +293,11 @@ if st_select_region != 'Регионы':
                 // Создаём карту
                 var map = new ymaps.Map("map", {{
                     center: [{center_lat}, {center_lon}],
-                    zoom: 10,
+                    zoom: {zoom},
                     type: 'yandex#satellite'
                 }});
 
-                // 
+                // Добавляем поиск на карту
                 map.controls.add(new ymaps.control.SearchControl({{
                     options: {{
                         provider: 'yandex#search',
@@ -303,24 +305,20 @@ if st_select_region != 'Регионы':
                     }}
                 }}));
 
-                // 
+                // Добавляем точки на карту
                 const points = [{points_js}];
                 
-                // 
+                // При клике на точку загружаем полный баллун
                 points.forEach(function(point, index) {{
                     point.events.add('click', function(e) {{
                         var fullData = FULL_BALLOONS[index];
                         
-                        // 
+                        // Создаём полный HTML баллун
                         var fullBalloon = `
-                            <div style="font-size: 12px; max-width: 500px; padding: 8px; line-height: 1.4;">
-                                <div style="margin-bottom: 6px;">
-                                    <strong style="color: #2563eb;">📋 Полное название:</strong><br>
-                                    <span>${{fullData.full_name}}</span>
-                                </div>
-                                <div style="margin-bottom: 6px; padding-top: 6px; border-top: 1px solid #e5e7eb;">
-                                    <strong style="color: #10b981;">⚽ Короткое название:</strong><br>
-                                    <span>${{fullData.short_name}}</span>
+                            <div style="font-size: 10px; max-width: 500px; padding: 7px; line-height: 1.4;">
+                                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
+                                <div><strong>📋 Полное название:</strong><br><span>${{fullData.full_name}}</span></div>
+                                <div><strong>⚽ Короткое название:</strong><br><span>${{fullData.short_name}}</span></div>
                                 </div>
                                 <div style="margin-bottom: 6px; padding-top: 6px; border-top: 1px solid #e5e7eb;">
                                     <strong>📍 Адрес:</strong><br>
@@ -350,16 +348,30 @@ if st_select_region != 'Регионы':
                                     <div><strong>Год:</strong><br><span>${{fullData.year}}</span></div>
                                 </div>
                             </div>
+
+                            <div style="margin-top: 12px; padding-top: 12px; border-top: 2px solid #e5e7eb;">
+                    <div style="display: flex; gap: 20px; justify-content: center;">
+                        <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                            <input type="button" class="button" data-type="confirm" 
+                                     onclick="handleConfirmClick({i})">
+                            <span style="color: #10b981; font-weight: bold;">✅ Изменить данные</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                            <input type="button" class="button" data-type="reject" 
+                                    style="cursor: pointer;">
+                            <span style="color: #ef4444; font-weight: bold;">❌ Удалить поле</span>
+                        </label>
+                    </div>
                         `;
                         
-                        // 
+                        // Обновляем баллун точки
                         e.get('target').properties.set('balloonContent', fullBalloon);
                     }});
                     
                     map.geoObjects.add(point);
                 }});
 
-                // 
+                // Обработка клика на карте (для адреса по координатам)
                 map.events.add('click', function(e) {{
                     const coords = e.get('coords');
                     const pixelCoords = e.get('pagePixels');
@@ -410,8 +422,9 @@ if st_select_region != 'Регионы':
     </html>
     """
     
-    # 
+    # Показываем карту
     st.components.v1.html(map_html, height=800)
+    
      # -------------------------------------------------------------------------------------------------------------
     st.write(f'Всего объектов: {all_object}')
     st.write('По типам реестра:')
@@ -424,7 +437,3 @@ if st_select_region != 'Регионы':
     st.write(f'С подогревом: {cnt_heat}')
     st.write(f'С раздевалками: {cnt_dress_room}')
     st.write(f'С дренажом: {cnt_drinage}')
-
-
-
-
