@@ -5,6 +5,21 @@ import json
 # Настройка страницы
 st.set_page_config(layout="wide", page_title="Реестр ОФИ")
 
+# CSS для синего фона
+st.markdown("""
+<style>
+    .stApp {
+        background-color: #1E3A8A;
+    }
+    .main .block-container {
+        background-color: white;
+        border-radius: 10px;
+        padding: 2rem;
+        margin-top: 1rem;
+    }
+</style>
+""", unsafe_allow_html=True)
+
 # Глобальный массив для полных данных баллунов
 FULL_BALLOONS_DATA = []
 
@@ -191,7 +206,8 @@ if st_select_region != 'Регионы':
                 balloonMaxWidth: 520,
                 balloonMinWidth: 450,
                 id_egora: "{current_id_egora}",
-                index: {i}
+                index: {i},
+                originalIconColor: '{icon_color}'
             }}, {{
                 preset: 'islands#circleDotIcon',
                 iconColor : '{icon_color}',
@@ -230,6 +246,71 @@ if st_select_region != 'Регионы':
             #map {{
                 width: 100%;
                 height: 100vh;
+            }}
+            /* Стили для модального окна подтверждения */
+            .confirmation-modal {{
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.5);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 2000;
+                animation: fadeIn 0.3s ease;
+            }}
+            .modal-content {{
+                background: white;
+                padding: 25px;
+                border-radius: 10px;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+                max-width: 400px;
+                width: 90%;
+                text-align: center;
+            }}
+            .modal-title {{
+                color: #EF4444;
+                font-size: 18px;
+                font-weight: bold;
+                margin-bottom: 15px;
+            }}
+            .modal-message {{
+                margin-bottom: 20px;
+                color: #333;
+                line-height: 1.5;
+            }}
+            .modal-buttons {{
+                display: flex;
+                gap: 10px;
+                justify-content: center;
+            }}
+            .modal-button {{
+                padding: 8px 20px;
+                border-radius: 5px;
+                border: none;
+                cursor: pointer;
+                font-weight: bold;
+                transition: all 0.3s;
+            }}
+            .cancel-button {{
+                background: #E5E7EB;
+                color: #333;
+            }}
+            .delete-button {{
+                background: #EF4444;
+                color: white;
+            }}
+            .cancel-button:hover {{
+                background: #D1D5DB;
+            }}
+            .delete-button:hover {{
+                background: #DC2626;
+            }}
+            @keyframes fadeIn {{
+                from {{ opacity: 0; }}
+                to {{ opacity: 1; }}
             }}
             .address-info {{
                 position: absolute;
@@ -272,14 +353,150 @@ if st_select_region != 'Регионы':
                 margin-top: 8px;
                 font-family: monospace;
             }}
+            .delete-notification {{
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #10B981;
+                color: white;
+                padding: 15px 25px;
+                border-radius: 8px;
+                z-index: 1001;
+                font-weight: bold;
+                box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+                animation: slideIn 0.3s ease;
+                font-size: 14px;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }}
+            .error-notification {{
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #EF4444;
+                color: white;
+                padding: 15px 25px;
+                border-radius: 8px;
+                z-index: 1001;
+                font-weight: bold;
+                box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+                animation: slideIn 0.3s ease;
+                font-size: 14px;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }}
+            @keyframes slideIn {{
+                from {{ transform: translateX(100%); opacity: 0; }}
+                to {{ transform: translateX(0); opacity: 1; }}
+            }}
+            @keyframes fadeOut {{
+                from {{ opacity: 1; }}
+                to {{ opacity: 0; }}
+            }}
         </style>
     </head>
     <body>
         <div id="map"></div>
+        
+        <!-- Модальное окно подтверждения -->
+        <div id="confirmation-modal" class="confirmation-modal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-title">⚠️ Подтверждение удаления</div>
+                <div class="modal-message" id="modal-message">
+                    Вы уверены, что хотите удалить этот объект?
+                </div>
+                <div class="modal-buttons">
+                    <button id="modal-cancel" class="modal-button cancel-button">Отмена</button>
+                    <button id="modal-delete" class="modal-button delete-button">Удалить</button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="delete-notification" class="delete-notification" style="display: none;">
+            <span>✅ Заявка на удаление отправлена в Bitrix24!</span>
+        </div>
+        <div id="error-notification" class="error-notification" style="display: none;">
+            <span>❌ Ошибка при отправке заявки</span>
+        </div>
 
         <script>
             // Передаём полные данные в JavaScript
             const FULL_BALLOONS = {json.dumps(FULL_BALLOONS_DATA, ensure_ascii=False)};
+            const REGION_CODE = "{st_select_region[:2]}";
+            const REGION_NAME = "{st_select_region}";
+            
+            // Глобальные переменные
+            let map;
+            let currentPlacemark = null;
+            let pendingDeleteIndex = null;
+            let pendingDeleteIdEgora = null;
+            
+            // Показать модальное окно подтверждения
+            function showConfirmationModal(index, idEgora, fullData) {{
+                pendingDeleteIndex = index;
+                pendingDeleteIdEgora = idEgora;
+                
+                // Обновляем текст сообщения
+                const message = `Вы уверены, что хотите удалить объект?<br><br>
+                                <strong>${{fullData.full_name}}</strong><br>
+                                ${{fullData.address}}<br><br>
+                                После подтверждения объект будет окрашен в красный цвет и отправлена заявка на удаление.`;
+                document.getElementById('modal-message').innerHTML = message;
+                
+                // Показываем модальное окно
+                document.getElementById('confirmation-modal').style.display = 'flex';
+                
+                // Закрытие по клику на отмену
+                document.getElementById('modal-cancel').onclick = function() {{
+                    hideConfirmationModal();
+                }};
+                
+                // Обработка подтверждения удаления
+                document.getElementById('modal-delete').onclick = async function() {{
+                    hideConfirmationModal();
+                    await executeDelete(pendingDeleteIndex, pendingDeleteIdEgora, fullData);
+                }};
+                
+                // Закрытие по клику вне модального окна
+                document.getElementById('confirmation-modal').onclick = function(e) {{
+                    if (e.target.id === 'confirmation-modal') {{
+                        hideConfirmationModal();
+                    }}
+                }};
+            }}
+            
+            // Скрыть модальное окно
+            function hideConfirmationModal() {{
+                document.getElementById('confirmation-modal').style.display = 'none';
+                pendingDeleteIndex = null;
+                pendingDeleteIdEgora = null;
+            }}
+            
+            // Обработка клика на кнопку Удалить
+            async function handleDeleteClick(index, id_egora, fullData) {{
+                showConfirmationModal(index, id_egora, fullData);
+            }}
+            
+            // Выполнить удаление после подтверждения
+            async function executeDelete(index, id_egora, fullData) {{
+                if (!currentPlacemark) return;
+                
+                // 1. Делаем точку красной
+                currentPlacemark.options.set('iconColor', '#EF4444');
+                
+                // 2. Закрываем баллун
+                currentPlacemark.balloon.close();
+                
+                // 3. Отправляем заявку в Bitrix24 (без уведомления)
+                try {{
+                    await sendDeleteToBitrix24(REGION_CODE, id_egora, fullData);
+                    saveToLocalStorage(REGION_CODE, id_egora, fullData);
+                }} catch (error) {{
+                    console.error('Ошибка при отправке в Bitrix24:', error);
+                }}
+            }}
             
             // Функция для обработки клика на кнопку Подтвердить
             function handleConfirmClick(index) {{
@@ -287,11 +504,100 @@ if st_select_region != 'Регионы':
                 window.open("https://school-eev.bitrix24site.ru/crm_form_1rlgr/", "_blank");
             }}
             
+            // Функция для отправки в CRM Bitrix24 через REST API
+            async function sendDeleteToBitrix24(regionCode, idEgora, fullData) {{
+                try {{
+                    // Ваш REST API URL
+                    const restUrl = 'https://drlk.rfs.ru/rest/205/kabk0xvmvkd29y00/crm.lead.add';
+                    
+                    // Данные для создания лида
+                    const leadData = {{
+                        fields: {{
+                            "TITLE": `Заявка на удаление объекта: ${{fullData.full_name}}`,
+                            "NAME": regionCode,  // Регион в поле NAME
+                            "SECOND_NAME": idEgora,  // ID объекта в поле SECOND_NAME
+                            "PHONE": idEgora,  // ID объекта как телефон
+                            "COMMENTS": `Регион: ${{regionCode}} (${{REGION_NAME}})
+ID объекта: ${{idEgora}}
+Объект: ${{fullData.full_name}}
+Адрес: ${{fullData.address}}
+Контакт: ${{fullData.contact}}
+Тип: ${{fullData.type}}
+Размер: ${{fullData.size}}
+Покрытие: ${{fullData.coverage}}
+Мест: ${{fullData.capacity}}
+Дренаж: ${{fullData.drainage}}
+Подогрев: ${{fullData.heating}}
+Табло: ${{fullData.scoreboard}}
+Раздевалки: ${{fullData.dressing}}
+Год: ${{fullData.year}}
+                                    
+Заявка создана автоматически из карты объектов.`,
+                            "SOURCE_ID": "WEB",
+                            "SOURCE_DESCRIPTION": "Карта спортивных объектов РФС"
+                        }}
+                    }};
+                    
+                    // Отправляем POST-запрос к REST API
+                    const response = await fetch(restUrl, {{
+                        method: 'POST',
+                        headers: {{
+                            'Content-Type': 'application/json',
+                        }},
+                        body: JSON.stringify(leadData)
+                    }});
+                    
+                    if (!response.ok) {{
+                        throw new Error(`HTTP ошибка! Статус: ${{response.status}}`);
+                    }}
+                    
+                    const result = await response.json();
+                    console.log('Ответ от Bitrix24:', result);
+                    
+                    if (result.error) {{
+                        throw new Error(`Ошибка Bitrix24: ${{result.error_description}}`);
+                    }}
+                    
+                    return true;
+                    
+                }} catch (error) {{
+                    console.error('Ошибка отправки в Bitrix24:', error);
+                    
+                    // Если REST API не работает, пробуем альтернативный метод
+                    try {{
+                        // Попробуем через простую форму
+                        const formUrl = `https://school-eev.bitrix24site.ru/crm_form_q7gi7/?name=${{encodeURIComponent(regionCode)}}&address=${{encodeURIComponent(idEgora)}}&comments=${{encodeURIComponent('Объект: ' + fullData.full_name)}}`;
+                        window.open(formUrl, '_blank');
+                        return true;
+                    }} catch (e) {{
+                        return false;
+                    }}
+                }}
+            }}
+            
+            // Функция для сохранения в localStorage
+            function saveToLocalStorage(regionCode, idEgora, fullData) {{
+                try {{
+                    const deleteRequests = JSON.parse(localStorage.getItem('delete_requests') || '[]');
+                    deleteRequests.push({{
+                        timestamp: new Date().toISOString(),
+                        region_code: regionCode,
+                        id_egora: idEgora,
+                        object_name: fullData.full_name,
+                        object_address: fullData.address,
+                        status: 'crm_lead_created'
+                    }});
+                    localStorage.setItem('delete_requests', JSON.stringify(deleteRequests));
+                }} catch (e) {{
+                    console.log('Не удалось сохранить в localStorage:', e);
+                }}
+            }}
+            
             ymaps.ready(init);
             
             function init() {{
                 // Создаём карту
-                var map = new ymaps.Map("map", {{
+                map = new ymaps.Map("map", {{
                     center: [{center_lat}, {center_lon}],
                     zoom: {zoom},
                     type: 'yandex#satellite'
@@ -312,13 +618,15 @@ if st_select_region != 'Регионы':
                 points.forEach(function(point, index) {{
                     point.events.add('click', function(e) {{
                         var fullData = FULL_BALLOONS[index];
+                        var id_egora = point.properties.get('id_egora');
+                        currentPlacemark = e.get('target');
                         
                         // Создаём полный HTML баллун
                         var fullBalloon = `
                             <div style="font-size: 10px; max-width: 500px; padding: 7px; line-height: 1.4;">
-                                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
-                                <div><strong>📋 Полное название:</strong><br><span>${{fullData.full_name}}</span></div>
-                                <div><strong>⚽ Короткое название:</strong><br><span>${{fullData.short_name}}</span></div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
+                                    <div><strong>📋 Полное название:</strong><br><span>${{fullData.full_name}}</span></div>
+                                    <div><strong>⚽ Короткое название:</strong><br><span>${{fullData.short_name}}</span></div>
                                 </div>
                                 <div style="margin-bottom: 6px; padding-top: 6px; border-top: 1px solid #e5e7eb;">
                                     <strong>📍 Адрес:</strong><br>
@@ -347,21 +655,18 @@ if st_select_region != 'Регионы':
                                     <div><strong>Раздевалки:</strong><br><span>${{fullData.dressing}}</span></div>
                                     <div><strong>Год:</strong><br><span>${{fullData.year}}</span></div>
                                 </div>
+                                
+                                <div style="margin-top: 12px; padding-top: 12px; border-top: 2px solid #e5e7eb;">
+                                    <div style="display: flex; gap: 20px; justify-content: center;">
+                                        <button onclick="handleConfirmClick(${{index}})" style="cursor: pointer; background: none; border: 1px solid #10b981; padding: 5px 15px; border-radius: 4px; color: #10b981; font-weight: bold;">
+                                            ✅ Изменить данные
+                                        </button>
+                                        <button onclick="handleDeleteClick(${{index}}, '${{id_egora}}', FULL_BALLOONS[${{index}}])" style="cursor: pointer; background: none; border: 1px solid #ef4444; padding: 5px 15px; border-radius: 4px; color: #ef4444; font-weight: bold;">
+                                            ❌ Удалить поле
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
-
-                            <div style="margin-top: 12px; padding-top: 12px; border-top: 2px solid #e5e7eb;">
-                    <div style="display: flex; gap: 20px; justify-content: center;">
-                        <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
-                            <input type="button" class="button" data-type="confirm" 
-                                     onclick="handleConfirmClick({i})">
-                            <span style="color: #10b981; font-weight: bold;">✅ Изменить данные</span>
-                        </label>
-                        <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
-                            <input type="button" class="button" data-type="reject" 
-                                    style="cursor: pointer;">
-                            <span style="color: #ef4444; font-weight: bold;">❌ Удалить поле</span>
-                        </label>
-                    </div>
                         `;
                         
                         // Обновляем баллун точки
