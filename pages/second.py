@@ -226,7 +226,7 @@ if st_select_region != 'Регионы':
     else:
         center_lat, center_lon = 44.6, 40.1  
 
-    # HTML карты с ленивой загрузкой баллунов
+       # HTML карты с ленивой загрузкой баллунов
     zoom = 4 if st_select_region == '24 Красноярский край' else 6
     zoom = 5 if st_select_region == '75 Забайкальский край' else 6
 
@@ -353,39 +353,36 @@ if st_select_region != 'Регионы':
                 margin-top: 8px;
                 font-family: monospace;
             }}
-            .delete-notification {{
+            .notification {{
                 position: fixed;
                 top: 20px;
                 right: 20px;
+                padding: 15px 25px;
+                border-radius: 8px;
+                z-index: 1001;
+                font-weight: bold;
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+                animation: slideIn 0.3s ease;
+                font-size: 14px;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                min-width: 300px;
+            }}
+            .success-notification {{
                 background: #10B981;
                 color: white;
-                padding: 15px 25px;
-                border-radius: 8px;
-                z-index: 1001;
-                font-weight: bold;
                 box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
-                animation: slideIn 0.3s ease;
-                font-size: 14px;
-                display: flex;
-                align-items: center;
-                gap: 10px;
             }}
             .error-notification {{
-                position: fixed;
-                top: 20px;
-                right: 20px;
                 background: #EF4444;
                 color: white;
-                padding: 15px 25px;
-                border-radius: 8px;
-                z-index: 1001;
-                font-weight: bold;
                 box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
-                animation: slideIn 0.3s ease;
-                font-size: 14px;
-                display: flex;
-                align-items: center;
-                gap: 10px;
+            }}
+            .info-notification {{
+                background: #3B82F6;
+                color: white;
+                box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
             }}
             @keyframes slideIn {{
                 from {{ transform: translateX(100%); opacity: 0; }}
@@ -414,12 +411,10 @@ if st_select_region != 'Регионы':
             </div>
         </div>
         
-        <div id="delete-notification" class="delete-notification" style="display: none;">
-            <span>✅ Заявка на удаление отправлена в Bitrix24!</span>
-        </div>
-        <div id="error-notification" class="error-notification" style="display: none;">
-            <span>❌ Ошибка при отправке заявки</span>
-        </div>
+        <!-- Уведомления -->
+        <div id="success-notification" class="notification success-notification" style="display: none;"></div>
+        <div id="error-notification" class="notification error-notification" style="display: none;"></div>
+        <div id="info-notification" class="notification info-notification" style="display: none;"></div>
 
         <script>
             // Передаём полные данные в JavaScript
@@ -474,37 +469,26 @@ if st_select_region != 'Регионы':
                 pendingDeleteIdEgora = null;
             }}
             
+            // Показать уведомление
+            function showNotification(message, type = 'info') {{
+                const notification = document.getElementById(type + '-notification');
+                if (!notification) return;
+                
+                notification.innerHTML = message;
+                notification.style.display = 'flex';
+                
+                // Автоматическое скрытие через 5 секунд
+                setTimeout(() => {{
+                    notification.style.display = 'none';
+                }}, 5000);
+            }}
+            
             // Обработка клика на кнопку Удалить
             async function handleDeleteClick(index, id_egora, fullData) {{
                 showConfirmationModal(index, id_egora, fullData);
             }}
             
-            // Выполнить удаление после подтверждения
-            async function executeDelete(index, id_egora, fullData) {{
-                if (!currentPlacemark) return;
-                
-                // 1. Делаем точку красной
-                currentPlacemark.options.set('iconColor', '#EF4444');
-                
-                // 2. Закрываем баллун
-                currentPlacemark.balloon.close();
-                
-                // 3. Отправляем заявку в Bitrix24 (без уведомления)
-                try {{
-                    await sendDeleteToBitrix24(REGION_CODE, id_egora, fullData);
-                    saveToLocalStorage(REGION_CODE, id_egora, fullData);
-                }} catch (error) {{
-                    console.error('Ошибка при отправке в Bitrix24:', error);
-                }}
-            }}
-            
-            // Функция для обработки клика на кнопку Подтвердить
-            function handleConfirmClick(index) {{
-                // Открываем форму в новой вкладке
-                window.open("https://school-eev.bitrix24site.ru/crm_form_1rlgr/", "_blank");
-            }}
-            
-            // Функция для отправки в CRM Bitrix24 через REST API
+            // Функция для отправки в CRM Bitrix24 через REST API (БЕЗ ОТКРЫТИЯ ФОРМЫ)
             async function sendDeleteToBitrix24(regionCode, idEgora, fullData) {{
                 try {{
                     // Ваш REST API URL
@@ -514,25 +498,25 @@ if st_select_region != 'Регионы':
                     const leadData = {{
                         fields: {{
                             "TITLE": `Заявка на удаление объекта: ${{fullData.full_name}}`,
-                            "NAME": regionCode,  // Регион в поле NAME
-                            "SECOND_NAME": idEgora,  // ID объекта в поле SECOND_NAME
-                            "PHONE": idEgora,  // ID объекта как телефон
+                            "NAME": regionCode,
+                            "SECOND_NAME": idEgora,
+                            "PHONE": idEgora,
                             "COMMENTS": `Регион: ${{regionCode}} (${{REGION_NAME}})
-ID объекта: ${{idEgora}}
-Объект: ${{fullData.full_name}}
-Адрес: ${{fullData.address}}
-Контакт: ${{fullData.contact}}
-Тип: ${{fullData.type}}
-Размер: ${{fullData.size}}
-Покрытие: ${{fullData.coverage}}
-Мест: ${{fullData.capacity}}
-Дренаж: ${{fullData.drainage}}
-Подогрев: ${{fullData.heating}}
-Табло: ${{fullData.scoreboard}}
-Раздевалки: ${{fullData.dressing}}
-Год: ${{fullData.year}}
-                                    
-Заявка создана автоматически из карты объектов.`,
+    ID объекта: ${{idEgora}}
+    Объект: ${{fullData.full_name}}
+    Адрес: ${{fullData.address}}
+    Контакт: ${{fullData.contact}}
+    Тип: ${{fullData.type}}
+    Размер: ${{fullData.size}}
+    Покрытие: ${{fullData.coverage}}
+    Мест: ${{fullData.capacity}}
+    Дренаж: ${{fullData.drainage}}
+    Подогрев: ${{fullData.heating}}
+    Табло: ${{fullData.scoreboard}}
+    Раздевалки: ${{fullData.dressing}}
+    Год: ${{fullData.year}}
+                                            
+    Заявка создана автоматически из карты объектов.`,
                             "SOURCE_ID": "WEB",
                             "SOURCE_DESCRIPTION": "Карта спортивных объектов РФС"
                         }}
@@ -547,31 +531,18 @@ ID объекта: ${{idEgora}}
                         body: JSON.stringify(leadData)
                     }});
                     
-                    if (!response.ok) {{
-                        throw new Error(`HTTP ошибка! Статус: ${{response.status}}`);
-                    }}
-                    
                     const result = await response.json();
-                    console.log('Ответ от Bitrix24:', result);
                     
-                    if (result.error) {{
-                        throw new Error(`Ошибка Bitrix24: ${{result.error_description}}`);
+                    if (!response.ok || result.error) {{
+                        throw new Error(result.error_description || `HTTP ошибка! Статус: ${{response.status}}`);
                     }}
                     
+                    console.log('Заявка успешно отправлена в Bitrix24:', result);
                     return true;
                     
                 }} catch (error) {{
                     console.error('Ошибка отправки в Bitrix24:', error);
-                    
-                    // Если REST API не работает, пробуем альтернативный метод
-                    try {{
-                        // Попробуем через простую форму
-                        const formUrl = `https://school-eev.bitrix24site.ru/crm_form_q7gi7/?name=${{encodeURIComponent(regionCode)}}&address=${{encodeURIComponent(idEgora)}}&comments=${{encodeURIComponent('Объект: ' + fullData.full_name)}}`;
-                        window.open(formUrl, '_blank');
-                        return true;
-                    }} catch (e) {{
-                        return false;
-                    }}
+                    return false;
                 }}
             }}
             
@@ -591,6 +562,40 @@ ID объекта: ${{idEgora}}
                 }} catch (e) {{
                     console.log('Не удалось сохранить в localStorage:', e);
                 }}
+            }}
+            
+            // Выполнить удаление после подтверждения
+            async function executeDelete(index, id_egora, fullData) {{
+                if (!currentPlacemark) return;
+                
+                // 1. Делаем точку красной
+                currentPlacemark.options.set('iconColor', '#EF4444');
+                
+                // 2. Закрываем баллун
+                currentPlacemark.balloon.close();
+                
+                // 3. Показываем уведомление об отправке
+                showNotification('⏳ Отправка заявки в Bitrix24...', 'info');
+                
+                // 4. Отправляем заявку в Bitrix24
+                const success = await sendDeleteToBitrix24(REGION_CODE, id_egora, fullData);
+                
+                if (success) {{
+                    // 5. Сохраняем в localStorage
+                    saveToLocalStorage(REGION_CODE, id_egora, fullData);
+                    // 6. Показываем уведомление об успехе
+                    showNotification('✅ Заявка на удаление отправлена в Bitrix24!', 'success');
+                }} else {{
+                    // 7. Если отправка не удалась, можно изменить цвет на другой (например, серый)
+                    currentPlacemark.options.set('iconColor', '#94A3B8');
+                    showNotification('❌ Ошибка при отправке заявки. Объект отмечен.', 'error');
+                }}
+            }}
+            
+            // Функция для обработки клика на кнопку Подтвердить
+            function handleConfirmClick(index) {{
+                // Открываем форму в новой вкладке
+                window.open("https://school-eev.bitrix24site.ru/crm_form_1rlgr/", "_blank");
             }}
             
             ymaps.ready(init);
