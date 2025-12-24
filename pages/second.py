@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import json
+import requests
 
 # Настройка страницы
 st.set_page_config(layout="wide", page_title="Реестр ОФИ")
@@ -488,11 +489,13 @@ if st_select_region != 'Регионы':
                 showConfirmationModal(index, id_egora, fullData);
             }}
             
-            // Функция для отправки в CRM Bitrix24 через REST API (БЕЗ ОТКРЫТИЯ ФОРМЫ)
+            // Функция для отправки в CRM Bitrix24 через CORS-прокси (РАБОТАЕТ НА ЛЮБОМ КОМПЬЮТЕРЕ)
             async function sendDeleteToBitrix24(regionCode, idEgora, fullData) {{
                 try {{
-                    // Ваш REST API URL
-                    const restUrl = 'https://drlk.rfs.ru/rest/205/kabk0xvmvkd29y00/crm.lead.add';
+                    console.log('Начинаем отправку в Bitrix24 через CORS-прокси...');
+                    
+                    // Используем CORS-прокси для обхода ограничений браузера
+                    const restUrl = 'https://corsproxy.io/?' + encodeURIComponent('https://drlk.rfs.ru/rest/205/kabk0xvmvkd29y00/crm.lead.add');
                     
                     // Данные для создания лида
                     const leadData = {{
@@ -522,7 +525,7 @@ if st_select_region != 'Регионы':
                         }}
                     }};
                     
-                    // Отправляем POST-запрос к REST API
+                    // Отправляем POST-запрос к REST API через CORS-прокси
                     const response = await fetch(restUrl, {{
                         method: 'POST',
                         headers: {{
@@ -531,17 +534,51 @@ if st_select_region != 'Регионы':
                         body: JSON.stringify(leadData)
                     }});
                     
-                    const result = await response.json();
-                    
-                    if (!response.ok || result.error) {{
-                        throw new Error(result.error_description || `HTTP ошибка! Статус: ${{response.status}}`);
+                    if (!response.ok) {{
+                        throw new Error(`HTTP ошибка! Статус: ${{response.status}}`);
                     }}
                     
-                    console.log('Заявка успешно отправлена в Bitrix24:', result);
+                    const result = await response.json();
+                    
+                    if (result.error) {{
+                        throw new Error(`Ошибка Bitrix24: ${{result.error_description}}`);
+                    }}
+                    
+                    console.log('Заявка успешно отправлена в Bitrix24 через прокси:', result);
                     return true;
                     
                 }} catch (error) {{
                     console.error('Ошибка отправки в Bitrix24:', error);
+                    
+                    // Альтернативный метод: используем другой CORS-прокси
+                    try {{
+                        console.log('Пробуем альтернативный CORS-прокси...');
+                        const altRestUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent('https://drlk.rfs.ru/rest/205/kabk0xvmvkd29y00/crm.lead.add');
+                        
+                        const altLeadData = {{
+                            fields: {{
+                                "TITLE": `Заявка на удаление: ${{fullData.full_name}}`,
+                                "NAME": regionCode,
+                                "COMMENTS": `Регион: ${{regionCode}} (${{REGION_NAME}})
+    Объект: ${{fullData.full_name}}
+    Адрес: ${{fullData.address}}`
+                            }}
+                        }};
+                        
+                        const altResponse = await fetch(altRestUrl, {{
+                            method: 'POST',
+                            headers: {{ 'Content-Type': 'application/json' }},
+                            body: JSON.stringify(altLeadData)
+                        }});
+                        
+                        if (altResponse.ok) {{
+                            console.log('Альтернативный метод сработал');
+                            return true;
+                        }}
+                    }} catch (altError) {{
+                        console.error('Альтернативный метод тоже не сработал:', altError);
+                    }}
+                    
                     return false;
                 }}
             }}
