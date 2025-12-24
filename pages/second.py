@@ -158,7 +158,7 @@ st_select_region = st.sidebar.selectbox("Выберите свой регион"
                                                                                                         '75 Забайкальский край'])
 
 if st_select_region != 'Регионы':
-    data = pd.read_excel("{}.xlsx".format(st_select_region[:2]))
+    data = pd.read_excel(r"D:\ed\rfs\Новый год - новая жизнь!\РЕЕСТР ОФИ\pet карта\adres\{}.xlsx".format(st_select_region[:2]))
     
     all_object = data.shape[0]
 
