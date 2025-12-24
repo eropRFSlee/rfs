@@ -2,9 +2,118 @@ import streamlit as st
 import pandas as pd
 import json
 import requests
+from flask import Flask, request, jsonify, make_response
+from flask_cors import CORS
+import threading
+
+# ==================== НАСТРОЙКА FLASK СЕРВЕРА ДЛЯ ОТПРАВКИ В BITRIX ====================
+# Создаем Flask приложение для обработки запросов с карты
+flask_app = Flask(__name__)
+
+# ВАЖНО: Разрешаем CORS для всех доменов (для разработки)
+CORS(flask_app, resources={r"/api/*": {"origins": "*"}})
+
+# Альтернативный вариант - если CORS не работает, добавьте заголовки вручную
+@flask_app.after_request
+def add_cors_headers(response):
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+    return response
+
+# Обрабатываем OPTIONS запросы (preflight)
+@flask_app.route('/api/create_lead', methods=['OPTIONS'])
+def handle_options():
+    response = make_response()
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+    return response
+
+@flask_app.route('/api/create_lead', methods=['POST'])
+def handle_bitrix_request():
+    """
+    Этот эндпоинт получает данные из браузера и отправляет заявку в Bitrix24.
+    """
+    try:
+        # 1. Получаем данные от клиента (с вашей карты)
+        data_from_client = request.json
+        region_code = data_from_client.get('region_code')
+        id_egora = data_from_client.get('id_egora', '')
+        full_data = data_from_client.get('full_data', {})
+        region_name = data_from_client.get('region_name', '')
+
+        # 2. Формируем запрос для Bitrix24 (используем вашу логику)
+        bitrix_url = 'https://drlk.rfs.ru/rest/205/kabk0xvmvkd29y00/crm.lead.add'
+        lead_data = {
+            "fields": {
+                "TITLE": f"Заявка на удаление объекта: {full_data.get('full_name', '')}",
+                "NAME": region_code,
+                "SECOND_NAME": id_egora,
+                "COMMENTS": f"""Регион: {region_code} ({region_name})
+ID объекта: {id_egora}
+Объект: {full_data.get('full_name', '')}
+Адрес: {full_data.get('address', '')}
+Контакт: {full_data.get('contact', '')}
+Тип: {full_data.get('type', '')}
+Размер: {full_data.get('size', '')}
+Покрытие: {full_data.get('coverage', '')}
+Мест: {full_data.get('capacity', '')}
+Дренаж: {full_data.get('drainage', '')}
+Подогрев: {full_data.get('heating', '')}
+Табло: {full_data.get('scoreboard', '')}
+Раздевалки: {full_data.get('dressing', '')}
+Год: {full_data.get('year', '')}
+
+Заявка создана автоматически из карты объектов.""",
+                "SOURCE_ID": "WEB",
+                "SOURCE_DESCRIPTION": "Карта спортивных объектов РФС"
+            }
+        }
+
+        # 3. Отправляем запрос с сервера (CORS здесь не применяется)
+        response = requests.post(bitrix_url, json=lead_data, timeout=10)
+        response.raise_for_status()  # Проверяем на ошибки HTTP
+        result = response.json()
+
+        # Проверяем ответ Bitrix24 на внутренние ошибки
+        if result.get('error'):
+            return jsonify({
+                "success": False,
+                "error": f"Ошибка Bitrix24: {result.get('error_description')}"
+            }), 500
+
+        # 4. Возвращаем успешный ответ в браузер
+        return jsonify({
+            "success": True,
+            "message": "Заявка успешно создана в Bitrix24",
+            "lead_id": result.get('result')
+        }), 200
+
+    except requests.exceptions.RequestException as e:
+        # Ошибка сети или HTTP
+        return jsonify({
+            "success": False,
+            "error": f"Ошибка сети/HTTP: {str(e)}"
+        }), 502
+    except Exception as e:
+        # Любая другая ошибка
+        return jsonify({
+            "success": False,
+            "error": f"Ошибка сервера: {str(e)}"
+        }), 500
+
+# Запускаем Flask в отдельном потоке, чтобы не блокировать Streamlit
+def run_flask():
+    flask_app.run(port=5000, debug=False, use_reloader=False, threaded=True)
+
+# ==================== ОСНОВНОЙ КОД STREAMLIT ПРИЛОЖЕНИЯ ====================
 
 # Настройка страницы
 st.set_page_config(layout="wide", page_title="Реестр ОФИ")
+# ==================== ОСНОВНОЙ КОД STREAMLIT ПРИЛОЖЕНИЯ ====================
+
+
 
 # CSS для синего фона
 st.markdown("""
@@ -20,6 +129,16 @@ st.markdown("""
     }
 </style>
 """, unsafe_allow_html=True)
+
+# Запускаем Flask сервер (только один раз)
+if not hasattr(st, 'flask_thread_started'):
+    try:
+        flask_thread = threading.Thread(target=run_flask, daemon=True)
+        flask_thread.start()
+        st.flask_thread_started = True
+        st.sidebar.success("✅ Сервер для отправки заявок запущен")
+    except Exception as e:
+        st.sidebar.error(f"❌ Ошибка запуска сервера: {e}")
 
 # Глобальный массив для полных данных баллунов
 FULL_BALLOONS_DATA = []
@@ -489,96 +608,36 @@ if st_select_region != 'Регионы':
                 showConfirmationModal(index, id_egora, fullData);
             }}
             
-            // Функция для отправки в CRM Bitrix24 через CORS-прокси (РАБОТАЕТ НА ЛЮБОМ КОМПЬЮТЕРЕ)
+            // Функция для отправки в CRM Bitrix24 через наш сервер Flask
             async function sendDeleteToBitrix24(regionCode, idEgora, fullData) {{
                 try {{
-                    console.log('Начинаем отправку в Bitrix24 через CORS-прокси...');
+                    console.log('Отправка данных на наш сервер для создания лида...');
                     
-                    // Используем CORS-прокси для обхода ограничений браузера
-                    const restUrl = 'https://corsproxy.io/?' + encodeURIComponent('https://drlk.rfs.ru/rest/205/kabk0xvmvkd29y00/crm.lead.add');
-                    
-                    // Данные для создания лида
-                    const leadData = {{
-                        fields: {{
-                            "TITLE": `Заявка на удаление объекта: ${{fullData.full_name}}`,
-                            "NAME": regionCode,
-                            "SECOND_NAME": idEgora,
-                            "PHONE": idEgora,
-                            "COMMENTS": `Регион: ${{regionCode}} (${{REGION_NAME}})
-    ID объекта: ${{idEgora}}
-    Объект: ${{fullData.full_name}}
-    Адрес: ${{fullData.address}}
-    Контакт: ${{fullData.contact}}
-    Тип: ${{fullData.type}}
-    Размер: ${{fullData.size}}
-    Покрытие: ${{fullData.coverage}}
-    Мест: ${{fullData.capacity}}
-    Дренаж: ${{fullData.drainage}}
-    Подогрев: ${{fullData.heating}}
-    Табло: ${{fullData.scoreboard}}
-    Раздевалки: ${{fullData.dressing}}
-    Год: ${{fullData.year}}
-                                            
-    Заявка создана автоматически из карты объектов.`,
-                            "SOURCE_ID": "WEB",
-                            "SOURCE_DESCRIPTION": "Карта спортивных объектов РФС"
-                        }}
-                    }};
-                    
-                    // Отправляем POST-запрос к REST API через CORS-прокси
-                    const response = await fetch(restUrl, {{
+                    // ВАЖНО: используем localhost:5000 для Flask сервера
+                    const response = await fetch('http://localhost:5000/api/create_lead', {{
                         method: 'POST',
                         headers: {{
                             'Content-Type': 'application/json',
                         }},
-                        body: JSON.stringify(leadData)
+                        body: JSON.stringify({{
+                            region_code: regionCode,
+                            id_egora: idEgora,
+                            full_data: fullData,
+                            region_name: REGION_NAME
+                        }})
                     }});
-                    
-                    if (!response.ok) {{
-                        throw new Error(`HTTP ошибка! Статус: ${{response.status}}`);
-                    }}
                     
                     const result = await response.json();
                     
-                    if (result.error) {{
-                        throw new Error(`Ошибка Bitrix24: ${{result.error_description}}`);
+                    if (!response.ok) {{
+                        throw new Error(result.error || `HTTP Error: ${{response.status}}`);
                     }}
                     
-                    console.log('Заявка успешно отправлена в Bitrix24 через прокси:', result);
+                    console.log('Успешный ответ от сервера:', result);
                     return true;
                     
                 }} catch (error) {{
-                    console.error('Ошибка отправки в Bitrix24:', error);
-                    
-                    // Альтернативный метод: используем другой CORS-прокси
-                    try {{
-                        console.log('Пробуем альтернативный CORS-прокси...');
-                        const altRestUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent('https://drlk.rfs.ru/rest/205/kabk0xvmvkd29y00/crm.lead.add');
-                        
-                        const altLeadData = {{
-                            fields: {{
-                                "TITLE": `Заявка на удаление: ${{fullData.full_name}}`,
-                                "NAME": regionCode,
-                                "COMMENTS": `Регион: ${{regionCode}} (${{REGION_NAME}})
-    Объект: ${{fullData.full_name}}
-    Адрес: ${{fullData.address}}`
-                            }}
-                        }};
-                        
-                        const altResponse = await fetch(altRestUrl, {{
-                            method: 'POST',
-                            headers: {{ 'Content-Type': 'application/json' }},
-                            body: JSON.stringify(altLeadData)
-                        }});
-                        
-                        if (altResponse.ok) {{
-                            console.log('Альтернативный метод сработал');
-                            return true;
-                        }}
-                    }} catch (altError) {{
-                        console.error('Альтернативный метод тоже не сработал:', altError);
-                    }}
-                    
+                    console.error('Ошибка при отправке через наш сервер:', error);
                     return false;
                 }}
             }}
