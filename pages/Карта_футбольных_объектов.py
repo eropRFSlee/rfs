@@ -6,7 +6,7 @@ import json
 
 # Настройка страницы
 st.set_page_config(
-    page_title="Ваше желаемое название для сайдбара/вкладки", 
+    page_title="Реестр ОФИ", 
     layout="wide" # или другие настройки
 )
 
@@ -591,3 +591,4 @@ if st_select_region != 'Регионы':
     st.write(f'С подогревом: {cnt_heat}')
     st.write(f'С раздевалками: {cnt_dress_room}')
     st.write(f'С дренажом: {cnt_drinage}')
+
