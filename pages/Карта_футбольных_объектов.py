@@ -14,6 +14,10 @@ st.markdown("""
 <style>
     .stApp {
         background-color: #204171;
+           
+    }
+    p, span, div {
+        color: white !important;
     }
     .main .block-container {
         background-color: white;
