@@ -12,36 +12,17 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-    /* Фон приложения */
     .stApp {
         background-color: #204171;
     }
     
-    /* Сайдбар - БЕЛЫЙ фон, ЧЁРНЫЙ текст */
+    /* Сайдбар - белый фон, черный текст */
     section[data-testid="stSidebar"] {
         background-color: white !important;
     }
     
-    /* Весь текст в сайдбаре - ЧЁРНЫЙ */
     section[data-testid="stSidebar"],
     section[data-testid="stSidebar"] * {
-        color: black !important;
-    }
-    
-    /* Особо для элементов ввода */
-    section[data-testid="stSidebar"] input,
-    section[data-testid="stSidebar"] select,
-    section[data-testid="stSidebar"] textarea {
-        color: black !important;
-        border-color: #666 !important;
-    }
-    
-    /* Красные теги тоже с чёрным текстом */
-    section[data-testid="stSidebar"] [data-baseweb="tag"] {
-        background-color: #EF4444 !important;
-    }
-    
-    section[data-testid="stSidebar"] [data-baseweb="tag"] * {
         color: black !important;
     }
     
@@ -49,16 +30,67 @@ st.markdown("""
         background-color: #204171 !important;
     }
     
-    /* Основной блок */
+    /* Главное окно */
     .main .block-container {
-        background-color: white;
+        background-color: #2a4a80;
+        color: white !important;
         border-radius: 10px;
         padding: 2rem;
         margin-top: 1rem;
     }
+    
+    .main .block-container,
+    .main .block-container * {
+        color: white !important;
+    }
+    
+    /* ★★★ ВСЕ КОМБОБОКСЫ - БЕЛЫЙ фон ★★★ */
+    /* Фон самого комбобокса */
+    [data-baseweb="select"] {
+        background-color: white !important;
+    }
+    
+    /* Внутренняя часть комбобокса */
+    [data-baseweb="select"] > div {
+        background-color: white !important;
+    }
+    
+    /* Кнопка комбобокса */
+    [data-baseweb="select"] [role="button"] {
+        background-color: white !important;
+    }
+    
+    /* ★★★ Текст в комбобоксах - ЧЁРНЫЙ ★★★ */
+    [data-baseweb="select"] * {
+        color: black !important;
+    }
+    
+    /* Выбранное значение */
+    [data-baseweb="select"] [aria-selected="true"] {
+        color: black !important;
+    }
+    
+    /* Выпадающий список */
+    [role="listbox"] {
+        background-color: white !important;
+    }
+    
+    [role="option"] {
+        color: black !important;
+        background-color: white !important;
+    }
+    
+    [role="option"]:hover {
+        background-color: #f0f0f0 !important;
+        color: black !important;
+    }
+    
+    /* Убираем белый текст из комбобоксов в основном блоке */
+    .main .block-container [data-baseweb="select"] * {
+        color: black !important;
+    }
 </style>
 """, unsafe_allow_html=True)
-
 # Глобальный массив для полных данных баллунов
 FULL_BALLOONS_DATA = []
 
@@ -603,14 +635,14 @@ if st_select_region != 'Регионы':
     st.components.v1.html(map_html, height=800)
     
      # -------------------------------------------------------------------------------------------------------------
-    st.write(f'Всего объектов: {all_object}')
-    st.write('По типам реестра:')
-    st.write(f'Тип 1: {one_object}')
-    st.write(f'Тип 2: {two_object}')
-    st.write(f'Тип 3: {three_object}')
+    st.sidebar.write(f'Всего объектов: {all_object}')
+    st.sidebar.write('По типам реестра:')
+    st.sidebar.write(f'Тип 1: {one_object}')
+    st.sidebar.write(f'Тип 2: {two_object}')
+    st.sidebar.write(f'Тип 3: {three_object}')
 
-    st.write(f'Дополнительно:')
-    st.write(f'С табло: {cnt_tablo}')
-    st.write(f'С подогревом: {cnt_heat}')
-    st.write(f'С раздевалками: {cnt_dress_room}')
-    st.write(f'С дренажом: {cnt_drinage}')
+    st.sidebar.write(f'Дополнительно:')
+    st.sidebar.write(f'С табло: {cnt_tablo}')
+    st.sidebar.write(f'С подогревом: {cnt_heat}')
+    st.sidebar.write(f'С раздевалками: {cnt_dress_room}')
+    st.sidebar.write(f'С дренажом: {cnt_drinage}')
