@@ -6,64 +6,82 @@ st.set_page_config(
 )
 st.markdown("""
 <style>
-    /* Основной фон приложения */
     .stApp {
         background-color: #204171;
     }
     
-    /* Сайдбар */
+    /* Сайдбар - белый фон, черный текст */
     section[data-testid="stSidebar"] {
-        background-color: #22305f;
+        background-color: white !important;
     }
     
-    /* Текст в сайдбаре */
+    section[data-testid="stSidebar"],
     section[data-testid="stSidebar"] * {
-        color: white !important;
+        color: black !important;
     }
     
-    /* Шапка */
     header {
         background-color: #204171 !important;
     }
     
-    /* Основной контент - блок */
+    /* Главное окно */
     .main .block-container {
-        background-color: #2a4a80;  /* Светлее основного фона, но темнее белого */
+        background-color: #2a4a80;
         color: white !important;
         border-radius: 10px;
         padding: 2rem;
         margin-top: 1rem;
     }
     
-    /* Белый текст во всех элементах основного контейнера */
+    .main .block-container,
     .main .block-container * {
         color: white !important;
     }
     
-    /* Текст по умолчанию */
-    p, span, div {
-        color: white !important;
+    /* ★★★ ВСЕ КОМБОБОКСЫ - БЕЛЫЙ фон ★★★ */
+    /* Фон самого комбобокса */
+    [data-baseweb="select"] {
+        background-color: white !important;
     }
     
-    /* Заголовки */
-    h1, h2, h3, h4, h5, h6 {
-        color: white !important;
+    /* Внутренняя часть комбобокса */
+    [data-baseweb="select"] > div {
+        background-color: white !important;
     }
     
-    /* Элементы ввода и метки */
-    label, input, select, textarea {
-        color: white !important;
+    /* Кнопка комбобокса */
+    [data-baseweb="select"] [role="button"] {
+        background-color: white !important;
     }
     
-    /* Кнопки в сайдбаре */
-    section[data-testid="stSidebar"] button {
-        color: white !important;
-        border-color: white !important;
+    /* ★★★ Текст в комбобоксах - ЧЁРНЫЙ ★★★ */
+    [data-baseweb="select"] * {
+        color: black !important;
     }
     
-    /* Подсветка активного элемента в сайдбаре */
-    section[data-testid="stSidebar"] [data-testid="stWidgetLabel"] {
-        color: white !important;
+    /* Выбранное значение */
+    [data-baseweb="select"] [aria-selected="true"] {
+        color: black !important;
+    }
+    
+    /* Выпадающий список */
+    [role="listbox"] {
+        background-color: white !important;
+    }
+    
+    [role="option"] {
+        color: black !important;
+        background-color: white !important;
+    }
+    
+    [role="option"]:hover {
+        background-color: #f0f0f0 !important;
+        color: black !important;
+    }
+    
+    /* Убираем белый текст из комбобоксов в основном блоке */
+    .main .block-container [data-baseweb="select"] * {
+        color: black !important;
     }
 </style>
 """, unsafe_allow_html=True)
