@@ -12,26 +12,49 @@ st.set_page_config(
 
 st.markdown("""
 <style>
+    /* Фон приложения */
     .stApp {
         background-color: #204171;
-           
     }
-    p, span, div {
-        color: white !important;
+    
+    /* Сайдбар - БЕЛЫЙ фон, ЧЁРНЫЙ текст */
+    section[data-testid="stSidebar"] {
+        background-color: white !important;
     }
+    
+    /* Весь текст в сайдбаре - ЧЁРНЫЙ */
+    section[data-testid="stSidebar"],
+    section[data-testid="stSidebar"] * {
+        color: black !important;
+    }
+    
+    /* Особо для элементов ввода */
+    section[data-testid="stSidebar"] input,
+    section[data-testid="stSidebar"] select,
+    section[data-testid="stSidebar"] textarea {
+        color: black !important;
+        border-color: #666 !important;
+    }
+    
+    /* Красные теги тоже с чёрным текстом */
+    section[data-testid="stSidebar"] [data-baseweb="tag"] {
+        background-color: #EF4444 !important;
+    }
+    
+    section[data-testid="stSidebar"] [data-baseweb="tag"] * {
+        color: black !important;
+    }
+    
+    header {
+        background-color: #204171 !important;
+    }
+    
+    /* Основной блок */
     .main .block-container {
         background-color: white;
         border-radius: 10px;
         padding: 2rem;
         margin-top: 1rem;
-    }
-            header {
-        background-color: #204171 !important;
-    }
-    
-    /* Сайдбар */
-    section[data-testid="stSidebar"] {
-        background-color: #22305f;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -591,4 +614,3 @@ if st_select_region != 'Регионы':
     st.write(f'С подогревом: {cnt_heat}')
     st.write(f'С раздевалками: {cnt_dress_room}')
     st.write(f'С дренажом: {cnt_drinage}')
-
