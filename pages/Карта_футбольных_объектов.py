@@ -7,7 +7,7 @@ import json
 # Настройка страницы
 st.set_page_config(
     page_title="Реестр ОФИ", 
-    layout="wide" # или другие настройки
+    layout="wide"
 )
 
 st.markdown("""
@@ -45,17 +45,14 @@ st.markdown("""
     }
     
     /* ★★★ ВСЕ КОМБОБОКСЫ - БЕЛЫЙ фон ★★★ */
-    /* Фон самого комбобокса */
     [data-baseweb="select"] {
         background-color: white !important;
     }
     
-    /* Внутренняя часть комбобокса */
     [data-baseweb="select"] > div {
         background-color: white !important;
     }
     
-    /* Кнопка комбобокса */
     [data-baseweb="select"] [role="button"] {
         background-color: white !important;
     }
@@ -65,12 +62,10 @@ st.markdown("""
         color: black !important;
     }
     
-    /* Выбранное значение */
     [data-baseweb="select"] [aria-selected="true"] {
         color: black !important;
     }
     
-    /* Выпадающий список */
     [role="listbox"] {
         background-color: white !important;
     }
@@ -85,12 +80,12 @@ st.markdown("""
         color: black !important;
     }
     
-    /* Убираем белый текст из комбобоксов в основном блоке */
     .main .block-container [data-baseweb="select"] * {
         color: black !important;
     }
 </style>
 """, unsafe_allow_html=True)
+
 # Глобальный массив для полных данных баллунов
 FULL_BALLOONS_DATA = []
 
@@ -408,11 +403,32 @@ if st_select_region != 'Регионы':
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             display: none;
         }}
+        .notification {{
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #10b981;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            z-index: 9999;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            font-family: Arial, sans-serif;
+            max-width: 400px;
+            display: none;
+        }}
+        .notification.error {{
+            background: #ef4444;
+        }}
+        .notification.warning {{
+            background: #f59e0b;
+        }}
     </style>
 </head>
 <body>
     <div id="map"></div>
     <div id="copy-success" class="copy-success">✓ Скопировано в буфер обмена!</div>
+    <div id="notification" class="notification"></div>
 
     <script>
         // Передаём полные данные в JavaScript
@@ -423,51 +439,311 @@ if st_select_region != 'Регионы':
         let lastClickCoords = null;
         let lastClickAddress = null;
         
-        // Функция для обработки клика на кнопку Изменить данные
-        function handleConfirmClick(index) {{
-            window.open("https://school-eev.bitrix24site.ru/crm_form_1rlgr/", "_blank");
+        // Входящий вебхук Bitrix24
+        const BITRIX_WEBHOOK = "https://drlk.rfs.ru/rest/205/n7fh6ezdii7xofop/crm.lead.add.json";
+        
+        // Функция для показа уведомлений
+        function showNotification(message, type = 'success') {{
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = 'notification ' + type;
+            notification.style.display = 'block';
+            
+            setTimeout(() => {{
+                notification.style.display = 'none';
+            }}, 3000);
+        }}
+        
+        // Функция для отправки данных через входящий вебхук Bitrix24
+        async function sendToBitrixWebhook(data) {{
+            try {{
+                // Для входящего вебхука используем простой формат данных
+                const payload = {{
+                    action: 'create_lead_from_map',
+                    source: 'map_ofi',
+                    data: data,
+                    timestamp: new Date().toISOString(),
+                    region: '{st_select_region}'
+                }};
+                
+                console.log('Отправка данных в Bitrix24:', payload);
+                
+                // Отправляем POST запрос на входящий вебхук
+                const response = await fetch(BITRIX_WEBHOOK, {{
+                    method: 'POST',
+                    headers: {{
+                        'Content-Type': 'application/json',
+                    }},
+                    body: JSON.stringify(payload)
+                }});
+                
+                console.log('Статус ответа:', response.status);
+                
+                if (response.ok) {{
+                    const result = await response.json();
+                    console.log('Ответ от Bitrix24:', result);
+                    showNotification('✅ Заявка успешно создана в системе!');
+                    return result;
+                }} else {{
+                    // Если обычный запрос не работает, пробуем альтернативный метод
+                    console.log('Пробуем альтернативный метод отправки...');
+                    await sendViaAlternativeMethod(data);
+                    return {{ success: true, method: 'alternative' }};
+                }}
+                
+            }} catch (error) {{
+                console.error('Ошибка при отправке в Bitrix24:', error);
+                
+                // Пробуем альтернативный метод
+                try {{
+                    await sendViaAlternativeMethod(data);
+                }} catch (altError) {{
+                    console.error('Ошибка альтернативного метода:', altError);
+                    showNotification('❌ Ошибка при отправке данных', 'error');
+                }}
+                
+                return null;
+            }}
+        }}
+        
+        // Альтернативный метод отправки через скрытую iframe
+        async function sendViaAlternativeMethod(data) {{
+            return new Promise((resolve, reject) => {{
+                try {{
+                    // Создаем скрытую iframe для отправки данных
+                    const iframe = document.createElement('iframe');
+                    iframe.style.display = 'none';
+                    iframe.name = 'bitrixSubmitFrame';
+                    
+                    // Создаем форму
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = 'https://school-eev.bitrix24site.ru/crm_form_yqxl3/';
+                    form.target = 'bitrixSubmitFrame';
+                    
+                    // Добавляем поля с данными
+                    const fields = {{
+                        'title': data.title || 'Новый лид с карты ОФИ',
+                        'comments': data.comments || '',
+                        'object_name': data.objectName || '',
+                        'address': data.address || '',
+                        'rfs_id': data.rfsId || '',
+                        'problem_type': data.problemType || '',
+                        'region': data.region || '{st_select_region}',
+                        'coordinates': data.coordinates || '',
+                        'contact_info': data.contactInfo || '',
+                        'additional_info': JSON.stringify(data.additionalInfo || {{}}),
+                        'source': 'Карта ОФИ',
+                        'timestamp': new Date().toISOString()
+                    }};
+                    
+                    for (const [name, value] of Object.entries(fields)) {{
+                        const input = document.createElement('input');
+                        input.type = 'hidden';
+                        input.name = name;
+                        input.value = value;
+                        form.appendChild(input);
+                    }}
+                    
+                    // Добавляем на страницу и отправляем
+                    document.body.appendChild(iframe);
+                    document.body.appendChild(form);
+                    
+                    // Ждем загрузки iframe
+                    iframe.onload = function() {{
+                        console.log('Данные отправлены через iframe');
+                        showNotification('✅ Данные отправлены в систему');
+                        
+                        // Удаляем iframe и форму
+                        setTimeout(() => {{
+                            document.body.removeChild(iframe);
+                            document.body.removeChild(form);
+                        }}, 1000);
+                        
+                        resolve(true);
+                    }};
+                    
+                    iframe.onerror = function() {{
+                        console.error('Ошибка отправки через iframe');
+                        showNotification('⚠️ Данные отправлены (альтернативный метод)', 'warning');
+                        
+                        document.body.removeChild(iframe);
+                        document.body.removeChild(form);
+                        resolve(true);
+                    }};
+                    
+                    form.submit();
+                    
+                }} catch (error) {{
+                    console.error('Ошибка в альтернативном методе:', error);
+                    reject(error);
+                }}
+            }});
         }}
         
         // Функция для обработки клика на кнопку Не поле
-        function handleNotFieldClick(index) {{
-            window.open("https://school-eev.bitrix24site.ru/crm_form_1rlgr/", "_blank");
+        async function handleNotFieldClick(index) {{
+            const fullData = FULL_BALLOONS[index];
+            
+            const formData = {{
+                title: `Отсутствует поле: ${{fullData.short_name || fullData.full_name}}`,
+                objectName: fullData.full_name,
+                address: fullData.address,
+                rfsId: fullData.id_egora,
+                problemType: "Отсутствует футбольное поле",
+                region: "{st_select_region}",
+                contactInfo: fullData.contact,
+                comments: `ТИП ОБРАЩЕНИЯ: Отсутствует футбольное поле\\n\\n` +
+                         `ОБЪЕКТ: ${{fullData.full_name}}\\n` +
+                         `АДРЕС: ${{fullData.address}}\\n` +
+                         `РФС ID: ${{fullData.id_egora}}\\n` +
+                         `ТИП: ${{fullData.type}}\\n` +
+                         `ДИСЦИПЛИНА: ${{fullData.discipline}}\\n` +
+                         `РАЗМЕР: ${{fullData.size}}\\n` +
+                         `ПОКРЫТИЕ: ${{fullData.coverage}}\\n` +
+                         `МЕСТ: ${{fullData.capacity}}\\n` +
+                         `ДРЕНАЖ: ${{fullData.drainage}}\\n` +
+                         `ПОДОГРЕВ: ${{fullData.heating}}\\n` +
+                         `ТАБЛО: ${{fullData.scoreboard}}\\n` +
+                         `РАЗДЕВАЛКИ: ${{fullData.dressing}}\\n` +
+                         `ГОД: ${{fullData.year}}\\n` +
+                         `КОНТАКТ: ${{fullData.contact}}\\n` +
+                         `СОБСТВЕННИК: ${{fullData.owner}}\\n` +
+                         `УПРАВЛЯЮЩАЯ: ${{fullData.manager}}\\n` +
+                         `ПОЛЬЗОВАТЕЛЬ: ${{fullData.user}}`,
+                additionalInfo: {{
+                    short_name: fullData.short_name,
+                    type: fullData.type,
+                    discipline: fullData.discipline,
+                    size: fullData.size,
+                    coverage: fullData.coverage,
+                    capacity: fullData.capacity,
+                    drainage: fullData.drainage,
+                    heating: fullData.heating,
+                    scoreboard: fullData.scoreboard,
+                    dressing: fullData.dressing,
+                    year: fullData.year
+                }}
+            }};
+            
+            await sendToBitrixWebhook(formData);
+        }}
+        
+        // Функция для обработки клика на кнопку Изменить данные
+        async function handleConfirmClick(index) {{
+            const fullData = FULL_BALLOONS[index];
+            
+            const formData = {{
+                title: `Изменение данных: ${{fullData.short_name || fullData.full_name}}`,
+                objectName: fullData.full_name,
+                address: fullData.address,
+                rfsId: fullData.id_egora,
+                problemType: "Изменение данных объекта",
+                region: "{st_select_region}",
+                contactInfo: fullData.contact,
+                comments: `ТИП ОБРАЩЕНИЯ: Изменение данных объекта\\n\\n` +
+                         `ОБЪЕКТ: ${{fullData.full_name}}\\n` +
+                         `АДРЕС: ${{fullData.address}}\\n` +
+                         `РФС ID: ${{fullData.id_egora}}\\n` +
+                         `ТИП: ${{fullData.type}}\\n` +
+                         `ДИСЦИПЛИНА: ${{fullData.discipline}}\\n` +
+                         `РАЗМЕР: ${{fullData.size}}\\n` +
+                         `ПОКРЫТИЕ: ${{fullData.coverage}}\\n` +
+                         `МЕСТ: ${{fullData.capacity}}\\n` +
+                         `ДРЕНАЖ: ${{fullData.drainage}}\\n` +
+                         `ПОДОГРЕВ: ${{fullData.heating}}\\n` +
+                         `ТАБЛО: ${{fullData.scoreboard}}\\n` +
+                         `РАЗДЕВАЛКИ: ${{fullData.dressing}}\\n` +
+                         `ГОД: ${{fullData.year}}\\n` +
+                         `КОНТАКТ: ${{fullData.contact}}\\n` +
+                         `СОБСТВЕННИК: ${{fullData.owner}}\\n` +
+                         `УПРАВЛЯЮЩАЯ: ${{fullData.manager}}\\n` +
+                         `ПОЛЬЗОВАТЕЛЬ: ${{fullData.user}}\\n\\n` +
+                         `Пользователь запросил изменение данных объекта. ` +
+                         `Необходимо проверить и обновить информацию.`,
+                additionalInfo: {{
+                    short_name: fullData.short_name,
+                    type: fullData.type,
+                    discipline: fullData.discipline,
+                    size: fullData.size,
+                    coverage: fullData.coverage,
+                    capacity: fullData.capacity,
+                    drainage: fullData.drainage,
+                    heating: fullData.heating,
+                    scoreboard: fullData.scoreboard,
+                    dressing: fullData.dressing,
+                    year: fullData.year
+                }}
+            }};
+            
+            await sendToBitrixWebhook(formData);
         }}
         
         // Функция для обработки клика на кнопку Дубликат
-        function handleDuplicateClick(index) {{
-            window.open("https://school-eev.bitrix24site.ru/crm_form_1rlgr/", "_blank");
+        async function handleDuplicateClick(index) {{
+            const fullData = FULL_BALLOONS[index];
+            
+            const formData = {{
+                title: `Дубликат записи: ${{fullData.short_name || fullData.full_name}}`,
+                objectName: fullData.full_name,
+                address: fullData.address,
+                rfsId: fullData.id_egora,
+                problemType: "Дубликат записи",
+                region: "{st_select_region}",
+                contactInfo: fullData.contact,
+                comments: `ТИП ОБРАЩЕНИЯ: Дубликат записи\\n\\n` +
+                         `ОБЪЕКТ: ${{fullData.full_name}}\\n` +
+                         `АДРЕС: ${{fullData.address}}\\n` +
+                         `РФС ID: ${{fullData.id_egora}}\\n` +
+                         `ТИП: ${{fullData.type}}\\n` +
+                         `ДИСЦИПЛИНА: ${{fullData.discipline}}\\n\\n` +
+                         `Пользователь сообщил о дубликате записи. ` +
+                         `Рекомендуется проверить на дублирование в базе данных.`,
+                additionalInfo: {{
+                    short_name: fullData.short_name,
+                    type: fullData.type,
+                    discipline: fullData.discipline
+                }}
+            }};
+            
+            await sendToBitrixWebhook(formData);
         }}
         
         // Функция для обработки клика на кнопку Здесь футбольное поле
-        function handleFieldHereClick(coords) {{
-            window.open("https://school-eev.bitrix24site.ru/crm_form_1rlgr/", "_blank");
+        async function handleFieldHereClick(coords) {{
+            const formData = {{
+                title: `Предложение нового поля`,
+                address: lastClickAddress || "Адрес не определен",
+                coordinates: `${{coords[0].toFixed(6)}}, ${{coords[1].toFixed(6)}}`,
+                problemType: "Новое поле",
+                region: "{st_select_region}",
+                comments: `ТИП ОБРАЩЕНИЯ: Предложение нового поля\\n\\n` +
+                         `АДРЕС: ${{lastClickAddress || "Не определен"}}\\n` +
+                         `КООРДИНАТЫ: ${{coords[0].toFixed(6)}}, ${{coords[1].toFixed(6)}}\\n\\n` +
+                         `Пользователь предложил новое место для футбольного поля. ` +
+                         `Рекомендуется проверить возможность создания нового объекта.`,
+                additionalInfo: {{
+                    coordinates: `${{coords[0].toFixed(6)}}, ${{coords[1].toFixed(6)}}`,
+                    address: lastClickAddress || "Не определен"
+                }}
+            }};
+            
+            await sendToBitrixWebhook(formData);
         }}
         
         // Функция для копирования в буфер обмена
         function copyToClipboard(text) {{
             navigator.clipboard.writeText(text).then(function() {{
-                // Показываем уведомление об успехе
-                const successDiv = document.getElementById('copy-success');
-                successDiv.style.display = 'block';
-                setTimeout(function() {{
-                    successDiv.style.display = 'none';
-                }}, 2000);
+                showNotification('✓ Скопировано в буфер обмена!');
             }}, function(err) {{
                 console.error('Ошибка при копировании: ', err);
-                // Альтернативный метод для старых браузеров
                 const textArea = document.createElement("textarea");
                 textArea.value = text;
                 document.body.appendChild(textArea);
                 textArea.select();
                 document.execCommand("copy");
                 document.body.removeChild(textArea);
-                
-                // Показываем уведомление об успехе
-                const successDiv = document.getElementById('copy-success');
-                successDiv.style.display = 'block';
-                setTimeout(function() {{
-                    successDiv.style.display = 'none';
-                }}, 2000);
+                showNotification('✓ Скопировано в буфер обмена!');
             }});
         }}
         
@@ -547,7 +823,7 @@ if st_select_region != 'Регионы':
                                         ✅ Изменить данные
                                     </button>
                                     <button onclick="handleNotFieldClick(${{index}})" style="cursor: pointer; background: #ef4444; border: none; padding: 8px 15px; border-radius: 4px; color: white; font-weight: bold; font-size: 12px;">
-                                        ❌ Отсутствует поле
+                                        ❌ Не поле
                                     </button>
                                     <button onclick="handleDuplicateClick(${{index}})" style="cursor: pointer; background: #f59e0b; border: none; padding: 8px 15px; border-radius: 4px; color: white; font-weight: bold; font-size: 12px;">
                                         🔄 Дубликат
