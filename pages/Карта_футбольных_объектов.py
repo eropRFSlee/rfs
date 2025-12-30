@@ -444,6 +444,7 @@ if st_select_region != 'Регионы':
         let lastClickCoords = null;
         let lastClickAddress = null;
         let placemarks = []; // Массив для хранения всех меток
+        let purplePlacemarks = []; // Массив для хранения фиолетовых меток
         
         // Функция для обработки клика на кнопку Внести изменения
         function handleConfirmClick(index) {{
@@ -526,6 +527,28 @@ if st_select_region != 'Регионы':
         // Функция для обработки клика на кнопку Здесь футбольное поле
         function handleFieldHereClick(coords) {{
             window.open("https://school-eev.bitrix24site.ru/crm_form_drmcv/", "_blank");
+            
+            // Создаем фиолетовую точку
+            const purplePlacemark = new ymaps.Placemark(coords, {{
+                balloonContent: '',
+                hasBalloon: false
+            }}, {{
+                preset: 'islands#circleDotIcon',
+                iconColor: '#8B5CF6', // Фиолетовый цвет
+                draggable: false
+            }});
+            
+            // Отключаем все события клика для фиолетовой точки
+            purplePlacemark.events.remove('click');
+            purplePlacemark.options.set('openBalloonOnClick', false);
+            purplePlacemark.options.set('openEmptyBalloon', false);
+            purplePlacemark.options.set('hasBalloon', false);
+            
+            // Добавляем точку на карту
+            map.geoObjects.add(purplePlacemark);
+            
+            // Сохраняем в массив фиолетовых меток
+            purplePlacemarks.push(purplePlacemark);
         }}
         
         // Функция для копирования в буфер обмена
@@ -563,7 +586,7 @@ if st_select_region != 'Регионы':
             }}
         }}
         
-        // Функция для копирования координатов
+        // Функция для копирования координат
         function copyCoords() {{
             if (lastClickCoords) {{
                 const coordsText = `${{lastClickCoords[0].toFixed(6)}}, ${{lastClickCoords[1].toFixed(6)}}`;
@@ -762,7 +785,7 @@ if st_select_region != 'Регионы':
         """
     
     # Показываем карту
-    st.components.v1.html(map_html, height=800)
+    st.components.v1.html(map_html, height=700, scrolling=False)
     
      # -------------------------------------------------------------------------------------------------------------
     st.sidebar.write(f'Всего объектов: {all_object}')
