@@ -2,8 +2,6 @@ import streamlit as st
 import pandas as pd
 import json
 
-
-
 st.set_page_config(
     page_title="Реестр ОФИ", 
     layout="wide"
@@ -91,9 +89,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-
 FULL_BALLOONS_DATA = []
-
 
 st_select_region = st.sidebar.selectbox("Выберите свой регион", ['Регионы','01 Республика Адыгея', \
                                                                  '04 Республика Алтай',\
@@ -122,25 +118,19 @@ if st_select_region != 'Регионы':
     cnt_dress_room = data[data['Наличие раздевалок'] == 'Да'].shape[0]
     cnt_heat = data[data['Наличие подогрева'].isin(['Да', 'Имеется'])].shape[0]
 
-
     condition_reestr = ['Все']
     for x in sorted(data['Наличие в реестрах'].unique()):
         condition_reestr.append(x)
     
-    
-
     conditional_size = ['Все']
     for x in sorted(data['Дисциплина_2'].unique()):
         conditional_size.append(x)
     
-
     conditional_dop = []
     conditional_dop.append('Наличие табло')
     conditional_dop.append('Наличие дренажа')
     conditional_dop.append('Наличие раздевалок')
     conditional_dop.append('Наличие подогрева')
-
-
     
     # -------------------------------------------------------------------------------------------------------------
 
@@ -156,21 +146,15 @@ if st_select_region != 'Регионы':
         data = data[data['Наличие в реестрах'] == 2]
     if st_select_reestr == 3:
         data = data[data['Наличие в реестрах'] == 3]
-
-
     
     if st_select_desciplyne != 'Все':
         data = data[data['Дисциплина_2'] == st_select_desciplyne]
-
 
     if bool(st_select_dop_info):
        data = data[data[st_select_dop_info].apply(
     lambda row: all(val in ['Да', 'Имеется'] for val in row),
     axis=1)]
    
-
-
-        
     # -------------------------------------------------------------------------------------------------------------
 
     sirota = data['Широта']
@@ -207,7 +191,6 @@ if st_select_region != 'Регионы':
     points_js = ""
     for i in range(len(sirota)):
     
-
         adres_to_map = [str(full_name.iloc[i]).replace('"', '').replace('nan','-'),
                         str(short_name.iloc[i]).replace('"', '').replace('nan','-'),
                         str(adres.iloc[i]).replace('"', '').replace('nan','-'),
@@ -230,7 +213,6 @@ if st_select_region != 'Регионы':
                         str(year.iloc[i]).replace('"', '').replace('nan','-').replace('.0','')
                         ]
         
-
         balloon_text = json.dumps(
             f'''<div style="font-size:12px;padding:5px">
                 <b>Загрузка информации...</b><br>
@@ -279,7 +261,8 @@ if st_select_region != 'Регионы':
                 balloonMinWidth: 450,
                 id_egora: "{current_id_egora}",
                 index: {i},
-                originalIconColor: '{icon_color}'
+                originalIconColor: '{icon_color}',
+                needsChanges: false
             }}, {{
                 preset: 'islands#circleDotIcon',
                 iconColor : '{icon_color}',
@@ -408,6 +391,44 @@ if st_select_region != 'Регионы':
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             display: none;
         }}
+        .address-item {{
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #e5e7eb;
+        }}
+        .address-item:last-child {{
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }}
+        .item-header {{
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }}
+        .item-label {{
+            font-weight: bold;
+            color: #3b82f6;
+            font-size: 14px;
+        }}
+        .item-content {{
+            color: #333;
+            font-size: 13px;
+            word-break: break-word;
+        }}
+        .copy-icon-btn {{
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 3px;
+            font-size: 18px;
+            color: #666;
+            transition: color 0.2s;
+        }}
+        .copy-icon-btn:hover {{
+            color: #8b5cf6;
+        }}
     </style>
 </head>
 <body>
@@ -422,25 +443,89 @@ if st_select_region != 'Регионы':
         let map;
         let lastClickCoords = null;
         let lastClickAddress = null;
+        let placemarks = []; // Массив для хранения всех меток
         
-        // Функция для обработки клика на кнопку Изменить данные
+        // Функция для обработки клика на кнопку Внести изменения
         function handleConfirmClick(index) {{
-            window.open("https://school-eev.bitrix24site.ru/crm_form_1rlgr/", "_blank");
-        }}
-        
-        // Функция для обработки клика на кнопку Не поле
-        function handleNotFieldClick(index) {{
-            window.open("https://school-eev.bitrix24site.ru/crm_form_1rlgr/", "_blank");
-        }}
-        
-        // Функция для обработки клика на кнопку Дубликат
-        function handleDuplicateClick(index) {{
-            window.open("https://school-eev.bitrix24site.ru/crm_form_1rlgr/", "_blank");
+            // Открываем форму для изменений
+            window.open("https://school-eev.bitrix24site.ru/crm_form_oekrf/", "_blank");
+            
+            // Находим соответствующую метку и меняем её цвет на красный
+            if (placemarks[index]) {{
+                const placemark = placemarks[index];
+                
+                // Изменяем цвет метки на красный
+                placemark.options.set('iconColor', '#EF4444');
+                
+                // Обновляем свойство, чтобы знать, что метка была изменена
+                placemark.properties.set('needsChanges', true);
+                
+                // Обновляем баллун, чтобы показать, что изменения были внесены
+                const updatedBalloon = `
+                    <div style="font-size: 10px; max-width: 500px; padding: 7px; line-height: 1.4;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
+                            <div><strong>📋 Полное название:</strong><br><span>${{FULL_BALLOONS[index].full_name}}</span></div>
+                            <div><strong>⚽ Короткое название:</strong><br><span>${{FULL_BALLOONS[index].short_name}}</span></div>
+                        </div>
+                        <div style="margin-bottom: 6px; padding-top: 6px; border-top: 1px solid #e5e7eb;">
+                            <strong>📍 Адрес:</strong><br>
+                            <span>${{FULL_BALLOONS[index].address}}</span>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
+                            <div><strong>📞 Контакт:</strong><br><span>${{FULL_BALLOONS[index].contact}}</span></div>
+                            <div><strong>👤 Собственник:</strong><br><span>${{FULL_BALLOONS[index].owner}}</span></div>
+                            <div><strong>🏢 Управляющая:</strong><br><span>${{FULL_BALLOONS[index].manager}}</span></div>
+                            <div><strong>👥 Пользователь:</strong><br><span>${{FULL_BALLOONS[index].user}}</span></div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div><strong>🌐 РФС ID:</strong><br><span>${{FULL_BALLOONS[index].id_egora}}</span></div>
+                                <button onclick="copyRfsId('${{FULL_BALLOONS[index].id_egora}}')" class="copy-icon-btn" title="Скопировать РФС ID">
+                                    📄
+                                </button>
+                            </div>
+                            <div><strong>Тип:</strong><br><span>${{FULL_BALLOONS[index].type}}</span></div>
+                            <div><strong>Дисциплина:</strong><br><span>${{FULL_BALLOONS[index].discipline}}</span></div>
+                            <div><strong>Размер:</strong><br><span>${{FULL_BALLOONS[index].size}} м</span></div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
+                            <div><strong>Покрытие:</strong><br><span>${{FULL_BALLOONS[index].coverage}}</span></div>
+                            <div><strong>Мест:</strong><br><span>${{FULL_BALLOONS[index].capacity}}</span></div>
+                            <div><strong>Дренаж:</strong><br><span>${{FULL_BALLOONS[index].drainage}}</span></div>
+                            <div><strong>Подогрев:</strong><br><span>${{FULL_BALLOONS[index].heating}}</span></div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
+                            <div><strong>Табло:</strong><br><span>${{FULL_BALLOONS[index].scoreboard}}</span></div>
+                            <div><strong>Раздевалки:</strong><br><span>${{FULL_BALLOONS[index].dressing}}</span></div>
+                            <div><strong>Год:</strong><br><span>${{FULL_BALLOONS[index].year}}</span></div>
+                        </div>
+                        
+                        <div style="margin-top: 12px; padding-top: 12px; border-top: 2px solid #e5e7eb;">
+                            <div style="background-color: #FEF2F2; border: 1px solid #FCA5A5; padding: 10px; border-radius: 4px; margin-bottom: 10px;">
+                                <div style="color: #DC2626; font-weight: bold; display: flex; align-items: center; gap: 5px;">
+                                    <span>🔴</span>
+                                    <span>Внесены изменения</span>
+                                </div>
+                                <div style="font-size: 9px; color: #666; margin-top: 5px;">
+                                    Точка окрашена в красный цвет
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                                <button onclick="handleConfirmClick(${{index}})" style="cursor: pointer; background: #10b981; border: none; padding: 8px 15px; border-radius: 4px; color: white; font-weight: bold; font-size: 12px;">
+                                    ✅ Внести изменения
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                placemark.properties.set('balloonContent', updatedBalloon);
+            }}
         }}
         
         // Функция для обработки клика на кнопку Здесь футбольное поле
         function handleFieldHereClick(coords) {{
-            window.open("https://school-eev.bitrix24site.ru/crm_form_1rlgr/", "_blank");
+            window.open("https://school-eev.bitrix24site.ru/crm_form_drmcv/", "_blank");
         }}
         
         // Функция для копирования в буфер обмена
@@ -471,11 +556,25 @@ if st_select_region != 'Регионы':
             }});
         }}
         
-        // Функция для копирования адреса и координатов
-        function copyAddressAndCoords() {{
-            if (lastClickAddress && lastClickCoords) {{
-                const text = `Адрес: ${{lastClickAddress}}\\nКоординаты: ${{lastClickCoords[0].toFixed(6)}}, ${{lastClickCoords[1].toFixed(6)}}`;
-                copyToClipboard(text);
+        // Функция для копирования адреса
+        function copyAddress() {{
+            if (lastClickAddress) {{
+                copyToClipboard(lastClickAddress);
+            }}
+        }}
+        
+        // Функция для копирования координатов
+        function copyCoords() {{
+            if (lastClickCoords) {{
+                const coordsText = `${{lastClickCoords[0].toFixed(6)}}, ${{lastClickCoords[1].toFixed(6)}}`;
+                copyToClipboard(coordsText);
+            }}
+        }}
+        
+        // Функция для копирования РФС ID
+        function copyRfsId(rfsId) {{
+            if (rfsId) {{
+                copyToClipboard(rfsId);
             }}
         }}
         
@@ -489,11 +588,12 @@ if st_select_region != 'Регионы':
                 type: 'yandex#satellite'
             }});
 
-            // Добавляем поиск на карту
+            // Добавляем только стандартный поиск Яндекс.Карт
             map.controls.add(new ymaps.control.SearchControl({{
                 options: {{
                     provider: 'yandex#search',
-                    noPlacemark: false
+                    noPlacemark: true,
+                    placeholderContent: 'Поиск на карте'
                 }}
             }}));
 
@@ -506,9 +606,29 @@ if st_select_region != 'Регионы':
                     var fullData = FULL_BALLOONS[index];
                     var id_egora = point.properties.get('id_egora');
                     
+                    // Проверяем, были ли уже внесены изменения для этой точки
+                    const needsChanges = point.properties.get('needsChanges') || false;
+                    const iconColor = point.options.get('iconColor');
+                    
+                    let statusHTML = '';
+                    if (iconColor === '#EF4444' || needsChanges) {{
+                        statusHTML = `
+                            <div style="background-color: #FEF2F2; border: 1px solid #FCA5A5; padding: 10px; border-radius: 4px; margin-bottom: 10px;">
+                                <div style="color: #DC2626; font-weight: bold; display: flex; align-items: center; gap: 5px;">
+                                    <span>🔴</span>
+                                    <span>Внесены изменения</span>
+                                </div>
+                                <div style="font-size: 9px; color: #666; margin-top: 5px;">
+                                    Точка окрашена в красный цвет
+                                </div>
+                            </div>
+                        `;
+                    }}
+                    
                     // Создаём полный HTML баллун
                     var fullBalloon = `
                         <div style="font-size: 10px; max-width: 500px; padding: 7px; line-height: 1.4;">
+                            ${{statusHTML}}
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
                                 <div><strong>📋 Полное название:</strong><br><span>${{fullData.full_name}}</span></div>
                                 <div><strong>⚽ Короткое название:</strong><br><span>${{fullData.short_name}}</span></div>
@@ -524,7 +644,12 @@ if st_select_region != 'Регионы':
                                 <div><strong>👥 Пользователь:</strong><br><span>${{fullData.user}}</span></div>
                             </div>
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
-                                <div><strong>🌐 РФС ID:</strong><br><span>${{fullData.id_egora}}</span></div>
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <div><strong>🌐 РФС ID:</strong><br><span>${{fullData.id_egora}}</span></div>
+                                    <button onclick="copyRfsId('${{fullData.id_egora}}')" class="copy-icon-btn" title="Скопировать РФС ID">
+                                        📄
+                                    </button>
+                                </div>
                                 <div><strong>Тип:</strong><br><span>${{fullData.type}}</span></div>
                                 <div><strong>Дисциплина:</strong><br><span>${{fullData.discipline}}</span></div>
                                 <div><strong>Размер:</strong><br><span>${{fullData.size}} м</span></div>
@@ -544,13 +669,7 @@ if st_select_region != 'Регионы':
                             <div style="margin-top: 12px; padding-top: 12px; border-top: 2px solid #e5e7eb;">
                                 <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
                                     <button onclick="handleConfirmClick(${{index}})" style="cursor: pointer; background: #10b981; border: none; padding: 8px 15px; border-radius: 4px; color: white; font-weight: bold; font-size: 12px;">
-                                        ✅ Изменить данные
-                                    </button>
-                                    <button onclick="handleNotFieldClick(${{index}})" style="cursor: pointer; background: #ef4444; border: none; padding: 8px 15px; border-radius: 4px; color: white; font-weight: bold; font-size: 12px;">
-                                        ❌ Отсутствует поле
-                                    </button>
-                                    <button onclick="handleDuplicateClick(${{index}})" style="cursor: pointer; background: #f59e0b; border: none; padding: 8px 15px; border-radius: 4px; color: white; font-weight: bold; font-size: 12px;">
-                                        🔄 Дубликат
+                                        ✅ Внести изменения
                                     </button>
                                 </div>
                             </div>
@@ -562,6 +681,7 @@ if st_select_region != 'Регионы':
                 }});
                 
                 map.geoObjects.add(point);
+                placemarks[index] = point; // Сохраняем метку в массив
             }});
 
             // Обработка клика на карте (для адреса по координатам)
@@ -592,20 +712,30 @@ if st_select_region != 'Регионы':
                     
                     infoDiv.innerHTML = `
                         <div class="close-btn" onclick="this.parentElement.remove()">×</div>
-                        <div class="address-title">📍 Адрес:</div>
-                        <div style="margin-bottom: 10px;">${{address}}</div>
-                        <div class="coords">
-                            Координаты:<br>
-                            ${{coords[0].toFixed(6)}}, ${{coords[1].toFixed(6)}}
+                        <div class="address-title">📍 Информация о местоположении</div>
+                        
+                        <div class="address-item">
+                            <div class="item-header">
+                                <div class="item-label">Адрес:</div>
+                                <button onclick="copyAddress()" class="copy-icon-btn" title="Скопировать адрес">
+                                    📄
+                                </button>
+                            </div>
+                            <div class="item-content">${{address}}</div>
                         </div>
-                        <button onclick="copyAddressAndCoords()" 
-                style="cursor: pointer; background: none; border: none; padding: 3px; font-size: 18px; color: #666; margin-left: 10px;"
-                onmouseover="this.style.color='#8b5cf6'" 
-                onmouseout="this.style.color='#666'"
-                title="Скопировать адрес и координаты">
-            📄
-        </button>
-    </div>
+                        
+                        <div class="address-item">
+                            <div class="item-header">
+                                <div class="item-label">Координаты:</div>
+                                <button onclick="copyCoords()" class="copy-icon-btn" title="Скопировать координаты">
+                                    📄
+                                </button>
+                            </div>
+                            <div class="item-content">
+                                ${{coords[0].toFixed(6)}}, ${{coords[1].toFixed(6)}}
+                            </div>
+                        </div>
+                        
                         <div class="field-btn">
                             <button onclick="handleFieldHereClick([${{coords[0]}}, ${{coords[1]}}])">
                                 ⚽ Здесь футбольное поле
