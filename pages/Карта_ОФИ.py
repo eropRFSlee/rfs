@@ -37,21 +37,35 @@ st.markdown("""
         background-color: #204171 !important;
     }
     
-    /* Главное окно */
+    /* ГЛАВНОЕ ОКНО - ЗОЛОТОЙ ТЕКСТ */
     .main .block-container {
         background-color: #2a4a80;
-        color: white !important;
+        color: #FFD700 !important; /* Золотой цвет */
         border-radius: 10px;
         padding: 2rem;
         margin-top: 1rem;
     }
     
-    .main .block-container,
-    .main .block-container * {
-        color: white !important;
+    /* ВСЕ элементы в основном окне - золотой цвет */
+    .main .block-container *:not([data-baseweb="select"] *):not([role="listbox"] *):not([role="option"] *) {
+        color: #FFD700 !important;
     }
     
-    /* ★★★ ВСЕ КОМБОБОКСЫ - БЕЛЫЙ фон ★★★ */
+    /* Исключения для некоторых элементов */
+    .main .block-container h1,
+    .main .block-container h2,
+    .main .block-container h3,
+    .main .block-container h4,
+    .main .block-container h5,
+    .main .block-container h6,
+    .main .block-container p,
+    .main .block-container span,
+    .main .block-container div:not([data-baseweb="select"]):not([role="listbox"]):not([role="option"]),
+    .main .block-container label {
+        color: #FFD700 !important;
+    }
+    
+    /* ★★★ ВСЕ КОМБОБОКСЫ - БЕЛЫЙ фон, черный текст ★★★ */
     /* Фон самого комбобокса */
     [data-baseweb="select"] {
         background-color: white !important;
@@ -92,18 +106,82 @@ st.markdown("""
         color: black !important;
     }
     
-    /* Убираем белый текст из комбобоксов в основном блоке */
+    /* Текст в комбобоксах в основном блоке - черный */
     .main .block-container [data-baseweb="select"] * {
         color: black !important;
     }
     
+    /* Текст в input полях поиска */
+    .stTextInput input {
+        color: #000000 !important;
+        background-color: white !important;
+    }
+    
+    .stTextInput label {
+        color: #FFD700 !important;
+    }
+    
+    /* Кнопки в основном окне */
+    .stButton button {
+        color: #FFD700 !important;
+        border-color: #FFD700 !important;
+    }
+    
+    .stButton button:hover {
+        background-color: rgba(255, 215, 0, 0.1) !important;
+    }
+    
+    /* ★★★ ВСЕ ИНФОРМАЦИОННЫЕ СООБЩЕНИЯ В ОСНОВНОМ ОКНЕ - ЗОЛОТОЙ ★★★ */
+    /* Сообщение "Загрузка данных..." и другие текстовые элементы */
+    .stSpinner + div,
+    .stSpinner > div > div,
+    .stAlert,
+    .stInfo,
+    .stWarning,
+    .stSuccess,
+    .stError,
+    .element-container .stMarkdown p,
+    .element-container .stMarkdown span,
+    .element-container .stMarkdown div {
+        color: #FFD700 !important;
+    }
+    
+    /* Специально для информационных сообщений */
+    div[data-testid="stToast"],
+    div[data-testid="stNotification"],
+    .st-emotion-cache-1q7spjk {
+        color: #FFD700 !important;
+    }
+    
+    /* Текст внутри информационных блоков */
+    .stAlert *,
+    .stInfo *,
+    .stWarning *,
+    .stSuccess *,
+    .stError * {
+        color: #FFD700 !important;
+    }
+    
+    /* Границы информационных сообщений */
+    .stInfo,
+    .stWarning,
+    .stSuccess,
+    .stError {
+        border-color: #FFD700 !important;
+    }
+    
     /* Стили для карточек объектов */
     .card {
-        background-color: white;
+        background-color: rgba(255, 255, 255, 0.9);
         border-radius: 10px;
         padding: 15px;
         margin-bottom: 15px;
         box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        color: #000000 !important;
+    }
+    
+    .card * {
+        color: #000000 !important;
     }
     
     /* Стили для цветового индикатора */
@@ -123,6 +201,7 @@ st.markdown("""
         border-radius: 4px;
         font-size: 12px;
         font-weight: bold;
+        color: #000000 !important;
     }
     
     .color-blue {
@@ -143,6 +222,33 @@ st.markdown("""
     
     .color-red {
         background-color: #EF4444;
+    }
+    
+    /* Стили для спиннера */
+    .stSpinner > div {
+        border-color: #FFD700 transparent transparent transparent !important;
+    }
+    
+    /* Текст статуса загрузки */
+    .stSpinner + div {
+        color: #FFD700 !important;
+    }
+    
+    /* Заголовки в сайдбаре */
+    .sidebar-content h1,
+    .sidebar-content h2,
+    .sidebar-content h3,
+    .sidebar-content h4,
+    .sidebar-content h5,
+    .sidebar-content h6 {
+        color: black !important;
+    }
+    
+    /* Параграфы и текст в сайдбаре */
+    .sidebar-content p,
+    .sidebar-content span,
+    .sidebar-content div {
+        color: black !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -268,22 +374,96 @@ if 'data_loaded' not in st.session_state:
     st.session_state.last_data_update = None  # Время последнего обновления данных
     st.session_state.view_mode = 'map'  # Режим просмотра: 'map' или 'list'
     st.session_state.copied_id = None  # Для отслеживания скопированного ID
+    st.session_state.search_query = ''  # Поисковый запрос
+    st.session_state.search_triggered = False  # Флаг для отслеживания нажатия Enter
 
 # Создаем одну кнопку обновления в сайдбаре ДО выбора региона
-st.sidebar.markdown("---")
 
-st_select_region = st.sidebar.selectbox("Выберите свой регион", ['Регионы', 'Сибирь',\
-                                                                 '03 Республика Бурятия', \
-                                                                 '04 Республика Алтай',\
-                                                                        '17 Республика Тыва',\
-                                                                            '19 Республика Хакасия',\
-                                                                                '22 Алтайский  край',\
-                                                                                    '24 Красноярский край',\
-                                                                                        '38 Иркутская область',\
-                                                                                            '42 Кемеровская область',\
-                                                                                                '54 Новосибирская область',\
-                                                                                                    '70 Томская область',\
-                                                                                                        '75 Забайкальский край'])
+st_select_region = st.sidebar.selectbox("Выберите свой регион", ['Регионы',\
+    '01 Республика Адыгея',
+    '02 Республика Башкортостан',
+    '03 Республика Бурятия',
+    '04 Республика Алтай',
+    '05 Республика Дагестан',
+    '06 Республика Ингушетия',
+    '07 Кабардино-Балкарская Республика',
+    '08 Республика Калмыкия',
+    '09 Карачаево-Черкесская Республика',
+    '10 Республика Корелия',
+    '11 Республика Коми',
+    '12 Республика Марий Эл',
+    '13 Республика Мордовия',
+    '14 Республика Саха (Якутия)',
+    '15 Республика Северная Осетия — Алания',
+    '16 Республика Татарстан',
+    '17 Республика Тыва',
+    '18 Удмуртская Республика',
+    '19 Республика Хакасия',
+    '20 Чеченская Республика',
+    '21 Чувашская Республика',
+    '22 Алтайский край',
+    '23 Краснодарский край',
+    '24 Красноярский край',
+    '25 Приморский край',
+    '26 Ставропольский край',
+    '27 Хабаровский край',
+    '28 Амурская область',
+    '29 Архангельская область',
+    '30 Астраханская область',
+    '31 Белгородская область',
+    '32 Брянская область',
+    '33 Владимирская область',
+    '34 Волгоградская область',
+    '35 Вологодская область',
+    '36 Воронежская область',
+    '37 Ивановская область',
+    '38 Иркутская область',
+    '39 Калининградская область',
+    '40 Калужская область',
+    '41 Камчатский край',
+    '42 Кемеровская область',
+    '43 Кировская область',
+    '44 Костромская область',
+    '45 Курганская область',
+    '46 Курская область',
+    '47 Ленинградская область',
+    '48 Липецкая область',
+    '49 Магаданская область',
+    '50 Московская область',
+    '51 Мурманская область',
+    '52 Нижегородская область',
+    '53 Новгородская область',
+    '54 Новосибирская область',
+    '55 Омская область',
+    '56 Оренбургская область',
+    '57 Орловская область',
+    '58 Пензенская область',
+    '59 Пермский край',
+    '60 Псковская область',
+    '61 Ростовская область',
+    '62 Рязанская область',
+    '63 Самарская область',
+    '64 Саратовская область',
+    '65 Сахалинская область',
+    '66 Свердловская область',
+    '67 Смоленская область',
+    '68 Тамбовская область',
+    '69 Тверская область',
+    '70 Томская область',
+    '71 Тульская область',
+    '72 Тюменская область',
+    '73 Ульяновская область',
+    '74 Челябинская область',
+    '75 Забайкальский край',
+    '76 Ярославская область',
+    '77 Москва',
+    '78 Санкт-Петербург',
+    '79 Еврейская автономная область',
+    '83 Ненецкий автономный округ',
+    '86 Ханты-Мансийский автономный округ — Югра',
+    '87 Чукотский автономный округ',
+    '89 Ямало-Ненецкий автономный округ'
+])
 
 # Кнопка в сайдбаре для перезагрузки данных
 if st_select_region != 'Регионы':
@@ -294,7 +474,7 @@ if st_select_region != 'Регионы':
         current_region_number = int(st_select_region[0:2])
     
     # Переносим кнопку "Обновить карту и данные" в сайдбар
-    st.sidebar.markdown("---")
+
     if st.sidebar.button("🔄 Обновить карту и данные", key="refresh_all_btn", type="primary"):
         # 1. Загружаем новые данные из Битрикса
         st.session_state.force_reload = True
@@ -309,8 +489,11 @@ if st_select_region != 'Регионы':
         </script>
         """, unsafe_allow_html=True)
     
-    # Добавляем кнопки выбора режима в основное окно - МЕНЬШЕ И ОДИН ФОН
-    col1, col2, col3 = st.columns([1, 1, 8])
+    # -------------------------------------------------------------------------------------------------------------
+    # ПЕРЕМЕЩАЕМ КНОПКИ ВЫБОРА РЕЖИМА В САЙДБАР ПОСЛЕ ВЫБОРА РЕГИОНА
+    st.sidebar.markdown("---")
+    st.sidebar.write("**Режим просмотра:**")
+    col1, col2 = st.sidebar.columns(2)
     with col1:
         if st.button("🗺️ Карта", key="map_btn", type="primary" if st.session_state.view_mode == 'map' else "secondary", 
                      help="Переключить на карту", use_container_width=True):
@@ -400,27 +583,12 @@ if st_select_region != 'Регионы':
     conditional_dop.append('Наличие дренажа')
     conditional_dop.append('Наличие раздевалок')
     conditional_dop.append('Наличие подогрева')
-    conditional_dop.append('Искусственное поле')
-    conditional_dop.append('Натуральное поле')  # Добавляем новый фильтр
-
-    # Добавляем список натуральных покрытий для фильтрации
-    natural_coverings = [
-        'Естественное покрытие', 'натуральное', 'Естественныйтравяной', 
-        'Естественный травяной газон', 'Естественное покрытие «газонная трава»', 
-        'Натуральное', 'естественное', 'естественное покрытие', 'Травяное', 
-        'натуральный газон , требующий обновления', 'трава', 
-        'натуральный газон (ведуться работы по замене газона на искусственное покрытие)',
-        'Натуральная трава', 'Натуральный', 'травяной газон естественный', 
-        'естественный газон', 'газон трава', 'газон', 'натуральный газон',
-        'естественное (травяное) покрытие', 'натуральные', 'естественное озеленение',
-        'земляное', 'естественное', 'Естественное покрытие', 'натуральное газонное покрытие',
-        'естественный', 'трава искуственная зеленая', 'натуральнвая трава',
-        'земляное, частично газон', 'газонное', 'естественный  газон',
-        'земля', 'Земляное', 'гравий', 'естественный травянной покров',
-        'Газонное, песчаное', 'земляное, газонное', 'естественное ',
-        'газонная трава', 'естественное травяное покрытие', 'Натуральное',
-        'Естественное земляное'
-    ]
+    conditional_dop.append('Натуральное')
+    conditional_dop.append('Искусственная трава')
+    conditional_dop.append('Спортивное (резина, крошка и тп)') 
+    conditional_dop.append('Доска (паркет)') 
+    conditional_dop.append('Иное') 
+    conditional_dop.append('Нет информации') 
 
     # -------------------------------------------------------------------------------------------------------------
 
@@ -434,7 +602,7 @@ if st_select_region != 'Регионы':
 
     # ДОБАВЛЯЕМ НОВЫЙ ФИЛЬТР ПО ТИПУ ПОКРЫТИЯ
     st_select_covering = st.sidebar.selectbox(
-        "Фильтр по типу покрытия",
+        "Фильтр по типу покрытия/особенностям",
         conditional_dop,
         key=f"covering_{current_region_number}_{st.session_state.widget_reset_key}"
     )
@@ -455,7 +623,7 @@ if st_select_region != 'Регионы':
     elif st_select_reestr == '🟣 Добавили новое поле, на стадии рассмотрения':
         data = data[data['Статус работы'] == '2']
     elif st_select_reestr == '🔵 Есть в РОИВ, но нет в ЦП':
-        data = data[data['Наличие в реестрах'] == 1]
+        data = data[(data['Наличие в реестрах'] == 1) & (data['Статус работы'] != '1')]
     elif st_select_reestr == '🟡 Есть только в ЦП':
         data = data[data['Наличие в реестрах'] == 2]
     elif st_select_reestr == '🟢 Есть в РОИВ и в ЦП':
@@ -470,10 +638,18 @@ if st_select_region != 'Регионы':
             data = data[data['Дисциплина_2'].isin(lst_to_combo[2].split(', '))]
 
     # ДОБАВЛЯЕМ ПРИМЕНЕНИЕ ФИЛЬТРА ПО ТИПУ ПОКРЫТИЯ
-    if st_select_covering == 'Натуральное поле':
-        data = data[data['Тип покрытия'].isin(natural_coverings)]
-    elif st_select_covering == 'Искусственное поле':
-        data = data[~data['Тип покрытия'].isin(natural_coverings)]
+    if st_select_covering == 'Натуральное':
+        data = data[data['Тип покрытия'] == 'Натуральное']
+    elif st_select_covering == 'Искусственная трава':
+        data = data[data['Тип покрытия'] == 'Искусственная трава']
+    elif st_select_covering == 'Спортивное (резина, крошка и тп)':
+        data = data[data['Тип покрытия'] == 'Спортивное (резина, крошка и тп)']
+    elif st_select_covering == 'Доска (паркет)':
+        data = data[data['Тип покрытия'] == 'Доска (паркет)']
+    elif st_select_covering == 'Иное':
+        data = data[data['Тип покрытия'] == 'Иное']
+    elif st_select_covering == 'Нет информации':
+        data = data[data['Тип покрытия'] == 'Нет информации']
     elif st_select_covering == 'Наличие табло':
         data = data[data['Наличие табло'] == 'Y']
     elif st_select_covering == 'Наличие дренажа':
@@ -483,15 +659,56 @@ if st_select_region != 'Регионы':
     elif st_select_covering == 'Наличие подогрева':
         data = data[data['Наличие подогрева'] == 'Y']
 
-
-    
-    
     # -------------------------------------------------------------------------------------------------------------
+    
+    # ДОБАВЛЕН ПОИСК ПО КЛЮЧЕВЫМ СЛОВАМ С ИСПРАВЛЕННОЙ ЛОГИКОЙ
+    # Создаем контейнер для поиска
+    search_container = st.container()
+    
+    with search_container:
+        # Используем key для управления состоянием поля поиска
+        search_query = st.text_input(
+            "Поиск",
+            value=st.session_state.get('search_query', ''),
+            placeholder="Введите название, адрес, контакт и т.д. (нажмите Enter для поиска)",
+            label_visibility="collapsed",
+            key="search_input_field"
+        )
+    
+    # Обработка нажатия Enter и очистки поля
+    # Если поле поиска пустое, очищаем session_state.search_query
+    if search_query == "" and st.session_state.search_query != "":
+        st.session_state.search_query = ""
+        # Используем rerun для немедленного обновления
+        st.rerun()
+    
+    # Если в поле есть текст, сохраняем его в session_state
+    elif search_query != "" and search_query != st.session_state.search_query:
+        st.session_state.search_query = search_query
+    
+    # Применяем поиск если есть запрос
+    if st.session_state.search_query:
+        search_lower = st.session_state.search_query.lower()
+        search_mask = (
+            data['Полное (официальное) название объекта'].astype(str).str.lower().str.contains(search_lower, na=False) |
+            data['Короткое (спортивное) название объекта'].astype(str).str.lower().str.contains(search_lower, na=False) |
+            data['Адрес'].astype(str).str.lower().str.contains(search_lower, na=False) |
+            data['Контактное лицо'].astype(str).str.lower().str.contains(search_lower, na=False) |
+            data['Собственник (ОГРН)'].astype(str).str.lower().str.contains(search_lower, na=False) |
+            data['Управляющая компания (ОГРН)'].astype(str).str.lower().str.contains(search_lower, na=False) |
+            data['Пользователь (ОГРН)'].astype(str).str.lower().str.contains(search_lower, na=False) |
+            data['Тип Объекта '].astype(str).str.lower().str.contains(search_lower, na=False) |
+            data['Тип покрытия'].astype(str).str.lower().str.contains(search_lower, na=False) |
+            data['Год ввода в эксплуатацию/год капитального ремонта'].astype(str).str.lower().str.contains(search_lower, na=False) |
+            data['Дисциплина_2'].astype(str).str.lower().str.contains(search_lower, na=False)
+        )
+        data = data[search_mask]
+        # Используем HTML для золотого цвета текста
+        st.markdown(f'<p style="color: #FFD700;">Найдено объектов по запросу "{st.session_state.search_query}": {len(data)}</p>', unsafe_allow_html=True)
     
     # Проверяем режим просмотра
     if st.session_state.view_mode == 'list':
         
-        # ИСПРАВЛЕНИЕ №1: Используем более компактный формат для данных, чтобы избежать проблем с большим количеством объектов
         # Подготавливаем данные для JavaScript
         objects_data = []
         for index, row in data.iterrows():
@@ -547,35 +764,58 @@ if st_select_region != 'Регионы':
                         'Зал/не зал': to_slovar[8] if to_slovar[8] == 'Y' else ''
                     }
                 
-                # ИСПРАВЛЕНИЕ №3: Значения делаем жирными
                 if 'slovar' in locals():
                     result_parts = []
                     for key, value in slovar.items():
                         if value != '' and value is not None:
-                            # ИСПРАВЛЕНИЕ №3: Значения делаем жирными
                             result_parts.append(f'{key}: <strong>{value}</strong>')
 
                     if result_parts:
                         provided_data = '<br>'.join(result_parts)
             
-            # ИСПРАВЛЕНИЕ №1: Минимизируем данные, передаваемые в JSON
-            objects_data.append({
-                'i': index,  # Более короткое имя
+            # Подготавливаем все данные с целочисленными значениями размеров
+            length_val = str(row['Длина футбольного поля']) if pd.notna(row['Длина футбольного поля']) else '-'
+            width_val = str(row['Ширина футбольного поля']) if pd.notna(row['Ширина футбольного поля']) else '-'
+            
+            # Пытаемся преобразовать к целым числам
+            try:
+                if length_val != '-' and float(length_val).is_integer():
+                    length_val = str(int(float(length_val)))
+                if width_val != '-' and float(width_val).is_integer():
+                    width_val = str(int(float(width_val)))
+            except:
+                pass
+            
+            full_info = {
                 'fn': str(row['Полное (официальное) название объекта']) if pd.notna(row['Полное (официальное) название объекта']) else '-',
+                'sn': str(row['Короткое (спортивное) название объекта']) if pd.notna(row['Короткое (спортивное) название объекта']) else '-',
                 'ad': str(row['Адрес']) if pd.notna(row['Адрес']) else '-',
-                'ln': str(row['Длина футбольного поля']) if pd.notna(row['Длина футбольного поля']) else '-',
-                'wd': str(row['Ширина футбольного поля']) if pd.notna(row['Ширина футбольного поля']) else '-',
+                'ct': str(row['Контактное лицо']) if pd.notna(row['Контактное лицо']) else '-',
+                'ow': str(row['Собственник (ОГРН)']) if pd.notna(row['Собственник (ОГРН)']) else '-',
+                'mg': str(row['Управляющая компания (ОГРН)']) if pd.notna(row['Управляющая компания (ОГРН)']) else '-',
+                'us': str(row['Пользователь (ОГРН)']) if pd.notna(row['Пользователь (ОГРН)']) else '-',
+                'tp': str(row['Тип Объекта ']) if pd.notna(row['Тип Объекта ']) else '-',
                 'd2': str(row['Дисциплина_2']) if pd.notna(row['Дисциплина_2']) else '-',
+                'ln': length_val,
+                'wd': width_val,
+                'cv': str(row['Тип покрытия']) if pd.notna(row['Тип покрытия']) else '-',
+                'cp': str(row['Количество мест для зрителей']) if pd.notna(row['Количество мест для зрителей']) else '-',
+                'dr': '+' if pd.notna(row['Наличие дренажа']) and row['Наличие дренажа'] == 'Y' else '-',
+                'ht': '+' if pd.notna(row['Наличие подогрева']) and row['Наличие подогрева'] == 'Y' else '-',
+                'sc': '+' if pd.notna(row['Наличие табло']) and row['Наличие табло'] == 'Y' else '-',
+                'ds': '+' if pd.notna(row['Наличие раздевалок']) and row['Наличие раздевалок'] == 'Y' else '-',
+                'yr': str(row['Год ввода в эксплуатацию/год капитального ремонта']) if pd.notna(row['Год ввода в эксплуатацию/год капитального ремонта']) else '-',
+                'sz': f"{length_val}×{width_val}" if length_val != '-' and width_val != '-' else '-',
                 'id': id_egora_value,
                 'cl': color_class,
                 'cd': color_description,
-                'sz': f"{str(row['Длина футбольного поля'])}×{str(row['Ширина футбольного поля'])}" 
-                        if pd.notna(row['Длина футбольного поля']) and pd.notna(row['Ширина футбольного поля']) else '-',
                 'sw': status_of_work,
-                'pd': provided_data  # HTML с жирным выделением значений
-            })
+                'pd': provided_data
+            }
+            
+            objects_data.append(full_info)
         
-        # ИСПРАВЛЕНИЕ №1: Упрощаем HTML и добавляем виртуальный скроллинг для больших списков
+        # HTML для компактных плашек с правильным расположением элементов
         objects_html = f"""
         <!DOCTYPE html>
         <html>
@@ -594,70 +834,126 @@ if st_select_region != 'Регионы':
                 .objects-container {{
                     width: 100%;
                     margin: 0 auto;
-                    padding: 5px;
-                    max-height: 750px;
+                    padding: 3px;
+                    max-height: 850px;
                     overflow-y: auto;
                 }}
                 
                 .card {{
                     background-color: white;
-                    border-radius: 8px;
-                    padding: 12px;
-                    margin-bottom: 8px;
-                    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-                    border-left: 3px solid #3b82f6;
-                }}
-                
-                .card h4 {{
-                    color: #2a4a80;
+                    border-radius: 6px;
+                    padding: 8px;
                     margin-bottom: 6px;
-                    margin-top: 0;
-                    font-size: 14px;
-                    line-height: 1.2;
+                    box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+                    border-left: 2px solid #3b82f6;
                 }}
                 
-                .card-info-grid {{
-                    display: grid;
-                    grid-template-columns: 1fr 1fr;
-                    gap: 8px;
-                    margin-bottom: 8px;
-                }}
-                
-                .card-info-item {{
+                /* Строка 1: Полное название + Кнопка (кнопка сразу после названия) */
+                .row-1 {{
                     display: flex;
-                    flex-direction: column;
+                    align-items: flex-start;
+                    margin-bottom: 6px;
+                    gap: 5px;
                 }}
                 
-                .card-info-label {{
-                    font-weight: bold;
+                .full-name {{
                     color: #2a4a80;
-                    font-size: 11px;
-                    margin-bottom: 2px;
-                }}
-                
-                .card-info-value {{
-                    color: #333;
-                    font-size: 12px;
-                    word-break: break-word;
+                    font-weight: bold;
+                    font-size: 13px;
                     line-height: 1.3;
+                    margin-top: 0;
+                    margin-bottom: 0;
                 }}
                 
-                .color-label {{
+                /* Кнопка "Внести изменения" - сразу после названия */
+                .form-btn-compact {{
+                    cursor: pointer;
+                    background: #10b981;
+                    border: none;
+                    padding: 4px 8px;
+                    border-radius: 3px;
+                    color: white;
+                    font-weight: bold;
+                    font-size: 10px;
+                    white-space: nowrap;
+                    height: 24px;
+                }}
+                
+                .form-btn-compact:hover {{
+                    background: #059669;
+                }}
+                
+                .form-btn-opened {{
+                    background: #6b7280;
+                    cursor: default !important;
+                }}
+                
+                .form-btn-disabled {{
+                    background: #9ca3af;
+                    opacity: 0.7;
+                    cursor: not-allowed !important;
+                }}
+                
+                /* Строка 2: ID + Краткое + Адрес + Размер + Статус (все подряд) */
+                .row-2 {{
+                    display: flex;
+                    align-items: center;
+                    flex-wrap: wrap;
+                    gap: 8px;
+                    margin-bottom: 6px;
+                    font-size: 11px;
+                    color: #333;
+                }}
+                
+                /* ID с кнопкой копирования */
+                .id-container {{
+                    display: flex;
+                    align-items: center;
+                    gap: 3px;
+                    background: #f3f4f6;
+                    padding: 2px 6px;
+                    border-radius: 3px;
+                    white-space: nowrap;
+                }}
+                
+                .copy-icon-small {{
+                    cursor: pointer;
+                    color: #3b82f6;
+                    font-size: 10px;
+                    transition: color 0.2s;
+                    margin-left: 2px;
+                }}
+                
+                .copy-icon-small:hover {{
+                    color: #2563eb;
+                }}
+                
+                /* Элементы второй строки - все подряд */
+                .info-item {{
+                    display: flex;
+                    align-items: center;
+                    gap: 2px;
+                    white-space: nowrap;
+                }}
+                
+                /* Цветовая метка статуса - просто элемент в строке */
+                .color-label-compact {{
                     display: inline-flex;
                     align-items: center;
-                    padding: 3px 6px;
+                    gap: 3px;
+                    padding: 1px 5px;
                     border-radius: 3px;
-                    font-size: 11px;
+                    font-size: 9px;
                     font-weight: bold;
-                    margin-top: 4px;
+                    background: #f3f4f6;
+                    white-space: nowrap;
                 }}
                 
-                .color-indicator {{
+                .color-indicator-small {{
                     display: inline-block;
-                    width: 10px;
-                    height: 10px;
+                    width: 6px;
+                    height: 6px;
                     border-radius: 50%;
-                    margin-right: 6px;
                 }}
                 
                 .color-blue {{ background-color: #3B82F6; }}
@@ -666,156 +962,138 @@ if st_select_region != 'Регионы':
                 .color-purple {{ background-color: #9444EF; }}
                 .color-red {{ background-color: #EF4444; }}
                 
-                .buttons-container {{
-                    display: flex;
-                    gap: 6px;
-                    margin-top: 8px;
-                    flex-wrap: wrap;
-                }}
-                
-                .btn {{
-                    padding: 5px 10px;
-                    border-radius: 3px;
+                /* Строка 3: Кнопка показа деталей */
+                .toggle-details-btn {{
+                    background: none;
                     border: none;
+                    color: #3b82f6;
                     cursor: pointer;
-                    font-size: 11px;
-                    font-weight: bold;
-                    transition: background-color 0.2s;
-                    text-decoration: none;
-                    display: inline-flex;
-                    align-items: center;
-                    justify-content: center;
-                    gap: 4px;
-                    min-width: 120px;
-                    height: 28px;
+                    font-size: 10px;
+                    padding: 2px 0;
+                    text-align: left;
+                    margin: 0;
                 }}
                 
-                .btn-copy {{
-                    background-color: #3b82f6;
-                    color: white;
+                .toggle-details-btn:hover {{
+                    text-decoration: underline;
                 }}
                 
-                .btn-copy:hover {{
-                    background-color: #2563eb;
-                }}
-                
-                .btn-form {{
-                    background-color: #10b981;
-                    color: white;
-                }}
-                
-                .btn-form:hover {{
-                    background-color: #059669;
-                }}
-                
-                .btn-form-opened {{
-                    background-color: #6b7280;
-                    color: white;
-                    cursor: default !important;
-                }}
-                
-                .btn-form-disabled {{
-                    background-color: #9ca3af;
-                    color: white;
-                    cursor: not-allowed !important;
-                    opacity: 0.7;
-                }}
-                
+                /* Уведомление о копировании */
                 .notification {{
                     position: fixed;
-                    top: 20px;
-                    right: 20px;
+                    top: 15px;
+                    right: 15px;
                     background-color: #10b981;
                     color: white;
-                    padding: 8px 16px;
-                    border-radius: 5px;
+                    padding: 6px 12px;
+                    border-radius: 4px;
                     z-index: 10000;
-                    box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
                     display: flex;
                     align-items: center;
-                    gap: 6px;
+                    gap: 5px;
                     opacity: 0;
                     transition: opacity 0.3s;
-                    font-size: 12px;
+                    font-size: 11px;
                 }}
                 
                 .notification.show {{
                     opacity: 1;
                 }}
                 
-                .notification-icon {{
-                    font-size: 16px;
-                }}
-                
                 hr {{
                     border: none;
-                    height: 1px;
+                    height: 0.5px;
                     background-color: #e5e7eb;
-                    margin: 10px 0;
+                    margin: 6px 0;
                 }}
                 
-                /* Убираем лишние отступы */
-                p {{
-                    margin: 2px 0;
+                /* Секция деталей */
+                .details-section {{
+                    background-color: #f8f9fa;
+                    border: 1px solid #dee2e6;
+                    border-radius: 4px;
+                    padding: 6px;
+                    margin: 5px 0;
                 }}
                 
-                /* Стили для provided_data */
-                /* ИСПРАВЛЕНИЕ №1: Черный текст в provided_data */
+                .details-grid {{
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 5px;
+                }}
+                
+                .details-item {{
+                    display: flex;
+                    flex-direction: column;
+                }}
+                
+                .details-label {{
+                    font-weight: bold;
+                    color: #495057;
+                    font-size: 9px;
+                    margin-bottom: 1px;
+                }}
+                
+                .details-value {{
+                    color: #212529;
+                    font-size: 9px;
+                    word-break: break-word;
+                }}
+                
+                /* Предоставленные данные */
                 .provided-data-section {{
                     background-color: #F0F9FF;
                     border: 1px solid #93C5FD;
-                    border-radius: 6px;
-                    padding: 10px;
-                    margin: 8px 0;
+                    border-radius: 4px;
+                    padding: 6px;
+                    margin: 5px 0;
                 }}
                 
                 .provided-data-section-red {{
                     background-color: #FEF2F2;
                     border: 1px solid #FCA5A5;
-                    border-radius: 6px;
-                    padding: 10px;
-                    margin: 8px 0;
+                    border-radius: 4px;
+                    padding: 6px;
+                    margin: 5px 0;
                 }}
                 
-                /* ИСПРАВЛЕНИЕ №2: Одна рамка для статуса '2' */
                 .provided-data-section-purple {{
                     background-color: #F3E8FF;
                     border: 1px solid #9444EF;
-                    border-radius: 6px;
-                    padding: 10px;
-                    margin: 8px 0;
+                    border-radius: 4px;
+                    padding: 6px;
+                    margin: 5px 0;
                 }}
                 
                 .provided-data-title {{
                     color: #1D4ED8;
                     font-weight: bold;
-                    font-size: 12px;
-                    margin-bottom: 6px;
+                    font-size: 9px;
+                    margin-bottom: 4px;
                 }}
                 
                 .provided-data-title-red {{
                     color: #DC2626;
                     font-weight: bold;
-                    font-size: 12px;
-                    margin-bottom: 6px;
+                    font-size: 9px;
+                    margin-bottom: 4px;
                 }}
                 
                 .provided-data-title-purple {{
                     color: #9444EF;
                     font-weight: bold;
-                    font-size: 12px;
-                    margin-bottom: 6px;
+                    font-size: 9px;
+                    margin-bottom: 4px;
                 }}
                 
-                /* ИСПРАВЛЕНИЕ №1: Черный текст */
                 .provided-data-content {{
                     color: #000000;
-                    font-size: 11px;
+                    font-size: 9px;
                     white-space: pre-line;
-                    line-height: 1.3;
+                    line-height: 1.2;
                 }}
                 
-                /* ИСПРАВЛЕНИЕ №3: Жирные значения */
                 .provided-data-content strong {{
                     font-weight: bold;
                     color: #000000;
@@ -833,14 +1111,12 @@ if st_select_region != 'Регионы':
             </div>
             
             <script>
-                // ИСПРАВЛЕНИЕ №1: Используем более компактные имена переменных
                 const objectsData = {json.dumps(objects_data, ensure_ascii=False)};
                 
-                // Состояние кнопок
                 let buttonStates = {{}};
+                let detailsStates = {{}};
                 
-                // Функция для показа уведомления
-                function showNotification(message, duration = 2000) {{
+                function showNotification(message, duration = 1500) {{
                     const notification = document.getElementById('notification');
                     const notificationText = document.getElementById('notification-text');
                     
@@ -859,19 +1135,19 @@ if st_select_region != 'Регионы':
                     }}, duration);
                 }}
                 
-                // Функция для копирования текста в буфер обмена
-                function copyToClipboard(text, index) {{
+                // Функция для копирования ID
+                function copyId(id, index) {{
                     if (navigator.clipboard && navigator.clipboard.writeText) {{
-                        navigator.clipboard.writeText(text)
+                        navigator.clipboard.writeText(id)
                             .then(() => {{
-                                showNotification('✓ ID скопирован: ' + text);
+                                showNotification('ID скопирован: ' + id);
                             }})
                             .catch(err => {{
                                 console.error('Clipboard API error:', err);
-                                fallbackCopy(text);
+                                fallbackCopy(id);
                             }});
                     }} else {{
-                        fallbackCopy(text);
+                        fallbackCopy(id);
                     }}
                     
                     function fallbackCopy(textToCopy) {{
@@ -898,7 +1174,6 @@ if st_select_region != 'Регионы':
                     }}
                 }}
                 
-                // Функция для открытия формы
                 function openForm(index, statusOfWork) {{
                     if (statusOfWork === '1') {{
                         return false;
@@ -911,7 +1186,7 @@ if st_select_region != 'Регионы':
                     const button = document.getElementById('form-btn-' + index);
                     if (button) {{
                         button.textContent = '📋 Форма была открыта';
-                        button.className = 'btn btn-form-opened';
+                        button.className = 'form-btn-compact form-btn-opened';
                         
                         button.onclick = function() {{
                             window.open(url, '_blank');
@@ -922,18 +1197,20 @@ if st_select_region != 'Регионы':
                     return true;
                 }}
                 
-                // Функция для создания карточки объекта
-                function createObjectCard(obj) {{
+                function createObjectCard(obj, index) {{
                     const card = document.createElement('div');
                     card.className = 'card';
                     
                     const statusOfWork = obj.sw || '0';
                     
-                    if (buttonStates[obj.i] === undefined) {{
-                        buttonStates[obj.i] = false;
+                    if (buttonStates[index] === undefined) {{
+                        buttonStates[index] = false;
                     }}
                     
-                    // ИСПРАВЛЕНИЕ №2: Одна рамка для статуса '2'
+                    if (detailsStates[index] === undefined) {{
+                        detailsStates[index] = false;
+                    }}
+                    
                     let providedDataHTML = '';
                     if (obj.pd) {{
                         if (statusOfWork === '1') {{
@@ -944,7 +1221,6 @@ if st_select_region != 'Регионы':
                                 </div>
                             `;
                         }} else if (statusOfWork === '2') {{
-                            // ИСПРАВЛЕНИЕ №2: Одна рамка с заголовком и данными
                             providedDataHTML = `
                                 <div class="provided-data-section-purple">
                                     <div class="provided-data-title-purple">🟣 Добавили новое поле, на стадии рассмотрения</div>
@@ -963,65 +1239,136 @@ if st_select_region != 'Регионы':
                     
                     let formButtonHTML = '';
                     if (statusOfWork !== '1') {{
-                        let formBtnClass = 'btn-form';
+                        let formBtnClass = 'form-btn-compact';
                         let formBtnText = '✅ Внести изменения';
-                        let formBtnOnclick = `openForm(${{obj.i}}, '${{statusOfWork}}')`;
+                        let formBtnOnclick = `openForm(${{index}}, '${{statusOfWork}}')`;
                         
-                        if (buttonStates[obj.i]) {{
-                            formBtnClass = 'btn-form-opened';
+                        if (buttonStates[index]) {{
+                            formBtnClass = 'form-btn-compact form-btn-opened';
                             formBtnText = '📋 Форма была открыта';
                             formBtnOnclick = `window.open('https://school-eev.bitrix24site.ru/crm_form_drmcv/', '_blank')`;
                         }}
                         
                         formButtonHTML = `
-                            <button id="form-btn-${{obj.i}}" 
+                            <button id="form-btn-${{index}}" 
                                     onclick="${{formBtnOnclick}}" 
-                                    class="btn ${{formBtnClass}}" 
+                                    class="${{formBtnClass}}" 
                                     title="Открыть форму для внесения изменений">
                                 ${{formBtnText}}
                             </button>
                         `;
                     }}
                     
-                    card.innerHTML = `
-                        <h4>${{obj.fn}}</h4>
-                        <div class="card-info-grid">
-                            <div class="card-info-item">
-                                <span class="card-info-label">📍 Адрес:</span>
-                                <span class="card-info-value">${{obj.ad}}</span>
-                            </div>
-                            <div class="card-info-item">
-                                <span class="card-info-label">📏 Размер:</span>
-                                <span class="card-info-value">${{obj.sz}}</span>
-                            </div>
-                            <div class="card-info-item">
-                                <span class="card-info-label">⚽ Дисциплина:</span>
-                                <span class="card-info-value">${{obj.d2}}</span>
-                            </div>
-                            <div class="card-info-item">
-                                <div class="color-label">
-                                    ${{obj.cd}}
+                    const detailsHTML = `
+                        <div class="details-section">
+                            <div class="details-grid">
+                                <div class="details-item">
+                                    <span class="details-label">📞 Контакт:</span>
+                                    <span class="details-value">${{obj.ct}}</span>
+                                </div>
+                                <div class="details-item">
+                                    <span class="details-label">👤 Собственник:</span>
+                                    <span class="details-value">${{obj.ow}}</span>
+                                </div>
+                                <div class="details-item">
+                                    <span class="details-label">🏢 Управляющая:</span>
+                                    <span class="details-value">${{obj.mg}}</span>
+                                </div>
+                                <div class="details-item">
+                                    <span class="details-label">👥 Пользователь:</span>
+                                    <span class="details-value">${{obj.us}}</span>
+                                </div>
+                                <div class="details-item">
+                                    <span class="details-label">Тип:</span>
+                                    <span class="details-value">${{obj.tp}}</span>
+                                </div>
+                                <div class="details-item">
+                                    <span class="details-label">Дисциплина:</span>
+                                    <span class="details-value">${{obj.d2}}</span>
+                                </div>
+                                <div class="details-item">
+                                    <span class="details-label">Покрытие:</span>
+                                    <span class="details-value">${{obj.cv}}</span>
+                                </div>
+                                <div class="details-item">
+                                    <span class="details-label">Мест:</span>
+                                    <span class="details-value">${{obj.cp}}</span>
+                                </div>
+                                <div class="details-item">
+                                    <span class="details-label">Дренаж:</span>
+                                    <span class="details-value">${{obj.dr}}</span>
+                                </div>
+                                <div class="details-item">
+                                    <span class="details-label">Подогрев:</span>
+                                    <span class="details-value">${{obj.ht}}</span>
+                                </div>
+                                <div class="details-item">
+                                    <span class="details-label">Табло:</span>
+                                    <span class="details-value">${{obj.sc}}</span>
+                                </div>
+                                <div class="details-item">
+                                    <span class="details-label">Раздевалки:</span>
+                                    <span class="details-value">${{obj.ds}}</span>
+                                </div>
+                                <div class="details-item">
+                                    <span class="details-label">Год:</span>
+                                    <span class="details-value">${{obj.yr}}</span>
                                 </div>
                             </div>
                         </div>
-                        <div class="card-info-item" style="margin-top: 4px;">
-                            <span class="card-info-label">🌐 ID:</span>
-                            <span class="card-info-value">${{obj.id}}</span>
-                        </div>
-                        ${{providedDataHTML}}
-                        <div class="buttons-container">
-                            <button onclick="copyToClipboard('${{obj.id}}', ${{obj.i}})" 
-                                    class="btn btn-copy" title="Скопировать ID в буфер обмена">
-                                📄 Копировать ID
-                            </button>
+                    `;
+                    
+                    // КОМПАКТНЫЙ ФОРМАТ: 3 строки, все элементы подряд
+                    card.innerHTML = `
+                        <!-- Строка 1: Полное название + Кнопка (сразу после названия) -->
+                        <div class="row-1">
+                            <div class="full-name">${{obj.fn}}</div>
                             ${{formButtonHTML}}
+                        </div>
+                        
+                        <!-- Строка 2: ID + Краткое + Адрес + Размер + Статус (все подряд) -->
+                        <div class="row-2">
+                            <div class="id-container">
+                                <span>ID: ${{obj.id}}</span>
+                                <span onclick="copyId('${{obj.id}}', ${{index}})" class="copy-icon-small" title="Скопировать ID">📄</span>
+                            </div>
+                            <div class="info-item">
+                                <span>⚽</span>
+                                <span>${{obj.sn}}</span>
+                            </div>
+                            <div class="info-item">
+                                <span>📍</span>
+                                <span>${{obj.ad}}</span>
+                            </div>
+                            <div class="info-item">
+                                <span>📏</span>
+                                <span>${{obj.sz}}</span>
+                            </div>
+                            <div class="color-label-compact">
+                                <span>${{obj.cd}}</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Строка 3: Кнопка показа деталей -->
+                        <button onclick="toggleDetails(${{index}})" class="toggle-details-btn">
+                            ${{detailsStates[index] ? '▲ Скрыть детали' : '▼ Показать все детали'}}
+                        </button>
+                        
+                        <!-- Детали и предоставленные данные -->
+                        <div id="details-${{index}}" style="display: ${{detailsStates[index] ? 'block' : 'none'}};">
+                            ${{detailsHTML}}
+                            ${{providedDataHTML}}
                         </div>
                     `;
                     
                     return card;
                 }}
                 
-                // Функция для отображения всех объектов
+                function toggleDetails(index) {{
+                    detailsStates[index] = !detailsStates[index];
+                    renderObjects();
+                }}
+                
                 function renderObjects() {{
                     const container = document.getElementById('objects-container');
                     container.innerHTML = '';
@@ -1031,8 +1378,7 @@ if st_select_region != 'Регионы':
                         return;
                     }}
                     
-                    // ИСПРАВЛЕНИЕ №1: Рендерим объекты с ограничением, чтобы не перегружать DOM
-                    const batchSize = 50; // Рендерим по 50 объектов
+                    const batchSize = 100;
                     const totalObjects = objectsData.length;
                     
                     function renderBatch(startIndex) {{
@@ -1040,7 +1386,7 @@ if st_select_region != 'Регионы':
                         
                         for (let i = startIndex; i < endIndex; i++) {{
                             const obj = objectsData[i];
-                            const card = createObjectCard(obj);
+                            const card = createObjectCard(obj, i);
                             container.appendChild(card);
                             
                             if (i < totalObjects - 1) {{
@@ -1049,17 +1395,14 @@ if st_select_region != 'Регионы':
                             }}
                         }}
                         
-                        // Если есть еще объекты, планируем следующий batch
                         if (endIndex < totalObjects) {{
                             setTimeout(() => renderBatch(endIndex), 0);
                         }}
                     }}
                     
-                    // Начинаем рендеринг с первого batch
                     renderBatch(0);
                 }}
                 
-                // Инициализация при загрузке страницы
                 document.addEventListener('DOMContentLoaded', renderObjects);
                 
                 if (document.readyState === 'loading') {{
@@ -1072,11 +1415,11 @@ if st_select_region != 'Регионы':
         </html>
         """
         
-        # Отображаем JS список через components.v1.html
-        st.components.v1.html(objects_html, height=800, scrolling=True)
+        # Увеличиваем высоту для показа большего количества объектов
+        st.components.v1.html(objects_html, height=900, scrolling=True)
     
     else:
-        # Продолжаем отображение карты (остальной код карты)
+        # Карта (режим карты)
         sirota = data['Широта']
         dolgota = data['Долгота']
         
@@ -1110,7 +1453,7 @@ if st_select_region != 'Регионы':
 
         YANDEX_API_KEY = "7fe74d5b-be45-47d1-9fc0-a0765598a4d7"
 
-        # Подготовка данных для карты - СОКРАЩЕННАЯ версия
+        # Подготовка данных для карты
         points_data = []
         for i in range(len(sirota)):
             # Обработка информации для объектов со статусом работы '1' или '2'
@@ -1130,7 +1473,8 @@ if st_select_region != 'Регионы':
                         'Отправитель' : to_slovar[7],
                         'Подтвердить' : to_slovar[8] if to_slovar[8] == 'Y' else '',
                         'Удалить' : to_slovar[9] if to_slovar[9] == 'Y' else '',
-                        'Зал/не зал' : to_slovar[10] if to_slovar[10] == 'Y' else ''
+                        'Зал/не зал' : to_slovar[10] if to_slovar[10] == 'Y' else '',
+                        'Комментарий': to_slovar[11]
                     }
                 elif status_of_work.iloc[i] == '2' and len(to_slovar) >= 9:
                     slovar = {
@@ -1142,15 +1486,13 @@ if st_select_region != 'Регионы':
                         'Ширина' : to_slovar[5],
                         'Тип покрытия' : to_slovar[6],
                         'Отправитель' : to_slovar[7],
-                        'Зал/не зал' : to_slovar[8] if to_slovar[8] == 'Y' else ''
+                        'Зал/не зал' : to_slovar[8] if to_slovar[8] == 'Y' else '',
+                        'Комментарий': to_slovar[9]
                     }
-                
-                # ИСПРАВЛЕНИЕ №3: Значения делаем жирными
                 if slovar:
                     result_parts = []
                     for key, value in slovar.items():
                         if value != '' and value is not None:
-                            # ИСПРАВЛЕНИЕ №3: Значения делаем жирными
                             result_parts.append(f'{key}: <strong>{value}</strong>')
 
                     if result_parts:
@@ -1160,6 +1502,18 @@ if st_select_region != 'Регионы':
             icon_color, _ = get_point_color(str(status_of_work.iloc[i]), in_reestr[i])
             
             current_id_egora = str(int(float(id_egora.iloc[i]))) if pd.notna(id_egora.iloc[i]) and str(id_egora.iloc[i]).replace('.0', '') != 'nan' else ""
+            
+            # Преобразуем размеры в целые числа
+            length_val = str(length.iloc[i]) if pd.notna(length.iloc[i]) else '-'
+            width_val = str(width.iloc[i]) if pd.notna(width.iloc[i]) else '-'
+            
+            try:
+                if length_val != '-' and float(length_val).is_integer():
+                    length_val = str(int(float(length_val)))
+                if width_val != '-' and float(width_val).is_integer():
+                    width_val = str(int(float(width_val)))
+            except:
+                pass
             
             points_data.append({
                 'lat': float(sirota.iloc[i]) if pd.notna(sirota.iloc[i]) else 0,
@@ -1177,27 +1531,31 @@ if st_select_region != 'Регионы':
                 'user': str(user.iloc[i]).replace('"', '').replace('nan','-') if pd.notna(user.iloc[i]) else '-',
                 'type': str(type_objectt.iloc[i]).replace('"', '').replace('nan','-') if pd.notna(type_objectt.iloc[i]) else '-',
                 'discipline': str(disp_2.iloc[i]).replace('"', '').replace('nan','-') if pd.notna(disp_2.iloc[i]) else '-',
-                'size': f"{str(length.iloc[i]).replace('nan','-')}×{str(width.iloc[i]).replace('nan','-')}",
+                'size': f"{length_val}×{width_val}",
                 'coverage': str(type_of_coverage.iloc[i]).replace('"', '').replace('nan','-') if pd.notna(type_of_coverage.iloc[i]) else '-',
                 'capacity': str(capacity.iloc[i]).replace('nan','-') if pd.notna(capacity.iloc[i]) else '-',
-                'drainage': str(drainage.iloc[i]).replace('"', '').replace('nan','-') if pd.notna(drainage.iloc[i]) else '-',
-                'heating': str(heating.iloc[i]).replace('"', '').replace('nan','-') if pd.notna(heating.iloc[i]) else '-',
-                'scoreboard': str(scoreboard.iloc[i]).replace('"', '').replace('nan','-') if pd.notna(scoreboard.iloc[i]) else '-',
-                'dressing': str(dress_room.iloc[i]).replace('"', '').replace('nan','-') if pd.notna(dress_room.iloc[i]) else '-',
+                'drainage': '+' if pd.notna(drainage.iloc[i]) and drainage.iloc[i] == 'Y' else '-',
+                'heating': '+' if pd.notna(heating.iloc[i]) and heating.iloc[i] == 'Y' else '-',
+                'scoreboard': '+' if pd.notna(scoreboard.iloc[i]) and scoreboard.iloc[i] == 'Y' else '-',
+                'dressing': '+' if pd.notna(dress_room.iloc[i]) and dress_room.iloc[i] == 'Y' else '-',
                 'year': str(year.iloc[i]).replace('nan','-') if pd.notna(year.iloc[i]) else '-',
                 'provided_data': result_string
             })
 
         # Центр карты - средние координаты
         if len(sirota) > 0 and not sirota.isna().all():
-            center_lat = sirota.mean()
-            center_lon = dolgota.mean()
+            if st_select_region == '87 Чукотский автономный округ':
+                center_lat, center_lon = 67.131709, 172.286661
+            else:
+                center_lat = sirota.mean()
+                center_lon = dolgota.mean()
         else:
             center_lat, center_lon = 44.6, 40.1  
 
-        # HTML карты с оптимизированным кодом
+        # HTML карты
         zoom = 4 if st_select_region == '24 Красноярский край' else 1
         zoom = 4 if st_select_region == '75 Забайкальский край' else 5
+        
         
         map_unique_id = st.session_state.map_refresh_key
         map_html = f"""
@@ -1220,77 +1578,77 @@ if st_select_region != 'Регионы':
         .address-info {{
             position: absolute;
             background: white;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.25);
-            max-width: 350px;
+            padding: 12px;
+            border-radius: 6px;
+            box-shadow: 0 3px 15px rgba(0,0,0,0.2);
+            max-width: 320px;
             z-index: 1000;
             border: 2px solid #3b82f6;
             font-family: Arial, sans-serif;
-            left: 20px;
-            bottom: 20px;
+            left: 15px;
+            bottom: 15px;
         }}
         .close-btn {{
             position: absolute;
-            top: -10px;
-            right: -10px;
+            top: -8px;
+            right: -8px;
             background: #3b82f6;
             color: white;
             border-radius: 50%;
-            width: 24px;
-            height: 24px;
+            width: 20px;
+            height: 20px;
             text-align: center;
-            line-height: 24px;
+            line-height: 20px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 12px;
             font-weight: bold;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
         }}
         .close-btn:hover {{
             background: #2563eb;
         }}
         .address-title {{
             color: #3b82f6;
-            margin-bottom: 8px;
-            font-size: 16px;
+            margin-bottom: 6px;
+            font-size: 14px;
         }}
         .coords {{
             color: #666;
-            font-size: 13px;
-            margin-top: 8px;
+            font-size: 12px;
+            margin-top: 6px;
             font-family: monospace;
         }}
         .field-btn {{
-            margin-top: 10px;
+            margin-top: 8px;
             text-align: center;
         }}
         .field-btn button {{
             cursor: pointer;
             background: #3b82f6;
             border: none;
-            padding: 8px 15px;
-            border-radius: 4px;
+            padding: 6px 12px;
+            border-radius: 3px;
             color: white;
             font-weight: bold;
-            font-size: 12px;
+            font-size: 11px;
             width: 100%;
         }}
         .field-btn button:hover {{
             background: #2563eb;
         }}
         .copy-btn {{
-            margin-top: 10px;
+            margin-top: 8px;
             text-align: center;
         }}
         .copy-btn button {{
             cursor: pointer;
             background: #8b5cf6;
             border: none;
-            padding: 8px 15px;
-            border-radius: 4px;
+            padding: 6px 12px;
+            border-radius: 3px;
             color: white;
             font-weight: bold;
-            font-size: 12px;
+            font-size: 11px;
             width: 100%;
         }}
         .copy-btn button:hover {{
@@ -1298,19 +1656,19 @@ if st_select_region != 'Регионы':
         }}
         .copy-success {{
             position: fixed;
-            top: 20px;
-            right: 20px;
+            top: 15px;
+            right: 15px;
             background: #10b981;
             color: white;
-            padding: 10px 20px;
-            border-radius: 5px;
+            padding: 8px 15px;
+            border-radius: 4px;
             z-index: 9999;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 3px 5px rgba(0, 0, 0, 0.1);
             display: none;
         }}
         .address-item {{
-            margin-bottom: 12px;
-            padding-bottom: 12px;
+            margin-bottom: 8px;
+            padding-bottom: 8px;
             border-bottom: 1px solid #e5e7eb;
         }}
         .address-item:last-child {{
@@ -1322,24 +1680,24 @@ if st_select_region != 'Регионы':
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 5px;
+            margin-bottom: 3px;
         }}
         .item-label {{
             font-weight: bold;
             color: #3b82f6;
-            font-size: 14px;
+            font-size: 12px;
         }}
         .item-content {{
             color: #333;
-            font-size: 13px;
+            font-size: 12px;
             word-break: break-word;
         }}
         .copy-icon-btn {{
             cursor: pointer;
             background: none;
             border: none;
-            padding: 3px;
-            font-size: 18px;
+            padding: 2px;
+            font-size: 16px;
             color: #666;
             transition: color 0.2s;
         }}
@@ -1349,22 +1707,21 @@ if st_select_region != 'Регионы':
         .status-warning {{
             background-color: #F3E8FF;
             border: 2px solid #9444EF;
-            border-radius: 8px;
-            padding: 15px;
-            margin: 10px 0;
+            border-radius: 6px;
+            padding: 12px;
+            margin: 8px 0;
         }}
         .status-warning-title {{
             color: #9444EF;
             font-weight: bold;
-            font-size: 16px;
-            margin-bottom: 10px;
+            font-size: 14px;
+            margin-bottom: 8px;
             text-align: center;
         }}
         .status-warning-text {{
             color: #6B21A8;
-            font-size: 14px;
+            font-size: 12px;
         }}
-        /* ИСПРАВЛЕНИЕ №3: Жирные значения */
         .provided-data-content strong {{
             font-weight: bold;
             color: #000000;
@@ -1372,22 +1729,21 @@ if st_select_region != 'Регионы':
         .provided-data-section {{
             background-color: #F0F9FF;
             border: 1px solid #93C5FD;
-            border-radius: 6px;
-            padding: 12px;
-            margin: 10px 0;
+            border-radius: 5px;
+            padding: 10px;
+            margin: 8px 0;
         }}
         .provided-data-title {{
             color: #1D4ED8;
             font-weight: bold;
-            font-size: 14px;
-            margin-bottom: 8px;
+            font-size: 12px;
+            margin-bottom: 6px;
         }}
-        /* ИСПРАВЛЕНИЕ №1: Черный текст */
         .provided-data-content {{
             color: #000000;
-            font-size: 12px;
+            font-size: 11px;
             white-space: pre-line;
-            line-height: 1.4;
+            line-height: 1.3;
         }}
         .form-button-disabled {{
             cursor: not-allowed !important;
@@ -1411,31 +1767,22 @@ if st_select_region != 'Регионы':
         let map;
         let lastClickCoords = null;
         let lastClickAddress = null;
-        let placemarks = []; // Массив для хранения всех меток
+        let placemarks = [];
         
-        // Функция для обработки клика на кнопку Внести изменения
         function handleConfirmClick(index) {{
-            // Получаем данные объекта
             const pointData = POINTS_DATA[index];
             const statusOfWork = pointData.status_of_work || '0';
             
-            // Проверяем статус работы - если '1', то кнопка неактивна
             if (statusOfWork === '1') {{
                 alert('Объект находится в стадии рассмотрения. Внести изменения нельзя.');
                 return false;
             }}
             
-            // Открываем форму для изменений
             window.open("https://school-eev.bitrix24site.ru/crm_form_drmcv/", "_blank");
             
-            // Находим соответствующую метку и меняем её цвет на серый
             if (placemarks[index]) {{
                 const placemark = placemarks[index];
-                
-                // Изменяем цвет метки на серый
                 placemark.options.set('iconColor', '#808080');
-                
-                // Обновляем баллун
                 const updatedBalloon = getBalloonContent(pointData, true);
                 placemark.properties.set('balloonContent', updatedBalloon);
             }}
@@ -1443,29 +1790,26 @@ if st_select_region != 'Регионы':
             return true;
         }}
         
-        // Функция для создания HTML баллуна
         function getBalloonContent(pointData, isChanged = false) {{
             const statusOfWork = pointData.status_of_work || '0';
             const providedData = pointData.provided_data || '';
             
-            // Если статус работы равен '2', показываем упрощенный баллун
             if (statusOfWork === '2') {{
                 let providedDataHTML = '';
                 if (providedData) {{
-                    // ИСПРАВЛЕНИЕ №2: Одна рамка с заголовком и данными
                     providedDataHTML = `
-                        <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #e5e7eb;">
-                            <div style="color: #9444EF; font-weight: bold; font-size: 12px; margin-bottom: 5px;">
+                        <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
+                            <div style="color: #9444EF; font-weight: bold; font-size: 11px; margin-bottom: 4px;">
                                 📋 Предоставленные данные:
                             </div>
-                            <div style="color: #000000; font-size: 11px;">${{providedData}}</div>
+                            <div style="color: #000000; font-size: 10px;">${{providedData}}</div>
                         </div>
                     `;
                 }}
                 
                 return `
-                    <div style="font-size: 10px; max-width: 500px; padding: 7px; line-height: 1.4;">
-                        <div style="margin-bottom: 6px; padding-top: 6px;">
+                    <div style="font-size: 9px; max-width: 450px; padding: 6px; line-height: 1.3;">
+                        <div style="margin-bottom: 5px; padding-top: 5px;">
                             <strong>📍 Адрес:</strong><br>
                             <span>${{pointData.address}}</span>
                         </div>
@@ -1478,18 +1822,17 @@ if st_select_region != 'Регионы':
                 `;
             }}
             
-            // Стандартный баллун для остальных статусов
             let statusHTML = '';
             if (isChanged || statusOfWork === '1') {{
                 let providedDataHTML = '';
                 if (providedData && !isChanged) {{
                     if (statusOfWork === '1') {{
                         providedDataHTML = `
-                            <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #e5e7eb;">
-                                <div style="color: #DC2626; font-weight: bold; font-size: 12px; margin-bottom: 5px;">
+                            <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
+                                <div style="color: #DC2626; font-weight: bold; font-size: 11px; margin-bottom: 4px;">
                                     📋 Предоставленные данные:
                                 </div>
-                                <div style="color: #000000; font-size: 11px;">${{providedData}}</div>
+                                <div style="color: #000000; font-size: 10px;">${{providedData}}</div>
                             </div>
                         `;
                     }}
@@ -1498,8 +1841,8 @@ if st_select_region != 'Регионы':
                 statusHTML = `
                     <div style="background-color: ${{isChanged ? '#F3F4F6' : '#FEF2F2'}}; 
                          border: 1px solid ${{isChanged ? '#D1D5DB' : '#FCA5A5'}}; 
-                         padding: 10px; border-radius: 4px; margin-bottom: 10px;">
-                        <div style="color: ${{isChanged ? '#6B7280' : '#DC2626'}}; font-weight: bold; display: flex; align-items: center; gap: 5px;">
+                         padding: 8px; border-radius: 3px; margin-bottom: 8px;">
+                        <div style="color: ${{isChanged ? '#6B7280' : '#DC2626'}}; font-weight: bold; display: flex; align-items: center; gap: 4px;">
                             <span>${{isChanged ? '⚪' : '🔴'}}</span>
                             <span>${{isChanged ? 'Нажали "Внести изменения", но не отправили анкету' : 'Объект находится в стадии рассмотрения'}}</span>
                         </div>
@@ -1508,15 +1851,14 @@ if st_select_region != 'Регионы':
                 `;
             }}
             
-            // Определяем, показывать ли кнопку "Внести изменения"
             const showConfirmButton = (statusOfWork !== '1');
             const confirmButtonSection = showConfirmButton ? `
-                <div style="margin-top: 12px; padding-top: 12px; border-top: 2px solid #e5e7eb;">
-                    <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #e5e7eb;">
+                    <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
                         <button onclick="handleConfirmClick(${{pointData.index}})" 
                                 style="cursor: pointer; background: ${{statusOfWork === '1' ? '#9ca3af' : '#10b981'}}; 
-                                       border: none; padding: 8px 15px; border-radius: 4px; 
-                                       color: white; font-weight: bold; font-size: 12px;
+                                       border: none; padding: 6px 12px; border-radius: 3px; 
+                                       color: white; font-weight: bold; font-size: 11px;
                                        ${{statusOfWork === '1' ? 'cursor: not-allowed;' : ''}}"
                                 ${{statusOfWork === '1' ? 'disabled' : ''}}
                                 title="${{statusOfWork === '1' ? 'Объект на рассмотрении, изменения внести нельзя' : 'Внести изменения'}}">
@@ -1527,23 +1869,23 @@ if st_select_region != 'Регионы':
             ` : '';
             
             return `
-                <div style="font-size: 10px; max-width: 500px; padding: 7px; line-height: 1.4;">
+                <div style="font-size: 9px; max-width: 450px; padding: 6px; line-height: 1.3;">
                     ${{statusHTML}}
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 6px; padding-top: 6px; border-top: 1px solid #e5e7eb;">
                         <div><strong>📋 Полное название:</strong><br><span>${{pointData.full_name}}</span></div>
                         <div><strong>⚽ Короткое название:</strong><br><span>${{pointData.short_name}}</span></div>
                     </div>
-                    <div style="margin-bottom: 6px; padding-top: 6px; border-top: 1px solid #e5e7eb;">
+                    <div style="margin-bottom: 5px; padding-top: 5px; border-top: 1px solid #e5e7eb;">
                         <strong>📍 Адрес:</strong><br>
                         <span>${{pointData.address}}</span>
                     </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 6px; padding-top: 6px; border-top: 1px solid #e5e7eb;">
                         <div><strong>📞 Контакт:</strong><br><span>${{pointData.contact}}</span></div>
                         <div><strong>👤 Собственник:</strong><br><span>${{pointData.owner}}</span></div>
                         <div><strong>🏢 Управляющая:</strong><br><span>${{pointData.manager}}</span></div>
                         <div><strong>👥 Пользователь:</strong><br><span>${{pointData.user}}</span></div>
                     </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 6px; padding-top: 6px; border-top: 1px solid #e5e7eb;">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <div><strong>🌐 РФС ID:</strong><br><span>${{pointData.id_egora}}</span></div>
                             <button onclick="copyRfsId('${{pointData.id_egora}}')" class="copy-icon-btn" title="Скопировать РФС ID">
@@ -1554,13 +1896,13 @@ if st_select_region != 'Регионы':
                         <div><strong>Дисциплина:</strong><br><span>${{pointData.discipline}}</span></div>
                         <div><strong>Размер:</strong><br><span>${{pointData.size}} м</span></div>
                     </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 6px; padding-top: 6px; border-top: 1px solid #e5e7eb;">
                         <div><strong>Покрытие:</strong><br><span>${{pointData.coverage}}</span></div>
                         <div><strong>Мест:</strong><br><span>${{pointData.capacity}}</span></div>
                         <div><strong>Дренаж:</strong><br><span>${{pointData.drainage}}</span></div>
                         <div><strong>Подогрев:</strong><br><span>${{pointData.heating}}</span></div>
                     </div>
-                    <div style="display: flex; justify-content: space-between; margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
+                    <div style="display: flex; justify-content: space-between; margin-top: 6px; padding-top: 6px; border-top: 1px solid #e5e7eb;">
                         <div><strong>Табло:</strong><br><span>${{pointData.scoreboard}}</span></div>
                         <div><strong>Раздевалки:</strong><br><span>${{pointData.dressing}}</span></div>
                         <div><strong>Год:</strong><br><span>${{pointData.year}}</span></div>
@@ -1570,11 +1912,9 @@ if st_select_region != 'Регионы':
             `;
         }}
         
-        // Функция для обработки клика на кнопку Здесь футбольное поле
         function handleFieldHereClick(coords) {{
             window.open("https://school-eev.bitrix24site.ru/crm_form_saeda/", "_blank");
             
-            // Создаем черную точку
             const blackPlacemark = new ymaps.Placemark(coords, {{
                 balloonContent: '',
                 hasBalloon: false,
@@ -1589,7 +1929,6 @@ if st_select_region != 'Регионы':
             map.geoObjects.add(blackPlacemark);
         }}
         
-        // Функция для копирования в буфер обмена
         function copyToClipboard(text) {{
             if (navigator.clipboard && navigator.clipboard.writeText) {{
                 navigator.clipboard.writeText(text).then(function() {{
@@ -1610,18 +1949,16 @@ if st_select_region != 'Регионы':
                 successDiv.style.display = 'block';
                 setTimeout(function() {{
                     successDiv.style.display = 'none';
-                }}, 2000);
+                }}, 1500);
             }}
         }}
         
-        // Функция для копирования адреса
         function copyAddress() {{
             if (lastClickAddress) {{
                 copyToClipboard(lastClickAddress);
             }}
         }}
         
-        // Функция для копирования координат
         function copyCoords() {{
             if (lastClickCoords) {{
                 const coordsText = `${{lastClickCoords[0].toFixed(6)}}, ${{lastClickCoords[1].toFixed(6)}}`;
@@ -1629,19 +1966,16 @@ if st_select_region != 'Регионы':
             }}
         }}
         
-        // Функция для копирования номера региона
         function copyRegionNumber() {{
             copyToClipboard("{int(st_select_region[0:2])}");
         }}
         
-        // Функция для копирования РФС ID
         function copyRfsId(rfsId) {{
             if (rfsId) {{
                 copyToClipboard(rfsId);
             }}
         }}
         
-        // Функция для создания информации о местоположении
         function createAddressInfo(coords, address) {{
             const oldInfo = document.querySelector('.address-info');
             if (oldInfo) {{
@@ -1697,7 +2031,6 @@ if st_select_region != 'Регионы':
             
             document.body.appendChild(infoDiv);
             
-            // Удаление при клике вне блока
             setTimeout(() => {{
                 document.addEventListener('click', function closeOnOutsideClick(event) {{
                     if (!infoDiv.contains(event.target)) {{
@@ -1711,37 +2044,25 @@ if st_select_region != 'Регионы':
         ymaps.ready(init);
         
         function init() {{
-            // Создаём карту
             map = new ymaps.Map("map-{map_unique_id}", {{
                 center: [{center_lat}, {center_lon}],
                 zoom: {zoom},
                 type: 'yandex#satellite'
             }});
 
-            // Добавляем стандартный поиск
-            map.controls.add(new ymaps.control.SearchControl({{
-                options: {{
-                    provider: 'yandex#search',
-                    noPlacemark: true,
-                    placeholderContent: 'Поиск на карте'
-                }}
-            }}));
-
-            // Оптимизация: создаем метки в один проход
             const geoObjects = new ymaps.GeoObjectCollection(null, {{
                 preset: 'islands#circleDotIcon',
                 draggable: false
             }});
             
-            // Добавляем точки
             POINTS_DATA.forEach(point => {{
                 if (point.lat && point.lon && point.lat !== 0 && point.lon !== 0) {{
                     const placemark = new ymaps.Placemark(
                         [point.lat, point.lon],
                         {{
-                            balloonContent: '<div style="font-size:12px;padding:5px"><b>Загрузка...</b></div>',
-                            balloonMaxWidth: 520,
-                            balloonMinWidth: 450,
+                            balloonContent: '<div style="font-size:11px;padding:4px"><b>Загрузка...</b></div>',
+                            balloonMaxWidth: 480,
+                            balloonMinWidth: 420,
                             id_egora: point.id_egora,
                             index: point.index,
                             originalIconColor: point.color,
@@ -1755,7 +2076,6 @@ if st_select_region != 'Регионы':
                         }}
                     );
                     
-                    // Добавляем обработчик клика для загрузки полного баллуна
                     placemark.events.add('click', function(e) {{
                         const target = e.get('target');
                         const index = target.properties.get('index');
@@ -1772,7 +2092,6 @@ if st_select_region != 'Регионы':
             
             map.geoObjects.add(geoObjects);
 
-            // Обработка клика на карте
             map.events.add('click', function(e) {{
                 const coords = e.get('coords');
                 lastClickCoords = coords;
@@ -1804,23 +2123,21 @@ if st_select_region != 'Регионы':
     st.sidebar.write(f'Всего объектов: {original_data.shape[0]}')
     st.sidebar.markdown("---")
     st.sidebar.write('Типы точек:')
-    st.sidebar.write('🔵 Есть в РОИВ, но нет в ЦП')  # Синий
-    st.sidebar.write('🟡 Есть только в ЦП')          # Желтый
-    st.sidebar.write('🟢 Есть в РОИВ и в ЦП')       # Зеленый
-    st.sidebar.write('🟣 Добавили новое поле, на стадии рассмотрения')  # Фиолетовый
-    st.sidebar.write('🔴 Объект находится в стадии рассмотрения')       # Красный
+    st.sidebar.write(f'🔵 Есть в РОИВ, но нет в ЦП - {original_data[original_data["Наличие в реестрах"] == 1].shape[0]}')  # Синий
+    st.sidebar.write(f'🟡 Есть только в ЦП - {original_data[original_data["Наличие в реестрах"] == 2].shape[0]}')          # Желтый
+    st.sidebar.write(f'🟢 Есть в РОИВ и в ЦП - {original_data[original_data["Наличие в реестрах"] == 3].shape[0]}')       # Зеленый
+    st.sidebar.write(f'''🟣 Добавили новое поле, на стадии рассмотрения - {original_data[original_data["Статус работы"] == '1'].shape[0]}''')  # Фиолетовый
+    st.sidebar.write(f'''🔴 Объект находится в стадии рассмотрения - {original_data[original_data["Статус работы"] == '2'].shape[0]}''')       # Красный
     st.sidebar.write('⚪ Нажали "Внести изменения", но не отправили анкету')  # Серый
     st.sidebar.write('⚫ Нажали "Здесь поле", но не отправили анкету')        # Черный
 
     st.sidebar.markdown("---")
     st.sidebar.write(f'Дополнительно:')
     # Используем оригинальные данные для статистики
-    st.sidebar.write(f'Натуральных полей: {original_data[original_data["Тип покрытия"].isin(natural_coverings)].shape[0]}')
-    st.sidebar.write(f'Искусственных полей: {original_data[~original_data["Тип покрытия"].isin(natural_coverings)].shape[0]}')
-    st.sidebar.write(f'''Только субьект: {original_data[original_data["Наличие в реестрах"] == 1].shape[0]}''')
-    st.sidebar.write(f'''Только ЦП: {original_data[original_data["Наличие в реестрах"] == 2].shape[0]}''')
-    st.sidebar.write(f'''ЦП и субьект: {original_data[original_data["Наличие в реестрах"] == 3].shape[0]}''')
-    st.sidebar.write(f'С табло: {original_data[original_data["Наличие табло"] == "Y"].shape[0]}')
-    st.sidebar.write(f'С подогревом: {original_data[original_data["Наличие подогрева"] == "Y"].shape[0]}')
-    st.sidebar.write(f'С раздевалками: {original_data[original_data["Наличие раздевалок"] == "Y"].shape[0]}')
-    st.sidebar.write(f'С дренажом: {original_data[original_data["Наличие дренажа"] == "Y"].shape[0]}')
+    # ЗАМЕНА СТАТИСТИКИ ПО ТИПАМ ПОКРЫТИЙ
+    st.sidebar.write(f'Натуральных полей: {original_data[original_data["Тип покрытия"] == "Натуральное"].shape[0]}')
+    st.sidebar.write(f'Искусственная трава: {original_data[original_data["Тип покрытия"] == "Искусственная трава"].shape[0]}')
+    st.sidebar.write(f'Спортивное (резина, крошка и тп): {original_data[original_data["Тип покрытия"] == "Спортивное (резина, крошка и тп)"].shape[0]}')
+    st.sidebar.write(f'Доска (паркет): {original_data[original_data["Тип покрытия"] == "Доска (паркет)"].shape[0]}')
+    st.sidebar.write(f'Иное: {original_data[original_data["Тип покрытия"] == "Иное"].shape[0]}')
+    st.sidebar.write(f'Нет информации: {original_data[original_data["Тип покрытия"] == "Нет информации"].shape[0]}')
