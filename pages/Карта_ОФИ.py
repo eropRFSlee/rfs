@@ -276,7 +276,7 @@ def load_bitrix_data(REGION_NUMBER):
                 f'filter[ufCrm6_1767014564]': REGION_NUMBER  # Фильтр по номеру региона
             }
         
-        response = requests.get(f'{WEBHOOK}crm.item.list', params=params)
+        response = requests.get(f'{WEBHOOK}crm.item.list', params=params, timeout=540)
         data = response.json()
         
         # Проверяем, есть ли результат в ответе
@@ -837,6 +837,7 @@ if st_select_region != 'Регионы':
                     padding: 3px;
                     max-height: 850px;
                     overflow-y: auto;
+                    scroll-behavior: smooth;
                 }}
                 
                 .card {{
@@ -1115,6 +1116,25 @@ if st_select_region != 'Регионы':
                 
                 let buttonStates = {{}};
                 let detailsStates = {{}};
+                let scrollPosition = 0;
+                
+                // Сохраняем позицию скролла
+                function saveScrollPosition() {{
+                    const container = document.getElementById('objects-container');
+                    if (container) {{
+                        scrollPosition = container.scrollTop;
+                    }}
+                }}
+                
+                // Восстанавливаем позицию скролла
+                function restoreScrollPosition() {{
+                    const container = document.getElementById('objects-container');
+                    if (container && scrollPosition > 0) {{
+                        setTimeout(() => {{
+                            container.scrollTop = scrollPosition;
+                        }}, 50);
+                    }}
+                }}
                 
                 function showNotification(message, duration = 1500) {{
                     const notification = document.getElementById('notification');
@@ -1137,6 +1157,8 @@ if st_select_region != 'Регионы':
                 
                 // Функция для копирования ID
                 function copyId(id, index) {{
+                    saveScrollPosition(); // Сохраняем позицию перед копированием
+                    
                     if (navigator.clipboard && navigator.clipboard.writeText) {{
                         navigator.clipboard.writeText(id)
                             .then(() => {{
@@ -1175,6 +1197,8 @@ if st_select_region != 'Регионы':
                 }}
                 
                 function openForm(index, statusOfWork) {{
+                    saveScrollPosition(); // Сохраняем позицию перед открытием формы
+                    
                     if (statusOfWork === '1') {{
                         return false;
                     }}
@@ -1207,8 +1231,10 @@ if st_select_region != 'Регионы':
                         buttonStates[index] = false;
                     }}
                     
+                    // Восстанавливаем состояние из sessionStorage или инициализируем как false
                     if (detailsStates[index] === undefined) {{
-                        detailsStates[index] = false;
+                        const savedState = sessionStorage.getItem(`card_${{index}}_expanded`);
+                        detailsStates[index] = savedState === 'true';
                     }}
                     
                     let providedDataHTML = '';
@@ -1365,8 +1391,38 @@ if st_select_region != 'Регионы':
                 }}
                 
                 function toggleDetails(index) {{
+                    // Сохраняем текущую позицию скролла
+                    saveScrollPosition();
+                    
+                    // Меняем состояние
                     detailsStates[index] = !detailsStates[index];
-                    renderObjects();
+                    
+                    // Сохраняем в sessionStorage
+                    sessionStorage.setItem(`card_${{index}}_expanded`, detailsStates[index]);
+                    
+                    // Обновляем только конкретную карточку (чтобы не терять скролл)
+                    const toggleButton = document.querySelector(`[onclick="toggleDetails(${{index}})"]`);
+                    const detailsElement = document.getElementById('details-' + index);
+                    
+                    if (toggleButton && detailsElement) {{
+                        // Обновляем текст кнопки
+                        toggleButton.textContent = detailsStates[index] ? '▲ Скрыть детали' : '▼ Показать все детали';
+                        
+                        // Показываем/скрываем детали
+                        detailsElement.style.display = detailsStates[index] ? 'block' : 'none';
+                        
+                        // Плавно прокручиваем к карточке, если она раскрывается
+                        if (detailsStates[index]) {{
+                            setTimeout(() => {{
+                                toggleButton.scrollIntoView({{ behavior: 'smooth', block: 'nearest' }});
+                            }}, 10);
+                        }}
+                        
+                        // Восстанавливаем позицию скролла
+                        setTimeout(() => {{
+                            restoreScrollPosition();
+                        }}, 20);
+                    }}
                 }}
                 
                 function renderObjects() {{
@@ -1378,37 +1434,55 @@ if st_select_region != 'Регионы':
                         return;
                     }}
                     
-                    const batchSize = 100;
-                    const totalObjects = objectsData.length;
-                    
-                    function renderBatch(startIndex) {{
-                        const endIndex = Math.min(startIndex + batchSize, totalObjects);
+                    // Рендерим все карточки
+                    for (let i = 0; i < objectsData.length; i++) {{
+                        const obj = objectsData[i];
+                        const card = createObjectCard(obj, i);
+                        container.appendChild(card);
                         
-                        for (let i = startIndex; i < endIndex; i++) {{
-                            const obj = objectsData[i];
-                            const card = createObjectCard(obj, i);
-                            container.appendChild(card);
-                            
-                            if (i < totalObjects - 1) {{
-                                const hr = document.createElement('hr');
-                                container.appendChild(hr);
-                            }}
-                        }}
-                        
-                        if (endIndex < totalObjects) {{
-                            setTimeout(() => renderBatch(endIndex), 0);
+                        if (i < objectsData.length - 1) {{
+                            const hr = document.createElement('hr');
+                            container.appendChild(hr);
                         }}
                     }}
                     
-                    renderBatch(0);
+                    // Восстанавливаем позицию скролла
+                    restoreScrollPosition();
                 }}
                 
-                document.addEventListener('DOMContentLoaded', renderObjects);
+                document.addEventListener('DOMContentLoaded', function() {{
+                    // Сохраняем скролл при прокрутке
+                    const container = document.getElementById('objects-container');
+                    if (container) {{
+                        container.addEventListener('scroll', saveScrollPosition);
+                    }}
+                    
+                    // Загружаем сохраненные состояния кнопок
+                    try {{
+                        const savedButtonStates = sessionStorage.getItem('buttonStates');
+                        if (savedButtonStates) {{
+                            buttonStates = JSON.parse(savedButtonStates);
+                        }}
+                    }} catch (e) {{
+                        console.error('Error loading button states:', e);
+                    }}
+                    
+                    renderObjects();
+                    
+                    // Сохраняем состояния при закрытии
+                    window.addEventListener('beforeunload', function() {{
+                        try {{
+                            sessionStorage.setItem('buttonStates', JSON.stringify(buttonStates));
+                        }} catch (e) {{
+                            console.error('Error saving button states:', e);
+                        }}
+                    }});
+                }});
                 
                 if (document.readyState === 'loading') {{
                     document.addEventListener('DOMContentLoaded', renderObjects);
                 }} else {{
-                    renderObjects();
+                    setTimeout(renderObjects, 100);
                 }}
             </script>
         </body>
