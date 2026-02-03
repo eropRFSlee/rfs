@@ -530,7 +530,7 @@ if st_select_region != 'Регионы':
     
     # Переносим кнопку "Обновить карту и данные" в сайдбар
 
-    if st.sidebar.button("🔄 Обновить карту и данные", key="refresh_all_btn"):
+    if st.sidebar.button("🔄 Обновить данные", key="refresh_all_btn"):
         # 1. Загружаем новые данные из Битрикса
         st.session_state.force_reload = True
         # 2. Обновляем карту (черные/серые точки исчезнут)
@@ -550,15 +550,15 @@ if st_select_region != 'Регионы':
     st.sidebar.write("**Режим просмотра:**")
     col1, col2 = st.sidebar.columns(2)
     with col1:
-        if st.button("🗺️ Карта", key="map_btn" if st.session_state.view_mode == 'map' else "secondary", 
+        if st.button("Карта", key="map_btn" if st.session_state.view_mode == 'map' else "secondary", 
                      help="Переключить на карту", use_container_width=True):
             st.session_state.view_mode = 'map'
             st.rerun()
     with col2:
-        if st.button("📋 Список", key="list_btn" if st.session_state.view_mode == 'list' else "secondary",
+        if st.button("Список", key="list_btn" if st.session_state.view_mode == 'list' else "secondary",
                      help="Переключить на список", use_container_width=True):
             st.session_state.view_mode = 'list'
-            st.rerun()
+            st.rerun()  
     
     # Загружаем данные если они еще не загружены, изменился регион или принудительное обновление
     if (not st.session_state.data_loaded or 
@@ -678,11 +678,11 @@ if st_select_region != 'Регионы':
     elif st_select_reestr == '🟣 Добавили новое поле, на стадии рассмотрения':
         data = data[data['Статус работы'] == '2']
     elif st_select_reestr == '🔵 Есть в РОИВ, но нет в ЦП':
-        data = data[(data['Наличие в реестрах'] == 1) & (data['Статус работы'] != '1')]
+        data = data[(data['Наличие в реестрах'] == 1) & (data['Статус работы'] != '1') & (data['Статус работы'] != '2')]
     elif st_select_reestr == '🟡 Есть только в ЦП':
-        data = data[data['Наличие в реестрах'] == 2]
+        data = data[(data['Наличие в реестрах'] == 2) & (data['Статус работы'] != '1') & (data['Статус работы'] != '2')]
     elif st_select_reestr == '🟢 Есть в РОИВ и в ЦП':
-        data = data[data['Наличие в реестрах'] == 3]
+        data = data[(data['Наличие в реестрах'] == 3) & (data['Статус работы'] != '1') & (data['Статус работы'] != '2')]
 
     if st_select_desciplyne != 'Все':
         if st_select_desciplyne == '11x11':
@@ -741,15 +741,37 @@ if st_select_region != 'Регионы':
     elif search_query != "" and search_query != st.session_state.search_query:
         st.session_state.search_query = search_query
     
+    # Применяем поисковый фильтр ко всем данным (и для карты, и для списка)
+    filtered_data_for_display = data.copy()
+    if st.session_state.search_query:
+        search_lower = st.session_state.search_query.lower()
+        search_mask = (
+            filtered_data_for_display['Полное (официальное) название объекта'].astype(str).str.lower().str.contains(search_lower, na=False) |
+            filtered_data_for_display['Короткое (спортивное) название объекта'].astype(str).str.lower().str.contains(search_lower, na=False) |
+            filtered_data_for_display['Адрес'].astype(str).str.lower().str.contains(search_lower, na=False) |
+            filtered_data_for_display['Контактное лицо'].astype(str).str.lower().str.contains(search_lower, na=False) |
+            filtered_data_for_display['Собственник (ОГРН)'].astype(str).str.lower().str.contains(search_lower, na=False) |
+            filtered_data_for_display['Управляющая компания (ОГРН)'].astype(str).str.lower().str.contains(search_lower, na=False) |
+            filtered_data_for_display['Пользователь (ОГРН)'].astype(str).str.lower().str.contains(search_lower, na=False) |
+            filtered_data_for_display['Тип Объекта '].astype(str).str.lower().str.contains(search_lower, na=False) |
+            filtered_data_for_display['Тип покрытия'].astype(str).str.lower().str.contains(search_lower, na=False) |
+            filtered_data_for_display['Год ввода в эксплуатацию/год капитального ремонта'].astype(str).str.lower().str.contains(search_lower, na=False) |
+            filtered_data_for_display['Дисциплина_2'].astype(str).str.lower().str.contains(search_lower, na=False)
+        )
+        filtered_data_for_display = filtered_data_for_display[search_mask]
+        
+        # Показываем количество найденных объектов
+        st.markdown(f'<p style="color: #FFD700;">Найдено объектов по запросу "{st.session_state.search_query}": {len(filtered_data_for_display)}</p>', unsafe_allow_html=True)
+    
     # Проверяем режим просмотра
     if st.session_state.view_mode == 'list':
         
         # Сохраняем все данные для поиска
-        st.session_state.all_filtered_data = data.copy()
+        st.session_state.all_filtered_data = filtered_data_for_display.copy()
         
         # Пагинация
         items_per_page = 50
-        total_items = len(data)
+        total_items = len(filtered_data_for_display)
         
         # Если данных больше, чем на одну страницу, показываем пагинацию
         if total_items > items_per_page:
@@ -758,7 +780,7 @@ if st_select_region != 'Регионы':
             
             # Создаем селектор для выбора страницы
             page_options = [f"Страница {i+1}" for i in range(total_pages)]
-            st.write('Страница')
+            st.write('Выбор страницы')
             selected_page = st.selectbox(
                 "",
                 page_options,
@@ -773,40 +795,13 @@ if st_select_region != 'Регионы':
             end_idx = min((page_number + 1) * items_per_page, total_items)
             
             # Получаем данные для текущей страницы
-            page_data = data.iloc[start_idx:end_idx]
+            page_data = filtered_data_for_display.iloc[start_idx:end_idx]
             
         else:
             # Если все помещается на одну страницу
-            page_data = data
+            page_data = filtered_data_for_display
             total_pages = 1
             page_number = 0
-        
-        # Применяем поиск если есть запрос (теперь поиск работает по всем данным)
-        if st.session_state.search_query:
-            search_lower = st.session_state.search_query.lower()
-            search_mask = (
-                st.session_state.all_filtered_data['Полное (официальное) название объекта'].astype(str).str.lower().str.contains(search_lower, na=False) |
-                st.session_state.all_filtered_data['Короткое (спортивное) название объекта'].astype(str).str.lower().str.contains(search_lower, na=False) |
-                st.session_state.all_filtered_data['Адрес'].astype(str).str.lower().str.contains(search_lower, na=False) |
-                st.session_state.all_filtered_data['Контактное лицо'].astype(str).str.lower().str.contains(search_lower, na=False) |
-                st.session_state.all_filtered_data['Собственник (ОГРН)'].astype(str).str.lower().str.contains(search_lower, na=False) |
-                st.session_state.all_filtered_data['Управляющая компания (ОГРН)'].astype(str).str.lower().str.contains(search_lower, na=False) |
-                st.session_state.all_filtered_data['Пользователь (ОГРН)'].astype(str).str.lower().str.contains(search_lower, na=False) |
-                st.session_state.all_filtered_data['Тип Объекта '].astype(str).str.lower().str.contains(search_lower, na=False) |
-                st.session_state.all_filtered_data['Тип покрытия'].astype(str).str.lower().str.contains(search_lower, na=False) |
-                st.session_state.all_filtered_data['Год ввода в эксплуатацию/год капитального ремонта'].astype(str).str.lower().str.contains(search_lower, na=False) |
-                st.session_state.all_filtered_data['Дисциплина_2'].astype(str).str.lower().str.contains(search_lower, na=False)
-            )
-            search_results = st.session_state.all_filtered_data[search_mask]
-            
-            # Обновляем данные для отображения
-            page_data = search_results
-            
-            # Сбрасываем пагинацию для результатов поиска
-            total_items = len(search_results)
-            
-            # Показываем количество найденных объектов
-            st.markdown(f'<p style="color: #FFD700;">Найдено объектов по запросу "{st.session_state.search_query}": {total_items}</p>', unsafe_allow_html=True)
         
         # Подготавливаем данные для JavaScript из page_data
         objects_data = []
@@ -848,7 +843,9 @@ if st_select_region != 'Регионы':
                         'Отправитель': to_slovar[7],
                         'Подтвердить': to_slovar[8] if to_slovar[8] == 'Y' else '',
                         'Удалить': to_slovar[9] if to_slovar[9] == 'Y' else '',
-                        'Зал/не зал': to_slovar[10] if to_slovar[10] == 'Y' else ''
+                        'Зал/не зал': to_slovar[10] if to_slovar[10] == 'Y' else '',
+                        'Комментарий': to_slovar[11],
+                        'Номер региона': to_slovar[12]
                     }
                 elif status_of_work == '2' and len(to_slovar) >= 9:
                     slovar = {
@@ -860,7 +857,9 @@ if st_select_region != 'Регионы':
                         'Ширина': to_slovar[5],
                         'Тип покрытия': to_slovar[6],
                         'Отправитель': to_slovar[7],
-                        'Зал/не зал': to_slovar[8] if to_slovar[8] == 'Y' else ''
+                        'Зал/не зал': to_slovar[8] if to_slovar[8] == 'Y' else '',
+                        'Комментарий':  to_slovar[9],
+                        'Номер региона': to_slovar[-1]
                     }
                 
                 if 'slovar' in locals():
@@ -1214,7 +1213,7 @@ if st_select_region != 'Регионы':
         </head>
         <body>
             <div class="pagination-info">
-                Показано объектов: {len(objects_data)} из {len(st.session_state.all_filtered_data) if hasattr(st.session_state, 'all_filtered_data') else len(data)}
+                Показано объектов: {len(objects_data)} из {len(filtered_data_for_display)}
                 {f' (Страница {page_number + 1} из {total_pages})' if total_pages > 1 else ''}
             </div>
             
@@ -1609,37 +1608,37 @@ if st_select_region != 'Регионы':
         st.components.v1.html(objects_html, height=9000, scrolling=True)
     
     else:
-        # Карта (режим карты)
-        sirota = data['Широта']
-        dolgota = data['Долгота']
+        # Карта (режим карты) - используем filtered_data_for_display вместо data
+        sirota = filtered_data_for_display['Широта']
+        dolgota = filtered_data_for_display['Долгота']
         
-        full_name = data['Полное (официальное) название объекта'] # 0
-        short_name = data['Короткое (спортивное) название объекта'] # 1
-        adres = data['Адрес'] # 2
-        contact_name = data['Контактное лицо'] # 3
-        owner = data['Собственник (ОГРН)'] # 4
-        manager = data['Управляющая компания (ОГРН)'] #5
-        user = data['Пользователь (ОГРН)'] #6
-        rfs_id= data['РФС_ID'] #7
-        type_objectt = data['Тип Объекта '] #8
-        disciplyne = data['Дисциплина '] #9
-        length = data['Длина футбольного поля'] # 10
-        width = data['Ширина футбольного поля'] # 11
-        design_feature = data['Конструктивная особенность'] # 12
-        type_of_coverage = data['Тип покрытия'] # 13
-        capacity = data['Количество мест для зрителей'] # 14
+        full_name = filtered_data_for_display['Полное (официальное) название объекта'] # 0
+        short_name = filtered_data_for_display['Короткое (спортивное) название объекта'] # 1
+        adres = filtered_data_for_display['Адрес'] # 2
+        contact_name = filtered_data_for_display['Контактное лицо'] # 3
+        owner = filtered_data_for_display['Собственник (ОГРН)'] # 4
+        manager = filtered_data_for_display['Управляющая компания (ОГРН)'] #5
+        user = filtered_data_for_display['Пользователь (ОГРН)'] #6
+        rfs_id= filtered_data_for_display['РФС_ID'] #7
+        type_objectt = filtered_data_for_display['Тип Объекта '] #8
+        disciplyne = filtered_data_for_display['Дисциплина '] #9
+        length = filtered_data_for_display['Длина футбольного поля'] # 10
+        width = filtered_data_for_display['Ширина футбольного поля'] # 11
+        design_feature = filtered_data_for_display['Конструктивная особенность'] # 12
+        type_of_coverage = filtered_data_for_display['Тип покрытия'] # 13
+        capacity = filtered_data_for_display['Количество мест для зрителей'] # 14
         capacity = capacity.astype(str)
-        drainage = data['Наличие дренажа'] # 15
-        heating = data['Наличие подогрева'] # 16
-        scoreboard = data['Наличие табло'] # 17
-        dress_room = data['Наличие раздевалок'] # 18
-        year = data['Год ввода в эксплуатацию/год капитального ремонта'] # 19
+        drainage = filtered_data_for_display['Наличие дренажа'] # 15
+        heating = filtered_data_for_display['Наличие подогрева'] # 16
+        scoreboard = filtered_data_for_display['Наличие табло'] # 17
+        dress_room = filtered_data_for_display['Наличие раздевалок'] # 18
+        year = filtered_data_for_display['Год ввода в эксплуатацию/год капитального ремонта'] # 19
         year = year.astype(str)
-        in_reestr = data['Наличие в реестрах'].to_list()
-        disp_2 = data['Дисциплина_2']
-        id_egora = data['id_egora']
-        status_of_work = data['Статус работы']
-        info = data['То, что заполнили РОИВ']
+        in_reestr = filtered_data_for_display['Наличие в реестрах'].to_list()
+        disp_2 = filtered_data_for_display['Дисциплина_2']
+        id_egora = filtered_data_for_display['id_egora']
+        status_of_work = filtered_data_for_display['Статус работы']
+        info = filtered_data_for_display['То, что заполнили РОИВ']
 
         YANDEX_API_KEY = "7fe74d5b-be45-47d1-9fc0-a0765598a4d7"
 
@@ -1649,35 +1648,37 @@ if st_select_region != 'Регионы':
             # Обработка информации для объектов со статусом работы '1' или '2'
             result_string = ""
             if status_of_work.iloc[i] in ('1', '2'):
-                to_slovar = data['То, что заполнили РОИВ'].iloc[i].replace('<br>', '|').split('|')
+                to_slovar = filtered_data_for_display['То, что заполнили РОИВ'].iloc[i].replace('<br>', '|').split('|')
                 
                 if status_of_work.iloc[i] == '1' and len(to_slovar) >= 11:
                     slovar = {
-                        'Полное(официальное) название объекта' : to_slovar[0],
-                        'Короткое (спортивное) название объекта' : to_slovar[1],
-                        'Адрес' : to_slovar[2],
-                        'Широта и долгота' : to_slovar[3],
-                        'Длина' : to_slovar[4],
-                        'Ширина' : to_slovar[5],
-                        'Тип покрытия' : to_slovar[6],
-                        'Отправитель' : to_slovar[7],
-                        'Подтвердить' : to_slovar[8] if to_slovar[8] == 'Y' else '',
-                        'Удалить' : to_slovar[9] if to_slovar[9] == 'Y' else '',
-                        'Зал/не зал' : to_slovar[10] if to_slovar[10] == 'Y' else '',
-                        'Комментарий': to_slovar[11]
+                        'Полное(официальное) название объекта': to_slovar[0],
+                        'Короткое (спортивное) название объекта': to_slovar[1],
+                        'Адрес': to_slovar[2],
+                        'Широта и долгота': to_slovar[3],
+                        'Длина': to_slovar[4],
+                        'Ширина': to_slovar[5],
+                        'Тип покрытия': to_slovar[6],
+                        'Отправитель': to_slovar[7],
+                        'Подтвердить': to_slovar[8] if to_slovar[8] == 'Y' else '',
+                        'Удалить': to_slovar[9] if to_slovar[9] == 'Y' else '',
+                        'Зал/не зал': to_slovar[10] if to_slovar[10] == 'Y' else '',
+                        'Комментарий': to_slovar[11],
+                        'Номер региона': to_slovar[12]
                     }
                 elif status_of_work.iloc[i] == '2' and len(to_slovar) >= 9:
                     slovar = {
-                        'Полное(официальное) название объекта' : to_slovar[0],
-                        'Короткое (спортивное) название объекта' : to_slovar[1],
-                        'Адрес' : to_slovar[2],
-                        'Широта и долгота' : to_slovar[3],
-                        'Длина' : to_slovar[4],
-                        'Ширина' : to_slovar[5],
-                        'Тип покрытия' : to_slovar[6],
-                        'Отправитель' : to_slovar[7],
-                        'Зал/не зал' : to_slovar[8] if to_slovar[8] == 'Y' else '',
-                        'Комментарий': to_slovar[9]
+                        'Полное(официальное) название объекта': to_slovar[0],
+                        'Короткое (спортивное) название объекта': to_slovar[1],
+                        'Адрес': to_slovar[2],
+                        'Широта и долгота': to_slovar[3],
+                        'Длина': to_slovar[4],
+                        'Ширина': to_slovar[5],
+                        'Тип покрытия': to_slovar[6],
+                        'Отправитель': to_slovar[7],
+                        'Зал/не зал': to_slovar[8] if to_slovar[8] == 'Y' else '',
+                        'Комментарий':  to_slovar[9],
+                        'Номер региона': to_slovar[-1]
                     }
                 if slovar:
                     result_parts = []
@@ -2387,7 +2388,7 @@ if st_select_region != 'Регионы':
         """
         
         # Показываем карту
-        st.components.v1.html(map_html, height=1100, scrolling=False)
+        st.components.v1.html(map_html, height=600, scrolling=False)
     
     # -------------------------------------------------------------------------------------------------------------
     st.sidebar.markdown("---")
@@ -2398,8 +2399,8 @@ if st_select_region != 'Регионы':
     st.sidebar.write(f'🔵 Есть в РОИВ, но нет в ЦП - {original_data[original_data["Наличие в реестрах"] == 1].shape[0]}')  # Синий
     st.sidebar.write(f'🟡 Есть только в ЦП - {original_data[original_data["Наличие в реестрах"] == 2].shape[0]}')          # Желтый
     st.sidebar.write(f'🟢 Есть в РОИВ и в ЦП - {original_data[original_data["Наличие в реестрах"] == 3].shape[0]}')       # Зеленый
-    st.sidebar.write(f'''🟣 Добавили новое поле, на стадии рассмотрения - {original_data[original_data["Статус работы"] == '1'].shape[0]}''')  # Фиолетовый
-    st.sidebar.write(f'''🔴 Объект находится в стадии рассмотрения - {original_data[original_data["Статус работы"] == '2'].shape[0]}''')       # Красный
+    st.sidebar.write(f'''🟣 Добавили новое поле, на стадии рассмотрения - {original_data[original_data["Статус работы"] == '2'].shape[0]}''')  # Фиолетовый
+    st.sidebar.write(f'''🔴 Объект находится в стадии рассмотрения - {original_data[original_data["Статус работы"] == '1'].shape[0]}''')       # Красный
     st.sidebar.write('⚪ Нажали "Внести изменения", но не отправили анкету')  # Серый
     st.sidebar.write('⚫ Нажали "Здесь поле", но не отправили анкету')        # Черный
 
