@@ -10,6 +10,12 @@ import base64
 WEBHOOK = 'https://drlk.rfs.ru/rest/205/b8fz7f8gjkxwstkm/'
 ENTITY_TYPE_ID = 142
 
+# Константы для повторных попыток
+MAX_RETRIES = 3
+RETRY_DELAY = 2  # секунды
+CONNECTION_TIMEOUT = 30
+READ_TIMEOUT = 60
+
 # ---------------------------------------------------------------------------------------------------------------
 
 st.set_page_config(
@@ -255,6 +261,35 @@ st.markdown("""
 
 FULL_BALLOONS_DATA = []
 
+# Функция для отправки запроса с повторными попытками
+def send_request_with_retry(url, params, max_retries=MAX_RETRIES):
+    for attempt in range(max_retries):
+        try:
+            response = requests.get(
+                url, 
+                params=params, 
+                timeout=(CONNECTION_TIMEOUT, READ_TIMEOUT)
+            )
+            return response, attempt + 1
+        except requests.exceptions.ConnectTimeout:
+            print(f"  ⏳ Таймаут соединения (попытка {attempt + 1}/{max_retries})")
+            if attempt < max_retries - 1:
+                time.sleep(RETRY_DELAY)
+        except requests.exceptions.ReadTimeout:
+            print(f"  ⏳ Таймаут чтения (попытка {attempt + 1}/{max_retries})")
+            if attempt < max_retries - 1:
+                time.sleep(RETRY_DELAY)
+        except requests.exceptions.ConnectionError as e:
+            print(f"  🔌 Ошибка соединения (попытка {attempt + 1}/{max_retries}): {e}")
+            if attempt < max_retries - 1:
+                time.sleep(RETRY_DELAY)
+        except Exception as e:
+            print(f"  ⚠️ Другая ошибка (попытка {attempt + 1}/{max_retries}): {e}")
+            if attempt < max_retries - 1:
+                time.sleep(RETRY_DELAY)
+    
+    return None, max_retries
+
 # Функция для загрузки данных из Битрикса (ТОЛЬКО РЕГИОН 24)
 def load_bitrix_data(REGION_NUMBER):
     all_items = []
@@ -276,8 +311,27 @@ def load_bitrix_data(REGION_NUMBER):
                 f'filter[ufCrm6_1767014564]': REGION_NUMBER  # Фильтр по номеру региона
             }
         
-        response = requests.get(f'{WEBHOOK}crm.item.list', params=params, timeout=540)
-        data = response.json()
+        # Используем функцию с повторными попытками
+        response, attempt_used = send_request_with_retry(
+            f'{WEBHOOK}crm.item.list', 
+            params
+        )
+        
+        # Если все попытки неудачны
+        if response is None:
+            print(f"  ❌ Не удалось получить данные после {MAX_RETRIES} попыток")
+            break
+        
+        try:
+            data = response.json()
+        except Exception as e:
+            print(f"  ❌ Ошибка при разборе JSON: {e}")
+            # Если это была последняя страница, выходим
+            if attempt_used < MAX_RETRIES:
+                # Пробуем еще раз с теми же параметрами
+                continue
+            else:
+                break
         
         # Проверяем, есть ли результат в ответе
         if 'result' in data and 'items' in data['result']:
@@ -292,6 +346,7 @@ def load_bitrix_data(REGION_NUMBER):
             start += len(batch)
         else:
             # Если нет результатов или ошибка в ответе
+            print(f"  ⚠️ Некорректный ответ от API: {data.get('error', 'No error message')}")
             break
     
     return all_items
@@ -475,7 +530,7 @@ if st_select_region != 'Регионы':
     
     # Переносим кнопку "Обновить карту и данные" в сайдбар
 
-    if st.sidebar.button("🔄 Обновить карту и данные", key="refresh_all_btn", type="primary"):
+    if st.sidebar.button("🔄 Обновить карту и данные", key="refresh_all_btn"):
         # 1. Загружаем новые данные из Битрикса
         st.session_state.force_reload = True
         # 2. Обновляем карту (черные/серые точки исчезнут)
@@ -495,12 +550,12 @@ if st_select_region != 'Регионы':
     st.sidebar.write("**Режим просмотра:**")
     col1, col2 = st.sidebar.columns(2)
     with col1:
-        if st.button("🗺️ Карта", key="map_btn", type="primary" if st.session_state.view_mode == 'map' else "secondary", 
+        if st.button("🗺️ Карта", key="map_btn" if st.session_state.view_mode == 'map' else "secondary", 
                      help="Переключить на карту", use_container_width=True):
             st.session_state.view_mode = 'map'
             st.rerun()
     with col2:
-        if st.button("📋 Список", key="list_btn", type="primary" if st.session_state.view_mode == 'list' else "secondary",
+        if st.button("📋 Список", key="list_btn" if st.session_state.view_mode == 'list' else "secondary",
                      help="Переключить на список", use_container_width=True):
             st.session_state.view_mode = 'list'
             st.rerun()
@@ -686,32 +741,76 @@ if st_select_region != 'Регионы':
     elif search_query != "" and search_query != st.session_state.search_query:
         st.session_state.search_query = search_query
     
-    # Применяем поиск если есть запрос
-    if st.session_state.search_query:
-        search_lower = st.session_state.search_query.lower()
-        search_mask = (
-            data['Полное (официальное) название объекта'].astype(str).str.lower().str.contains(search_lower, na=False) |
-            data['Короткое (спортивное) название объекта'].astype(str).str.lower().str.contains(search_lower, na=False) |
-            data['Адрес'].astype(str).str.lower().str.contains(search_lower, na=False) |
-            data['Контактное лицо'].astype(str).str.lower().str.contains(search_lower, na=False) |
-            data['Собственник (ОГРН)'].astype(str).str.lower().str.contains(search_lower, na=False) |
-            data['Управляющая компания (ОГРН)'].astype(str).str.lower().str.contains(search_lower, na=False) |
-            data['Пользователь (ОГРН)'].astype(str).str.lower().str.contains(search_lower, na=False) |
-            data['Тип Объекта '].astype(str).str.lower().str.contains(search_lower, na=False) |
-            data['Тип покрытия'].astype(str).str.lower().str.contains(search_lower, na=False) |
-            data['Год ввода в эксплуатацию/год капитального ремонта'].astype(str).str.lower().str.contains(search_lower, na=False) |
-            data['Дисциплина_2'].astype(str).str.lower().str.contains(search_lower, na=False)
-        )
-        data = data[search_mask]
-        # Используем HTML для золотого цвета текста
-        st.markdown(f'<p style="color: #FFD700;">Найдено объектов по запросу "{st.session_state.search_query}": {len(data)}</p>', unsafe_allow_html=True)
-    
     # Проверяем режим просмотра
     if st.session_state.view_mode == 'list':
         
-        # Подготавливаем данные для JavaScript
+        # Сохраняем все данные для поиска
+        st.session_state.all_filtered_data = data.copy()
+        
+        # Пагинация
+        items_per_page = 50
+        total_items = len(data)
+        
+        # Если данных больше, чем на одну страницу, показываем пагинацию
+        if total_items > items_per_page:
+            # Определяем количество страниц
+            total_pages = (total_items + items_per_page - 1) // items_per_page
+            
+            # Создаем селектор для выбора страницы
+            page_options = [f"Страница {i+1}" for i in range(total_pages)]
+            st.write('Страница')
+            selected_page = st.selectbox(
+                "",
+                page_options,
+                key=f"page_selector_{current_region_number}"
+            )
+            
+            # Определяем выбранный номер страницы
+            page_number = page_options.index(selected_page)
+            
+            # Вычисляем индексы для текущей страницы
+            start_idx = page_number * items_per_page
+            end_idx = min((page_number + 1) * items_per_page, total_items)
+            
+            # Получаем данные для текущей страницы
+            page_data = data.iloc[start_idx:end_idx]
+            
+        else:
+            # Если все помещается на одну страницу
+            page_data = data
+            total_pages = 1
+            page_number = 0
+        
+        # Применяем поиск если есть запрос (теперь поиск работает по всем данным)
+        if st.session_state.search_query:
+            search_lower = st.session_state.search_query.lower()
+            search_mask = (
+                st.session_state.all_filtered_data['Полное (официальное) название объекта'].astype(str).str.lower().str.contains(search_lower, na=False) |
+                st.session_state.all_filtered_data['Короткое (спортивное) название объекта'].astype(str).str.lower().str.contains(search_lower, na=False) |
+                st.session_state.all_filtered_data['Адрес'].astype(str).str.lower().str.contains(search_lower, na=False) |
+                st.session_state.all_filtered_data['Контактное лицо'].astype(str).str.lower().str.contains(search_lower, na=False) |
+                st.session_state.all_filtered_data['Собственник (ОГРН)'].astype(str).str.lower().str.contains(search_lower, na=False) |
+                st.session_state.all_filtered_data['Управляющая компания (ОГРН)'].astype(str).str.lower().str.contains(search_lower, na=False) |
+                st.session_state.all_filtered_data['Пользователь (ОГРН)'].astype(str).str.lower().str.contains(search_lower, na=False) |
+                st.session_state.all_filtered_data['Тип Объекта '].astype(str).str.lower().str.contains(search_lower, na=False) |
+                st.session_state.all_filtered_data['Тип покрытия'].astype(str).str.lower().str.contains(search_lower, na=False) |
+                st.session_state.all_filtered_data['Год ввода в эксплуатацию/год капитального ремонта'].astype(str).str.lower().str.contains(search_lower, na=False) |
+                st.session_state.all_filtered_data['Дисциплина_2'].astype(str).str.lower().str.contains(search_lower, na=False)
+            )
+            search_results = st.session_state.all_filtered_data[search_mask]
+            
+            # Обновляем данные для отображения
+            page_data = search_results
+            
+            # Сбрасываем пагинацию для результатов поиска
+            total_items = len(search_results)
+            
+            # Показываем количество найденных объектов
+            st.markdown(f'<p style="color: #FFD700;">Найдено объектов по запросу "{st.session_state.search_query}": {total_items}</p>', unsafe_allow_html=True)
+        
+        # Подготавливаем данные для JavaScript из page_data
         objects_data = []
-        for index, row in data.iterrows():
+        for index, row in page_data.iterrows():
             # Подготавливаем id_egora
             id_egora_value = '-'
             if pd.notna(row['id_egora']):
@@ -1099,9 +1198,26 @@ if st_select_region != 'Регионы':
                     font-weight: bold;
                     color: #000000;
                 }}
+                
+                /* Пагинация информация */
+                .pagination-info {{
+                    background-color: #f0f9ff;
+                    border: 1px solid #bae6fd;
+                    border-radius: 4px;
+                    padding: 8px;
+                    margin: 10px 0;
+                    font-size: 10px;
+                    color: #0369a1;
+                    text-align: center;
+                }}
             </style>
         </head>
         <body>
+            <div class="pagination-info">
+                Показано объектов: {len(objects_data)} из {len(st.session_state.all_filtered_data) if hasattr(st.session_state, 'all_filtered_data') else len(data)}
+                {f' (Страница {page_number + 1} из {total_pages})' if total_pages > 1 else ''}
+            </div>
+            
             <div class="objects-container" id="objects-container">
                 <!-- Объекты будут добавлены через JavaScript -->
             </div>
@@ -1490,7 +1606,7 @@ if st_select_region != 'Регионы':
         """
         
         # Увеличиваем высоту для показа большего количества объектов
-        st.components.v1.html(objects_html, height=900, scrolling=True)
+        st.components.v1.html(objects_html, height=9000, scrolling=True)
     
     else:
         # Карта (режим карты)
@@ -1627,8 +1743,7 @@ if st_select_region != 'Регионы':
             center_lat, center_lon = 44.6, 40.1  
 
         # HTML карты
-        zoom = 4 if st_select_region == '24 Красноярский край' else 1
-        zoom = 4 if st_select_region == '75 Забайкальский край' else 5
+        zoom = 5
         
         
         map_unique_id = st.session_state.map_refresh_key
@@ -1842,6 +1957,7 @@ if st_select_region != 'Регионы':
         let lastClickCoords = null;
         let lastClickAddress = null;
         let placemarks = [];
+        let blackPlacemarks = [];
         
         function handleConfirmClick(index) {{
             const pointData = POINTS_DATA[index];
@@ -2000,7 +2116,13 @@ if st_select_region != 'Регионы':
                 draggable: false
             }});
             
+            // Добавляем обработчик клика на черную точку
+            blackPlacemark.events.add('click', function(e) {{
+                createAddressInfo(coords);
+            }});
+            
             map.geoObjects.add(blackPlacemark);
+            blackPlacemarks.push(blackPlacemark);
         }}
         
         function copyToClipboard(text) {{
@@ -2056,63 +2178,139 @@ if st_select_region != 'Регионы':
                 oldInfo.remove();
             }}
             
-            const infoDiv = document.createElement('div');
-            infoDiv.className = 'address-info';
-            infoDiv.innerHTML = `
-                <div class="close-btn" onclick="this.parentElement.remove()">×</div>
-                <div class="address-title">📍 Информация о местоположении</div>
-                
-                <div class="address-item">
-                    <div class="item-header">
-                        <div class="item-label">Адрес:</div>
-                        <button onclick="copyAddress()" class="copy-icon-btn" title="Скопировать адрес">
-                            📄
-                        </button>
-                    </div>
-                    <div class="item-content">${{address}}</div>
-                </div>
-                
-                <div class="address-item">
-                    <div class="item-header">
-                        <div class="item-label">Координаты:</div>
-                        <button onclick="copyCoords()" class="copy-icon-btn" title="Скопировать координаты">
-                            📄
-                        </button>
-                    </div>
-                    <div class="item-content">
-                        ${{coords[0].toFixed(6)}}, ${{coords[1].toFixed(6)}}
-                    </div>
-                </div>
-                
-                <div class="address-item">
-                    <div class="item-header">
-                        <div class="item-label">Номер региона:</div>
-                        <button onclick="copyRegionNumber()" class="copy-icon-btn" title="Скопировать номер региона">
-                            📄
-                        </button>
-                    </div>
-                    <div class="item-content">
-                        {int(st_select_region[0:2])}
-                    </div>
-                </div>
-                
-                <div class="field-btn">
-                    <button onclick="handleFieldHereClick([${{coords[0]}}, ${{coords[1]}}])">
-                        ⚽ Здесь футбольное поле
-                    </button>
-                </div>
-            `;
-            
-            document.body.appendChild(infoDiv);
-            
-            setTimeout(() => {{
-                document.addEventListener('click', function closeOnOutsideClick(event) {{
-                    if (!infoDiv.contains(event.target)) {{
-                        infoDiv.remove();
-                        document.removeEventListener('click', closeOnOutsideClick);
+            // Если адрес не предоставлен, геокодируем координаты
+            if (!address) {{
+                ymaps.geocode(coords).then(function(res) {{
+                    const firstGeoObject = res.geoObjects.get(0);
+                    let fetchedAddress = 'Адрес не определен';
+                    
+                    if (firstGeoObject) {{
+                        fetchedAddress = firstGeoObject.getAddressLine();
                     }}
+                    
+                    lastClickAddress = fetchedAddress;
+                    lastClickCoords = coords;
+                    
+                    const infoDiv = document.createElement('div');
+                    infoDiv.className = 'address-info';
+                    infoDiv.innerHTML = `
+                        <div class="close-btn" onclick="this.parentElement.remove()">×</div>
+                        <div class="address-title">📍 Информация о местоположении</div>
+                        
+                        <div class="address-item">
+                            <div class="item-header">
+                                <div class="item-label">Адрес:</div>
+                                <button onclick="copyAddress()" class="copy-icon-btn" title="Скопировать адрес">
+                                    📄
+                                </button>
+                            </div>
+                            <div class="item-content">${{fetchedAddress}}</div>
+                        </div>
+                        
+                        <div class="address-item">
+                            <div class="item-header">
+                                <div class="item-label">Координаты:</div>
+                                <button onclick="copyCoords()" class="copy-icon-btn" title="Скопировать координаты">
+                                    📄
+                                </button>
+                            </div>
+                            <div class="item-content">
+                                ${{coords[0].toFixed(6)}}, ${{coords[1].toFixed(6)}}
+                            </div>
+                        </div>
+                        
+                        <div class="address-item">
+                            <div class="item-header">
+                                <div class="item-label">Номер региона:</div>
+                                <button onclick="copyRegionNumber()" class="copy-icon-btn" title="Скопировать номер региона">
+                                    📄
+                                </button>
+                            </div>
+                            <div class="item-content">
+                                {int(st_select_region[0:2])}
+                            </div>
+                        </div>
+                        
+                        <div class="field-btn">
+                            <button onclick="handleFieldHereClick([${{coords[0]}}, ${{coords[1]}}])">
+                                ⚽ Здесь футбольное поле
+                            </button>
+                        </div>
+                    `;
+                    
+                    document.body.appendChild(infoDiv);
+                    
+                    setTimeout(() => {{
+                        document.addEventListener('click', function closeOnOutsideClick(event) {{
+                            if (!infoDiv.contains(event.target)) {{
+                                infoDiv.remove();
+                                document.removeEventListener('click', closeOnOutsideClick);
+                            }}
+                        }});
+                    }}, 10);
                 }});
-            }}, 10);
+            }} else {{
+                lastClickAddress = address;
+                lastClickCoords = coords;
+                
+                const infoDiv = document.createElement('div');
+                infoDiv.className = 'address-info';
+                infoDiv.innerHTML = `
+                    <div class="close-btn" onclick="this.parentElement.remove()">×</div>
+                    <div class="address-title">📍 Информация о местоположении</div>
+                    
+                    <div class="address-item">
+                        <div class="item-header">
+                            <div class="item-label">Адрес:</div>
+                            <button onclick="copyAddress()" class="copy-icon-btn" title="Скопировать адрес">
+                                📄
+                            </button>
+                        </div>
+                        <div class="item-content">${{address}}</div>
+                    </div>
+                    
+                    <div class="address-item">
+                        <div class="item-header">
+                            <div class="item-label">Координаты:</div>
+                            <button onclick="copyCoords()" class="copy-icon-btn" title="Скопировать координаты">
+                                📄
+                            </button>
+                        </div>
+                        <div class="item-content">
+                            ${{coords[0].toFixed(6)}}, ${{coords[1].toFixed(6)}}
+                        </div>
+                    </div>
+                    
+                    <div class="address-item">
+                        <div class="item-header">
+                            <div class="item-label">Номер региона:</div>
+                            <button onclick="copyRegionNumber()" class="copy-icon-btn" title="Скопировать номер региона">
+                                📄
+                            </button>
+                        </div>
+                        <div class="item-content">
+                            {int(st_select_region[0:2])}
+                        </div>
+                    </div>
+                    
+                    <div class="field-btn">
+                        <button onclick="handleFieldHereClick([${{coords[0]}}, ${{coords[1]}}])">
+                            ⚽ Здесь футбольное поле
+                        </button>
+                    </div>
+                `;
+                
+                document.body.appendChild(infoDiv);
+                
+                setTimeout(() => {{
+                    document.addEventListener('click', function closeOnOutsideClick(event) {{
+                        if (!infoDiv.contains(event.target)) {{
+                            infoDiv.remove();
+                            document.removeEventListener('click', closeOnOutsideClick);
+                        }}
+                    }});
+                }}, 10);
+            }}
         }}
         
         ymaps.ready(init);
@@ -2189,7 +2387,7 @@ if st_select_region != 'Регионы':
         """
         
         # Показываем карту
-        st.components.v1.html(map_html, height=700, scrolling=False)
+        st.components.v1.html(map_html, height=1100, scrolling=False)
     
     # -------------------------------------------------------------------------------------------------------------
     st.sidebar.markdown("---")
