@@ -392,9 +392,9 @@ def process_data(all_items):
 # Функция для определения цвета точки
 def get_point_color(status_of_work, in_reestr):
     if str(status_of_work) == '1':
-        return '#EF4444', '🔴 Объект находится в стадии рассмотрения'
+        return '#EF4444', '🔴 Внесли изменения, в стадии рассмотрения'
     elif str(status_of_work) == '2':
-        return '#9444EF', '🟣 Добавили новое поле, на стадии рассмотрения'
+        return '#9444EF', '🟣 Добавили новое поле, в стадии рассмотрения'
     elif in_reestr == 1:
         return '#3B82F6', '🔵 Есть в РОИВ, но нет в ЦП'
     elif in_reestr == 2:
@@ -405,9 +405,9 @@ def get_point_color(status_of_work, in_reestr):
 # Функция для получения CSS класса цвета
 def get_color_class(status_of_work, in_reestr):
     if str(status_of_work) == '1':
-        return 'color-red', '🔴 Объект находится в стадии рассмотрения'
+        return 'color-red', '🔴 Внесли изменения, в стадии рассмотрения'
     elif str(status_of_work) == '2':
-        return 'color-purple', '🟣 Добавили новое поле, на стадии рассмотрения'
+        return 'color-purple', '🟣 Добавили новое поле, в стадии рассмотрения'
     elif in_reestr == 1:
         return 'color-blue', '🔵 Есть в РОИВ, но нет в ЦП'
     elif in_reestr == 2:
@@ -607,8 +607,8 @@ if st_select_region != 'Регионы':
     condition_reestr.append('🔵 Есть в РОИВ, но нет в ЦП')  # Синий
     condition_reestr.append('🟡 Есть только в ЦП')          # Желтый
     condition_reestr.append('🟢 Есть в РОИВ и в ЦП')       # Зеленый
-    condition_reestr.append('🟣 Добавили новое поле, на стадии рассмотрения')  # Фиолетовый
-    condition_reestr.append('🔴 Объект находится в стадии рассмотрения')       # Красный
+    condition_reestr.append('🟣 Добавили новое поле, в стадии рассмотрения')  # Фиолетовый
+    condition_reestr.append('🔴 Внесли изменения, в стадии рассмотрения')       # Красный
     
     conditional_size = []
 
@@ -673,9 +673,9 @@ if st_select_region != 'Регионы':
     # Применяем фильтры
     original_data = data.copy()  # Сохраняем исходные данные для статистики
 
-    if st_select_reestr == '🔴 Объект находится в стадии рассмотрения':
+    if st_select_reestr == '🔴 Внесли изменения, в стадии рассмотрения':
         data = data[data['Статус работы'] == '1']
-    elif st_select_reestr == '🟣 Добавили новое поле, на стадии рассмотрения':
+    elif st_select_reestr == '🟣 Добавили новое поле, в стадии рассмотрения':
         data = data[data['Статус работы'] == '2']
     elif st_select_reestr == '🔵 Есть в РОИВ, но нет в ЦП':
         data = data[(data['Наличие в реестрах'] == 1) & (data['Статус работы'] != '1') & (data['Статус работы'] != '2')]
@@ -721,7 +721,7 @@ if st_select_region != 'Регионы':
     search_container = st.container()
     
     with search_container:
-        # Используем key для управления состоянием поля поиска
+        # Используем key для управления состояния поля поиска
         search_query = st.text_input(
             "Поиск",
             value=st.session_state.get('search_query', ''),
@@ -945,6 +945,11 @@ if st_select_region != 'Регионы':
                     margin-bottom: 6px;
                     box-shadow: 0 1px 2px rgba(0,0,0,0.08);
                     border-left: 2px solid #3b82f6;
+                }}
+                
+                /* Стиль для карточек со статусом 2 */
+                .card-status-2 {{
+                    border-left: 2px solid #9444EF;
                 }}
                 
                 /* Строка 1: Полное название + Кнопка (кнопка сразу после названия) */
@@ -1314,7 +1319,7 @@ if st_select_region != 'Регионы':
                 function openForm(index, statusOfWork) {{
                     saveScrollPosition(); // Сохраняем позицию перед открытием формы
                     
-                    if (statusOfWork === '1') {{
+                    if (statusOfWork === '1' || statusOfWork === '2') {{
                         return false;
                     }}
                     
@@ -1337,10 +1342,57 @@ if st_select_region != 'Регионы':
                 }}
                 
                 function createObjectCard(obj, index) {{
+                    const statusOfWork = obj.sw || '0';
+                    
+                    // Для статуса 2 создаем упрощенную карточку
+                    if (statusOfWork === '2') {{
+                        const card = document.createElement('div');
+                        card.className = 'card card-status-2';
+                        
+                        let providedDataHTML = '';
+                        if (obj.pd) {{
+                            providedDataHTML = `
+                                <div class="provided-data-section-purple" style="margin-top: 8px;">
+                                    <div class="provided-data-title-purple">🟣 Добавили новое поле, в стадии рассмотрения</div>
+                                    <div class="provided-data-content">${{obj.pd}}</div>
+                                </div>
+                            `;
+                        }}
+                        
+                        // Для статуса 2: только адрес и цветовая метка
+                        card.innerHTML = `
+                            <!-- Строка 1: Только цветовая метка статуса -->
+                            <div class="row-2">
+                                <div class="color-label-compact">
+                                    <span>${{obj.cd}}</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Строка 2: Адрес -->
+                            <div class="row-2" style="margin-top: 4px;">
+                                <div class="info-item">
+                                    <span>📍</span>
+                                    <span>${{obj.ad}}</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Строка 3: Кнопка показа деталей (только предоставленные данные) -->
+                            <button onclick="toggleStatus2Details(${{index}})" class="toggle-details-btn">
+                                ${{detailsStates[index] ? '▲ Скрыть предоставленные данные' : '▼ Показать предоставленные данные'}}
+                            </button>
+                            
+                            <!-- Детали (только предоставленные данные) -->
+                            <div id="details-${{index}}" style="display: ${{detailsStates[index] ? 'block' : 'none'}};">
+                                ${{providedDataHTML}}
+                            </div>
+                        `;
+                        
+                        return card;
+                    }}
+                    
+                    // Для остальных статусов - обычная карточка
                     const card = document.createElement('div');
                     card.className = 'card';
-                    
-                    const statusOfWork = obj.sw || '0';
                     
                     if (buttonStates[index] === undefined) {{
                         buttonStates[index] = false;
@@ -1357,21 +1409,7 @@ if st_select_region != 'Регионы':
                         if (statusOfWork === '1') {{
                             providedDataHTML = `
                                 <div class="provided-data-section-red">
-                                    <div class="provided-data-title-red">🔴 Объект находится в стадии рассмотрения</div>
-                                    <div class="provided-data-content">${{obj.pd}}</div>
-                                </div>
-                            `;
-                        }} else if (statusOfWork === '2') {{
-                            providedDataHTML = `
-                                <div class="provided-data-section-purple">
-                                    <div class="provided-data-title-purple">🟣 Добавили новое поле, на стадии рассмотрения</div>
-                                    <div class="provided-data-content">${{obj.pd}}</div>
-                                </div>
-                            `;
-                        }} else {{
-                            providedDataHTML = `
-                                <div class="provided-data-section">
-                                    <div class="provided-data-title">📋 Предоставленные данные:</div>
+                                    <div class="provided-data-title-red">🔴 Внесли изменения, в стадии рассмотрения</div>
                                     <div class="provided-data-content">${{obj.pd}}</div>
                                 </div>
                             `;
@@ -1379,7 +1417,8 @@ if st_select_region != 'Регионы':
                     }}
                     
                     let formButtonHTML = '';
-                    if (statusOfWork !== '1') {{
+                    // Для статуса 1 и 2 не показываем кнопку
+                    if (statusOfWork !== '1' && statusOfWork !== '2') {{
                         let formBtnClass = 'form-btn-compact';
                         let formBtnText = '✅ Внести изменения';
                         let formBtnOnclick = `openForm(${{index}}, '${{statusOfWork}}')`;
@@ -1522,6 +1561,41 @@ if st_select_region != 'Регионы':
                     if (toggleButton && detailsElement) {{
                         // Обновляем текст кнопки
                         toggleButton.textContent = detailsStates[index] ? '▲ Скрыть детали' : '▼ Показать все детали';
+                        
+                        // Показываем/скрываем детали
+                        detailsElement.style.display = detailsStates[index] ? 'block' : 'none';
+                        
+                        // Плавно прокручиваем к карточке, если она раскрывается
+                        if (detailsStates[index]) {{
+                            setTimeout(() => {{
+                                toggleButton.scrollIntoView({{ behavior: 'smooth', block: 'nearest' }});
+                            }}, 10);
+                        }}
+                        
+                        // Восстанавливаем позицию скролла
+                        setTimeout(() => {{
+                            restoreScrollPosition();
+                        }}, 20);
+                    }}
+                }}
+                
+                function toggleStatus2Details(index) {{
+                    // Сохраняем текущую позицию скролла
+                    saveScrollPosition();
+                    
+                    // Меняем состояние
+                    detailsStates[index] = !detailsStates[index];
+                    
+                    // Сохраняем в sessionStorage
+                    sessionStorage.setItem(`card_${{index}}_expanded`, detailsStates[index]);
+                    
+                    // Обновляем только конкретную карточку (чтобы не терять скролл)
+                    const toggleButton = document.querySelector(`[onclick="toggleStatus2Details(${{index}})"]`);
+                    const detailsElement = document.getElementById('details-' + index);
+                    
+                    if (toggleButton && detailsElement) {{
+                        // Обновляем текст кнопки
+                        toggleButton.textContent = detailsStates[index] ? '▲ Скрыть предоставленные данные' : '▼ Показать предоставленные данные';
                         
                         // Показываем/скрываем детали
                         detailsElement.style.display = detailsStates[index] ? 'block' : 'none';
@@ -1964,8 +2038,8 @@ if st_select_region != 'Регионы':
             const pointData = POINTS_DATA[index];
             const statusOfWork = pointData.status_of_work || '0';
             
-            if (statusOfWork === '1') {{
-                alert('Объект находится в стадии рассмотрения. Внести изменения нельзя.');
+            if (statusOfWork === '1' || statusOfWork === '2') {{
+                alert('Внесли изменения, в стадии рассмотрения. Внести изменения нельзя.');
                 return false;
             }}
             
@@ -2006,7 +2080,7 @@ if st_select_region != 'Регионы':
                         </div>
                         
                         <div class="status-warning">
-                            <div class="status-warning-title">🟣 Добавили новое поле, на стадии рассмотрения</div>
+                            <div class="status-warning-title">🟣 Добавили новое поле, в стадии рассмотрения</div>
                             ${{providedDataHTML}}
                         </div>
                     </div>
@@ -2035,25 +2109,25 @@ if st_select_region != 'Регионы':
                          padding: 8px; border-radius: 3px; margin-bottom: 8px;">
                         <div style="color: ${{isChanged ? '#6B7280' : '#DC2626'}}; font-weight: bold; display: flex; align-items: center; gap: 4px;">
                             <span>${{isChanged ? '⚪' : '🔴'}}</span>
-                            <span>${{isChanged ? 'Нажали "Внести изменения", но не отправили анкету' : 'Объект находится в стадии рассмотрения'}}</span>
+                            <span>${{isChanged ? 'Нажали "Внести изменения", но не отправили анкету' : 'Внесли изменения, в стадии рассмотрения'}}</span>
                         </div>
                         ${{providedDataHTML}}
                     </div>
                 `;
             }}
             
-            const showConfirmButton = (statusOfWork !== '1');
+            const showConfirmButton = (statusOfWork !== '1' && statusOfWork !== '2');
             const confirmButtonSection = showConfirmButton ? `
                 <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #e5e7eb;">
                     <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
                         <button onclick="handleConfirmClick(${{pointData.index}})" 
-                                style="cursor: pointer; background: ${{statusOfWork === '1' ? '#9ca3af' : '#10b981'}}; 
+                                style="cursor: pointer; background: ${{statusOfWork === '1' || statusOfWork === '2' ? '#9ca3af' : '#10b981'}}; 
                                        border: none; padding: 6px 12px; border-radius: 3px; 
                                        color: white; font-weight: bold; font-size: 11px;
-                                       ${{statusOfWork === '1' ? 'cursor: not-allowed;' : ''}}"
-                                ${{statusOfWork === '1' ? 'disabled' : ''}}
-                                title="${{statusOfWork === '1' ? 'Объект на рассмотрении, изменения внести нельзя' : 'Внести изменения'}}">
-                            ${{statusOfWork === '1' ? '⏳ На рассмотрении' : '✅ Внести изменения'}}
+                                       ${{statusOfWork === '1' || statusOfWork === '2' ? 'cursor: not-allowed;' : ''}}"
+                                ${{statusOfWork === '1' || statusOfWork === '2' ? 'disabled' : ''}}
+                                title="${{statusOfWork === '1' || statusOfWork === '2' ? 'Объект на рассмотрении, изменения внести нельзя' : 'Внести изменения'}}">
+                            ${{statusOfWork === '1' || statusOfWork === '2' ? '⏳ На рассмотрении' : '✅ Внести изменения'}}
                         </button>
                     </div>
                 </div>
@@ -2399,8 +2473,8 @@ if st_select_region != 'Регионы':
     st.sidebar.write(f'🔵 Есть в РОИВ, но нет в ЦП - {original_data[original_data["Наличие в реестрах"] == 1].shape[0]}')  # Синий
     st.sidebar.write(f'🟡 Есть только в ЦП - {original_data[original_data["Наличие в реестрах"] == 2].shape[0]}')          # Желтый
     st.sidebar.write(f'🟢 Есть в РОИВ и в ЦП - {original_data[original_data["Наличие в реестрах"] == 3].shape[0]}')       # Зеленый
-    st.sidebar.write(f'''🟣 Добавили новое поле, на стадии рассмотрения - {original_data[original_data["Статус работы"] == '2'].shape[0]}''')  # Фиолетовый
-    st.sidebar.write(f'''🔴 Объект находится в стадии рассмотрения - {original_data[original_data["Статус работы"] == '1'].shape[0]}''')       # Красный
+    st.sidebar.write(f'''🟣 Добавили новое поле, в стадии рассмотрения - {original_data[original_data["Статус работы"] == '2'].shape[0]}''')  # Фиолетовый
+    st.sidebar.write(f'''🔴 Внесли изменения, в стадии рассмотрения - {original_data[original_data["Статус работы"] == '1'].shape[0]}''')       # Красный
     st.sidebar.write('⚪ Нажали "Внести изменения", но не отправили анкету')  # Серый
     st.sidebar.write('⚫ Нажали "Здесь поле", но не отправили анкету')        # Черный
 
