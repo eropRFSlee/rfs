@@ -415,6 +415,29 @@ def get_color_class(status_of_work, in_reestr):
     else:
         return 'color-green', '🟢 Есть в РОИВ и в ЦП'
 
+# Функция для безопасной конвертации данных в JSON для JavaScript
+def safe_json_for_js(data):
+    """
+    Безопасно конвертирует Python данные в JSON строку для вставки в JavaScript.
+    Решает проблему с эмодзи, кавычками и спецсимволами.
+    """
+    # Сначала получаем обычный JSON
+    json_str = json.dumps(data, ensure_ascii=False)
+    
+    # Экранируем символы, которые могут сломать JavaScript
+    # 1. Обратные слэши
+    json_str = json_str.replace('\\', '\\\\')
+    # 2. Кавычки (используем одинарные кавычки в JS, поэтому экранируем только их)
+    json_str = json_str.replace("'", "\\'")
+    # 3. Переносы строк внутри строковых значений
+    json_str = json_str.replace('\n', '\\n')
+    # 4. Возврат каретки
+    json_str = json_str.replace('\r', '\\r')
+    # 5. HTML-теги на всякий случай
+    json_str = json_str.replace('</script>', '<\\/script>')
+    
+    return json_str
+
 # Инициализация session_state
 if 'data_loaded' not in st.session_state:
     st.session_state.data_loaded = False
@@ -756,7 +779,8 @@ if st_select_region != 'Регионы':
             filtered_data_for_display['Тип Объекта '].astype(str).str.lower().str.contains(search_lower, na=False) |
             filtered_data_for_display['Тип покрытия'].astype(str).str.lower().str.contains(search_lower, na=False) |
             filtered_data_for_display['Год ввода в эксплуатацию/год капитального ремонта'].astype(str).str.lower().str.contains(search_lower, na=False) |
-            filtered_data_for_display['Дисциплина_2'].astype(str).str.lower().str.contains(search_lower, na=False)
+            filtered_data_for_display['Дисциплина_2'].astype(str).str.lower().str.contains(search_lower, na=False) |
+            filtered_data_for_display['id_egora'].astype(str).str.lower().str.contains(search_lower, na=False)
         )
         filtered_data_for_display = filtered_data_for_display[search_mask]
         
@@ -1232,7 +1256,7 @@ if st_select_region != 'Регионы':
             </div>
             
             <script>
-                const objectsData = {json.dumps(objects_data, ensure_ascii=False)};
+                const objectsData = JSON.parse('{safe_json_for_js(objects_data)}');
                 
                 let buttonStates = {{}};
                 let detailsStates = {{}};
@@ -1819,8 +1843,6 @@ if st_select_region != 'Регионы':
 
         # HTML карты
         zoom = 5
-        
-        
         map_unique_id = st.session_state.map_refresh_key
         map_html = f"""
 <!DOCTYPE html>
@@ -2025,7 +2047,7 @@ if st_select_region != 'Регионы':
 
     <script>
         // Передаём данные точек
-        const POINTS_DATA = {json.dumps(points_data, ensure_ascii=False)};
+        const POINTS_DATA = JSON.parse('{safe_json_for_js(points_data)}');
         
         // Глобальные переменные
         let map;
