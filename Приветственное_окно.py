@@ -132,6 +132,9 @@ def show_instructions():
         }
     </style>
     """, unsafe_allow_html=True)
+    st.title("Регистрация субъектов футбола")
+    st.write("Объекты футбольной инфраструктуры")
+    st.markdown("---")
     
     # Заголовок
     st.title("Быстрый старт")
@@ -437,6 +440,7 @@ def show_instructions():
 
 if __name__ == "__main__":
     show_instructions()
+
 
 
 
