@@ -136,9 +136,6 @@ def show_instructions():
     st.write("Объекты футбольной инфраструктуры")
     st.markdown("---")
     
-    # Заголовок
-    st.title("Быстрый старт")
-    st.markdown("---")
     
     # Раздел 1: Общая информация
     with st.container():
@@ -441,6 +438,7 @@ def show_instructions():
 
 if __name__ == "__main__":
     show_instructions()
+
 
 
 
