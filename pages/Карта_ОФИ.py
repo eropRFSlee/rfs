@@ -843,6 +843,26 @@ if st_select_region != 'Регионы':
                 except:
                     id_egora_value = str(row['id_egora']).strip()
             
+            # Подготавливаем РФС_ID с проверкой
+            rfs_id_value = '-'
+            if row['Наличие в реестрах'] == 1:
+                # Если Наличие в реестрах == 1, всегда "-"
+                rfs_id_value = '-'
+            elif pd.notna(row['РФС_ID']):
+                # Иначе обрабатываем как обычно
+                try:
+                    if isinstance(row['РФС_ID'], (int, float)):
+                        rfs_id_value = str(int(float(row['РФС_ID'])))
+                    else:
+                        rfs_id_value = str(row['РФС_ID']).strip()
+                        if '.' in rfs_id_value:
+                            try:
+                                rfs_id_value = str(int(float(rfs_id_value)))
+                            except:
+                                pass
+                except:
+                    rfs_id_value = str(row['РФС_ID']).strip()
+            
             # Определяем цвет точки
             status_of_work = row['Статус работы'] if pd.notna(row['Статус работы']) else '0'
             in_reestr = row['Наличие в реестрах'] if pd.notna(row['Наличие в реестрах']) else 0
@@ -929,10 +949,12 @@ if st_select_region != 'Регионы':
                 'yr': str(row['Год ввода в эксплуатацию/год капитального ремонта']) if pd.notna(row['Год ввода в эксплуатацию/год капитального ремонта']) else '-',
                 'sz': f"{length_val}×{width_val}" if length_val != '-' and width_val != '-' else '-',
                 'id': id_egora_value,
+                'rfs_id': rfs_id_value,
                 'cl': color_class,
                 'cd': color_description,
                 'sw': status_of_work,
-                'pd': provided_data
+                'pd': provided_data,
+                'in_reestr': in_reestr  # Добавляем информацию о наличии в реестрах
             }
             
             objects_data.append(full_info)
@@ -1169,6 +1191,18 @@ if st_select_region != 'Регионы':
                     word-break: break-word;
                 }}
                 
+                /* Ссылка РФС ID */
+                .rfs-id-link {{
+                    color: #3b82f6;
+                    text-decoration: none;
+                    font-weight: bold;
+                    cursor: pointer;
+                }}
+                
+                .rfs-id-link:hover {{
+                    text-decoration: underline;
+                }}
+                
                 /* Предоставленные данные */
                 .provided-data-section {{
                     background-color: #F0F9FF;
@@ -1299,6 +1333,13 @@ if st_select_region != 'Регионы':
                     }}, duration);
                 }}
                 
+                // Функция для открытия РФС ID ссылки
+                function openRfsIdLink(rfsId) {{
+                    if (rfsId && rfsId !== '-' && rfsId !== 'nan') {{
+                        window.open('https://platform.rfs.ru/infrastructure/' + rfsId, '_blank');
+                    }}
+                }}
+                
                 // Функция для копирования ID
                 function copyId(id, index) {{
                     saveScrollPosition(); // Сохраняем позицию перед копированием
@@ -1327,7 +1368,7 @@ if st_select_region != 'Регионы':
                         try {{
                             const successful = document.execCommand('copy');
                             if (successful) {{
-                                showNotification('✓ ID скопирован: ' + textToCopy);
+                                showNotification('ID скопирован: ' + textToCopy);
                             }} else {{
                                 showNotification('❌ Не удалось скопировать');
                             }}
@@ -1383,7 +1424,7 @@ if st_select_region != 'Регионы':
                             `;
                         }}
                         
-                        // Для статуса 2: только адрес и цветовая метка
+                        // Для статуса 2: только адрес и цветовая метка статуса
                         card.innerHTML = `
                             <!-- Строка 1: Только цветовая метка статуса -->
                             <div class="row-2">
@@ -1463,9 +1504,23 @@ if st_select_region != 'Регионы':
                         `;
                     }}
                     
+                    // Создаем ссылку для РФС ID с проверкой наличия в реестрах
+                    let rfsIdHTML = '-';
+                    if (obj.in_reestr === 1) {{
+                        // Если Наличие в реестрах == 1, показываем просто "-" без ссылки
+                        rfsIdHTML = '-';
+                    }} else if (obj.rfs_id && obj.rfs_id !== '-' && obj.rfs_id !== 'nan') {{
+                        // Иначе показываем ссылку
+                        rfsIdHTML = `<a href="https://platform.rfs.ru/infrastructure/${{obj.rfs_id}}" target="_blank" class="rfs-id-link">${{obj.rfs_id}}</a>`;
+                    }}
+                    
                     const detailsHTML = `
                         <div class="details-section">
                             <div class="details-grid">
+                                <div class="details-item">
+                                    <span class="details-label">РФС ID:</span>
+                                    <span class="details-value">${{rfsIdHTML}}</span>
+                                </div>
                                 <div class="details-item">
                                     <span class="details-label">📞 Контакт:</span>
                                     <span class="details-value">${{obj.ct}}</span>
@@ -1792,6 +1847,26 @@ if st_select_region != 'Регионы':
             
             current_id_egora = str(int(float(id_egora.iloc[i]))) if pd.notna(id_egora.iloc[i]) and str(id_egora.iloc[i]).replace('.0', '') != 'nan' else ""
             
+            # Подготавливаем РФС_ID с проверкой
+            current_rfs_id = '-'
+            if in_reestr[i] == 1:
+                # Если Наличие в реестрах == 1, всегда "-"
+                current_rfs_id = '-'
+            elif pd.notna(rfs_id.iloc[i]):
+                # Иначе обрабатываем как обычно
+                try:
+                    if isinstance(rfs_id.iloc[i], (int, float)):
+                        current_rfs_id = str(int(float(rfs_id.iloc[i])))
+                    else:
+                        current_rfs_id = str(rfs_id.iloc[i]).strip()
+                        if '.' in current_rfs_id:
+                            try:
+                                current_rfs_id = str(int(float(current_rfs_id)))
+                            except:
+                                pass
+                except:
+                    current_rfs_id = str(rfs_id.iloc[i]).strip()
+            
             # Преобразуем размеры в целые числа
             length_val = str(length.iloc[i]) if pd.notna(length.iloc[i]) else '-'
             width_val = str(width.iloc[i]) if pd.notna(width.iloc[i]) else '-'
@@ -1810,6 +1885,8 @@ if st_select_region != 'Регионы':
                 'color': icon_color,
                 'index': i,
                 'id_egora': current_id_egora,
+                'rfs_id': current_rfs_id,
+                'in_reestr': in_reestr[i],  # Добавляем информацию о наличии в реестрах
                 'status_of_work': str(status_of_work.iloc[i]) if pd.notna(status_of_work.iloc[i]) else "0",
                 'address': str(adres.iloc[i]).replace('"', '').replace('nan','-') if pd.notna(adres.iloc[i]) else '-',
                 'full_name': str(full_name.iloc[i]).replace('"', '').replace('nan','-') if pd.notna(full_name.iloc[i]) else '-',
@@ -2039,6 +2116,15 @@ if st_select_region != 'Регионы':
         .form-button-disabled:hover {{
             background-color: #9ca3af !important;
         }}
+        .rfs-id-link {{
+            color: #3b82f6;
+            text-decoration: none;
+            font-weight: bold;
+            cursor: pointer;
+        }}
+        .rfs-id-link:hover {{
+            text-decoration: underline;
+        }}
     </style>
 </head>
 <body>
@@ -2080,6 +2166,16 @@ if st_select_region != 'Регионы':
         function getBalloonContent(pointData, isChanged = false) {{
             const statusOfWork = pointData.status_of_work || '0';
             const providedData = pointData.provided_data || '';
+            
+            // Создаем ссылку для РФС ID с проверкой наличия в реестрах
+            let rfsIdHTML = '-';
+            if (pointData.in_reestr === 1) {{
+                // Если Наличие в реестрах == 1, показываем просто "-" без ссылки
+                rfsIdHTML = '-';
+            }} else if (pointData.rfs_id && pointData.rfs_id !== '-' && pointData.rfs_id !== 'nan') {{
+                // Иначе показываем ссылку
+                rfsIdHTML = `<a href="https://platform.rfs.ru/infrastructure/${{pointData.rfs_id}}" target="_blank" class="rfs-id-link">${{pointData.rfs_id}}</a>`;
+            }}
             
             if (statusOfWork === '2') {{
                 let providedDataHTML = '';
@@ -2173,11 +2269,15 @@ if st_select_region != 'Регионы':
                         <div><strong>👥 Пользователь:</strong><br><span>${{pointData.user}}</span></div>
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 6px; padding-top: 6px; border-top: 1px solid #e5e7eb;">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <div><strong>🌐 РФС ID:</strong><br><span>${{pointData.id_egora}}</span></div>
-                            <button onclick="copyRfsId('${{pointData.id_egora}}')" class="copy-icon-btn" title="Скопировать РФС ID">
-                                📄
-                            </button>
+                        <div><strong>🌐 РФС ID:</strong><br><span>${{rfsIdHTML}}</span></div>
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 4px;">
+                                <strong>🌐 ID объекта:</strong>
+                                <button onclick="copyEgoraId('${{pointData.id_egora}}')" class="copy-icon-btn" title="Скопировать ID объекта" style="font-size: 12px; background: none; border: none; padding: 0; cursor: pointer; color: #666;">
+                                    📄
+                                </button>
+                            </div>
+                            <span>${{pointData.id_egora}}</span>
                         </div>
                         <div><strong>Тип:</strong><br><span>${{pointData.type}}</span></div>
                         <div><strong>Дисциплина:</strong><br><span>${{pointData.discipline}}</span></div>
@@ -2263,9 +2363,10 @@ if st_select_region != 'Регионы':
             copyToClipboard("{int(st_select_region[0:2])}");
         }}
         
-        function copyRfsId(rfsId) {{
-            if (rfsId) {{
-                copyToClipboard(rfsId);
+        function copyEgoraId(egoraId) {{
+            if (egoraId && egoraId !== '-' && egoraId !== 'nan') {{
+                copyToClipboard(egoraId);
+                showSuccessNotification();
             }}
         }}
         
@@ -2433,10 +2534,12 @@ if st_select_region != 'Регионы':
                             balloonMaxWidth: 480,
                             balloonMinWidth: 420,
                             id_egora: point.id_egora,
+                            rfs_id: point.rfs_id,
                             index: point.index,
                             originalIconColor: point.color,
                             needsChanges: false,
-                            status_of_work: point.status_of_work
+                            status_of_work: point.status_of_work,
+                            in_reestr: point.in_reestr
                         }},
                         {{
                             preset: 'islands#circleDotIcon',
