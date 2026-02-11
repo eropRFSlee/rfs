@@ -804,7 +804,6 @@ if st_select_region != 'Регионы':
             
             # Создаем селектор для выбора страницы
             page_options = [f"Страница {i+1}" for i in range(total_pages)]
-            st.write('Выбор страницы')
             selected_page = st.selectbox(
                 "",
                 page_options,
@@ -2613,3 +2612,4 @@ if st_select_region != 'Регионы':
     st.sidebar.write(f'Доска (паркет): {original_data[original_data["Тип покрытия"] == "Доска (паркет)"].shape[0]}')
     st.sidebar.write(f'Иное: {original_data[original_data["Тип покрытия"] == "Иное"].shape[0]}')
     st.sidebar.write(f'Нет информации: {original_data[original_data["Тип покрытия"] == "Нет информации"].shape[0]}')
+
