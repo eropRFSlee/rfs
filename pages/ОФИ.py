@@ -20,17 +20,16 @@ READ_TIMEOUT = 60
 
 st.set_page_config(
     page_title="Реестр ОФИ", 
-    layout="wide",
-    initial_sidebar_state="expanded"
+    layout="wide"
 )
 
 st.markdown("""
 <style>
-    /* ТОЛЬКО ОСНОВНЫЕ СТИЛИ, БЕЗ ИГР СО СКРОЛЛАМИ */
     .stApp {
         background-color: #204171;
     }
     
+    /* Сайдбар - белый фон, черный текст */
     section[data-testid="stSidebar"] {
         background-color: white !important;
     }
@@ -40,43 +39,222 @@ st.markdown("""
         color: black !important;
     }
     
+    header {
+        background-color: #204171 !important;
+    }
+    
+    /* ГЛАВНОЕ ОКНО - ЗОЛОТОЙ ТЕКСТ */
     .main .block-container {
         background-color: #2a4a80;
-        color: #FFD700 !important;
+        color: #FFD700 !important; /* Золотой цвет */
         border-radius: 10px;
         padding: 2rem;
         margin-top: 1rem;
     }
     
-    /* ВСЕ ВАШИ ОСТАЛЬНЫЕ СТИЛИ ОФОРМЛЕНИЯ */
-    /* ... (сохраните все свои стили для цветов, кнопок, комбобоксов и т.д.) ... */
-    
-    /* ===== СТИЛИ ТОЛЬКО ДЛЯ ШАПКИ ===== */
-    header[data-testid="stHeader"] {
-        background-color: #2a4a80 !important;
-        border-bottom: none !important;
-    }
-    
-    header[data-testid="stHeader"] * {
+    /* ВСЕ элементы в основном окне - золотой цвет */
+    .main .block-container *:not([data-baseweb="select"] *):not([role="listbox"] *):not([role="option"] *) {
         color: #FFD700 !important;
     }
     
-    header button {
+    /* Исключения для некоторых элементов */
+    .main .block-container h1,
+    .main .block-container h2,
+    .main .block-container h3,
+    .main .block-container h4,
+    .main .block-container h5,
+    .main .block-container h6,
+    .main .block-container p,
+    .main .block-container span,
+    .main .block-container div:not([data-baseweb="select"]):not([role="listbox"]):not([role="option"]),
+    .main .block-container label {
         color: #FFD700 !important;
     }
     
-    header button svg {
-        fill: #FFD700 !important;
+    /* ★★★ ВСЕ КОМБОБОКСЫ - БЕЛЫЙ фон, черный текст ★★★ */
+    /* Фон самого комбобокса */
+    [data-baseweb="select"] {
+        background-color: white !important;
+    }
+    
+    /* Внутренняя часть комбобокса */
+    [data-baseweb="select"] > div {
+        background-color: white !important;
+    }
+    
+    /* Кнопка комбобокса */
+    [data-baseweb="select"] [role="button"] {
+        background-color: white !important;
+    }
+    
+    /* ★★★ Текст в комбобоксах - ЧЁРНЫЙ ★★★ */
+    [data-baseweb="select"] * {
+        color: black !important;
+    }
+    
+    /* Выбранное значение */
+    [data-baseweb="select"] [aria-selected="true"] {
+        color: black !important;
+    }
+    
+    /* Выпадающий список */
+    [role="listbox"] {
+        background-color: white !important;
+    }
+    
+    [role="option"] {
+        color: black !important;
+        background-color: white !important;
+    }
+    
+    [role="option"]:hover {
+        background-color: #f0f0f0 !important;
+        color: black !important;
+    }
+    
+    /* Текст в комбобоксах в основном блоке - черный */
+    .main .block-container [data-baseweb="select"] * {
+        color: black !important;
+    }
+    
+    /* Текст в input полях поиска */
+    .stTextInput input {
+        color: #000000 !important;
+        background-color: white !important;
+    }
+    
+    .stTextInput label {
         color: #FFD700 !important;
     }
     
-    /* Убираем возможные разделители */
-    .st-emotion-cache-1dp5vir {
-        display: none !important;
+    /* Кнопки в основном окне */
+    .stButton button {
+        color: #FFD700 !important;
+        border-color: #FFD700 !important;
     }
     
-    .st-emotion-cache-12fmjuu {
-        border-bottom: none !important;
+    .stButton button:hover {
+        background-color: rgba(255, 215, 0, 0.1) !important;
+    }
+    
+    /* ★★★ ВСЕ ИНФОРМАЦИОННЫЕ СООБЩЕНИЯ В ОСНОВНОМ ОКНЕ - ЗОЛОТОЙ ★★★ */
+    /* Сообщение "Загрузка данных..." и другие текстовые элементы */
+    .stSpinner + div,
+    .stSpinner > div > div,
+    .stAlert,
+    .stInfo,
+    .stWarning,
+    .stSuccess,
+    .stError,
+    .element-container .stMarkdown p,
+    .element-container .stMarkdown span,
+    .element-container .stMarkdown div {
+        color: #FFD700 !important;
+    }
+    
+    /* Специально для информационных сообщений */
+    div[data-testid="stToast"],
+    div[data-testid="stNotification"],
+    .st-emotion-cache-1q7spjk {
+        color: #FFD700 !important;
+    }
+    
+    /* Текст внутри информационных блоков */
+    .stAlert *,
+    .stInfo *,
+    .stWarning *,
+    .stSuccess *,
+    .stError * {
+        color: #FFD700 !important;
+    }
+    
+    /* Границы информационных сообщений */
+    .stInfo,
+    .stWarning,
+    .stSuccess,
+    .stError {
+        border-color: #FFD700 !important;
+    }
+    
+    /* Стили для карточек объектов */
+    .card {
+        background-color: rgba(255, 255, 255, 0.9);
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 15px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        color: #000000 !important;
+    }
+    
+    .card * {
+        color: #000000 !important;
+    }
+    
+    /* Стили для цветового индикатора */
+    .color-indicator {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        margin-right: 8px;
+        vertical-align: middle;
+    }
+    
+    .color-label {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: bold;
+        color: #000000 !important;
+    }
+    
+    .color-blue {
+        background-color: #3B82F6;
+    }
+    
+    .color-yellow {
+        background-color: #FFA500;
+    }
+    
+    .color-green {
+        background-color: #10B981;
+    }
+    
+    .color-purple {
+        background-color: #9444EF;
+    }
+    
+    .color-red {
+        background-color: #EF4444;
+    }
+    
+    /* Стили для спиннера */
+    .stSpinner > div {
+        border-color: #FFD700 transparent transparent transparent !important;
+    }
+    
+    /* Текст статуса загрузки */
+    .stSpinner + div {
+        color: #FFD700 !important;
+    }
+    
+    /* Заголовки в сайдбаре */
+    .sidebar-content h1,
+    .sidebar-content h2,
+    .sidebar-content h3,
+    .sidebar-content h4,
+    .sidebar-content h5,
+    .sidebar-content h6 {
+        color: black !important;
+    }
+    
+    /* Параграфы и текст в сайдбаре */
+    .sidebar-content p,
+    .sidebar-content span,
+    .sidebar-content div {
+        color: black !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -115,26 +293,31 @@ def send_request_with_retry(url, params, max_retries=MAX_RETRIES):
 # Функция для загрузки данных из Битрикса (ТОЛЬКО РЕГИОН 24)
 def load_bitrix_data(REGION_NUMBER):
     all_items = []
-    start = 0
+    start = 0  # Начинаем с первого элемента
 
     while True:
+        # Если REGION_NUMBER = 0, загружаем все данные без фильтра
         if REGION_NUMBER == 0:
             params = {
                 'entityTypeId': ENTITY_TYPE_ID,
                 'start': start
+                # НЕТ ФИЛЬТРА ПО РЕГИОНУ
             }
         else:
+            # Иначе добавляем фильтр по региону
             params = {
                 'entityTypeId': ENTITY_TYPE_ID,
                 'start': start,
-                f'filter[ufCrm6_1767014564]': REGION_NUMBER
+                f'filter[ufCrm6_1767014564]': REGION_NUMBER  # Фильтр по номеру региона
             }
         
+        # Используем функцию с повторными попытками
         response, attempt_used = send_request_with_retry(
             f'{WEBHOOK}crm.item.list', 
             params
         )
         
+        # Если все попытки неудачны
         if response is None:
             print(f"  ❌ Не удалось получить данные после {MAX_RETRIES} попыток")
             break
@@ -143,20 +326,26 @@ def load_bitrix_data(REGION_NUMBER):
             data = response.json()
         except Exception as e:
             print(f"  ❌ Ошибка при разборе JSON: {e}")
+            # Если это была последняя страница, выходим
             if attempt_used < MAX_RETRIES:
+                # Пробуем еще раз с теми же параметрами
                 continue
             else:
                 break
         
+        # Проверяем, есть ли результат в ответе
         if 'result' in data and 'items' in data['result']:
             batch = data['result']['items']
-            all_items.extend(batch)
+            all_items.extend(batch)  # Добавляем пачку в общий список
             
+            # Условие выхода: если в пачке меньше 50, это последняя страница
             if len(batch) < 50:
                 break
             
+            # Увеличиваем start на количество полученных элементов для следующей страницы
             start += len(batch)
         else:
+            # Если нет результатов или ошибка в ответе
             print(f"  ⚠️ Некорректный ответ от API: {data.get('error', 'No error message')}")
             break
     
@@ -228,12 +417,25 @@ def get_color_class(status_of_work, in_reestr):
 
 # Функция для безопасной конвертации данных в JSON для JavaScript
 def safe_json_for_js(data):
+    """
+    Безопасно конвертирует Python данные в JSON строку для вставки в JavaScript.
+    Решает проблему с эмодзи, кавычками и спецсимволами.
+    """
+    # Сначала получаем обычный JSON с заменой NaN на null
     json_str = json.dumps(data, ensure_ascii=False, default=lambda x: None if pd.isna(x) else x)
+    
+    # Экранируем символы, которые могут сломать JavaScript
+    # 1. Обратные слэши
     json_str = json_str.replace('\\', '\\\\')
+    # 2. Кавычки (используем одинарные кавычки в JS, поэтому экранируем только их)
     json_str = json_str.replace("'", "\\'")
+    # 3. Переносы строк внутри строковых значений
     json_str = json_str.replace('\n', '\\n')
+    # 4. Возврат каретки
     json_str = json_str.replace('\r', '\\r')
+    # 5. HTML-теги на всякий случай
     json_str = json_str.replace('</script>', '<\\/script>')
+    
     return json_str
 
 # Инициализация session_state
@@ -244,16 +446,17 @@ if 'data_loaded' not in st.session_state:
     st.session_state.current_region = None
     st.session_state.last_region = None
     st.session_state.force_reload = False
-    st.session_state.widget_reset_key = 0
-    st.session_state.map_refresh_key = str(uuid.uuid4())
-    st.session_state.map_refresh_counter = 0
-    st.session_state.last_data_update = None
-    st.session_state.view_mode = 'map'
-    st.session_state.copied_id = None
-    st.session_state.search_query = ''
-    st.session_state.search_triggered = False
+    st.session_state.widget_reset_key = 0  # Ключ для сброса виджетов
+    st.session_state.map_refresh_key = str(uuid.uuid4())  # Уникальный ключ для карты
+    st.session_state.map_refresh_counter = 0  # Счетчик обновлений карты
+    st.session_state.last_data_update = None  # Время последнего обновления данных
+    st.session_state.view_mode = 'map'  # Режим просмотра: 'map' или 'list'
+    st.session_state.copied_id = None  # Для отслеживания скопированного ID
+    st.session_state.search_query = ''  # Поисковый запрос
+    st.session_state.search_triggered = False  # Флаг для отслеживания нажатия Enter
 
 # Создаем одну кнопку обновления в сайдбаре ДО выбора региона
+
 st_select_region = st.sidebar.selectbox("Выберите свой регион", ['Регионы',\
     '01 Республика Адыгея',
     '02 Республика Башкортостан',
@@ -348,11 +551,16 @@ if st_select_region != 'Регионы':
     else:
         current_region_number = int(st_select_region[0:2])
     
+    # Переносим кнопку "Обновить карту и данные" в сайдбар
+
     if st.sidebar.button("🔄 Обновить данные", key="refresh_all_btn"):
+        # 1. Загружаем новые данные из Битрикса
         st.session_state.force_reload = True
+        # 2. Обновляем карту (черные/серые точки исчезнут)
         st.session_state.map_refresh_key = str(uuid.uuid4())
         st.session_state.map_refresh_counter += 1
-        st.session_state.last_data_update = time.time()
+        st.session_state.last_data_update = time.time()  # Запоминаем время обновления
+        # 3. Используем JavaScript для обновления страницы
         st.markdown("""
         <script>
             window.location.reload();
@@ -360,7 +568,7 @@ if st_select_region != 'Регионы':
         """, unsafe_allow_html=True)
     
     # -------------------------------------------------------------------------------------------------------------
-    # КНОПКИ ВЫБОРА РЕЖИМА В САЙДБАР
+    # ПЕРЕМЕЩАЕМ КНОПКИ ВЫБОРА РЕЖИМА В САЙДБАР ПОСЛЕ ВЫБОРА РЕГИОНА
     st.sidebar.markdown("---")
     st.sidebar.write("**Режим просмотра:**")
     col1, col2 = st.sidebar.columns(2)
@@ -375,7 +583,7 @@ if st_select_region != 'Регионы':
             st.session_state.view_mode = 'list'
             st.rerun()  
     
-    # Загружаем данные если они еще не загружены
+    # Загружаем данные если они еще не загружены, изменился регион или принудительное обновление
     if (not st.session_state.data_loaded or 
         st.session_state.current_region != current_region_number or 
         st.session_state.clear_data is None or
@@ -388,6 +596,8 @@ if st_select_region != 'Регионы':
             st.session_state.current_region = current_region_number
             st.session_state.last_region = current_region_number
             st.session_state.force_reload = False
+    
+
     
     # Используем данные из session_state
     clear_data = st.session_state.clear_data
@@ -417,16 +627,16 @@ if st_select_region != 'Регионы':
 
     condition_reestr = []
     condition_reestr.append('Все')
-    condition_reestr.append('🔵 Есть в РОИВ, но нет в ЦП')
-    condition_reestr.append('🟡 Есть только в ЦП')
-    condition_reestr.append('🟢 Есть в РОИВ и в ЦП')
-    condition_reestr.append('🟣 Добавили новое поле, в стадии рассмотрения')
-    condition_reestr.append('🔴 Внесли изменения, в стадии рассмотрения')
+    condition_reestr.append('🔵 Есть в РОИВ, но нет в ЦП')  # Синий
+    condition_reestr.append('🟡 Есть только в ЦП')          # Желтый
+    condition_reestr.append('🟢 Есть в РОИВ и в ЦП')       # Зеленый
+    condition_reestr.append('🟣 Добавили новое поле, в стадии рассмотрения')  # Фиолетовый
+    condition_reestr.append('🔴 Внесли изменения, в стадии рассмотрения')       # Красный
     
     conditional_size = []
 
     for x in sorted(data['Дисциплина_2'].unique()):
-        if x != '-':
+        if x != '-':  # Убираем '-'
             conditional_size.append(x)
     under_list_size = ['Все']
 
@@ -444,6 +654,8 @@ if st_select_region != 'Регионы':
         lst_to_combo.append('Зал')
 
     # -------------------------------------------------------------------------------------------------------------
+
+    # Добавляем список для фильтра по типу покрытия (в раздел с другими фильтрами)
     conditional_dop = ['Все']
     conditional_dop.append('Наличие табло')
     conditional_dop.append('Наличие дренажа')
@@ -457,6 +669,8 @@ if st_select_region != 'Регионы':
     conditional_dop.append('Нет информации') 
 
     # -------------------------------------------------------------------------------------------------------------
+
+    # Создаем ключи для виджетов, зависящие от региона и ключа сброса
     st_select_desciplyne = st.sidebar.selectbox(
         "Выбор дисциплины", 
         lst_to_combo,
@@ -464,6 +678,7 @@ if st_select_region != 'Регионы':
     )
     st.sidebar.markdown("---")
 
+    # ДОБАВЛЯЕМ НОВЫЙ ФИЛЬТР ПО ТИПУ ПОКРЫТИЯ
     st_select_covering = st.sidebar.selectbox(
         "Фильтр по типу покрытия/особенностям",
         conditional_dop,
@@ -477,8 +692,9 @@ if st_select_region != 'Регионы':
     )
 
     # -------------------------------------------------------------------------------------------------------------
+
     # Применяем фильтры
-    original_data = data.copy()
+    original_data = data.copy()  # Сохраняем исходные данные для статистики
 
     if st_select_reestr == '🔴 Внесли изменения, в стадии рассмотрения':
         data = data[data['Статус работы'] == '1']
@@ -499,6 +715,7 @@ if st_select_region != 'Регионы':
         else:
             data = data[data['Дисциплина_2'].isin(lst_to_combo[2].split(', '))]
 
+    # ДОБАВЛЯЕМ ПРИМЕНЕНИЕ ФИЛЬТРА ПО ТИПУ ПОКРЫТИЯ
     if st_select_covering == 'Натуральное':
         data = data[data['Тип покрытия'] == 'Натуральное']
     elif st_select_covering == 'Искусственная трава':
@@ -520,11 +737,14 @@ if st_select_region != 'Регионы':
     elif st_select_covering == 'Наличие подогрева':
         data = data[data['Наличие подогрева'] == 'Y']
 
-    # -------------------------------------------------------------------------------------------------------------
-    # ПОИСК
+     # -------------------------------------------------------------------------------------------------------------
+    
+    # ДОБАВЛЕН ПОИСК ПО КЛЮЧЕВЫМ СЛОВАМ С ИСПРАВЛЕННОЙ ЛОГИКОЙ
+    # Создаем контейнер для поиска
     search_container = st.container()
     
     with search_container:
+        # Используем key для управления состояния поля поиска
         search_query = st.text_input(
             "Поиск",
             value=st.session_state.get('search_query', ''),
@@ -533,15 +753,22 @@ if st_select_region != 'Регионы':
             key="search_input_field"
         )
     
+    # Обработка нажатия Enter и очистки поля
+    # Если поле поиска пустое, очищаем session_state.search_query
     if search_query == "" and st.session_state.search_query != "":
         st.session_state.search_query = ""
+        # Используем rerun для немедленного обновления
         st.rerun()
+    
+    # Если в поле есть текст, сохраняем его в session_state
     elif search_query != "" and search_query != st.session_state.search_query:
         st.session_state.search_query = search_query
     
+    # Применяем поисковый фильтр ко всем данным (и для карты, и для списка)
     filtered_data_for_display = data.copy()
     if st.session_state.search_query:
         search_lower = st.session_state.search_query.lower()
+        # Экранируем специальные символы регулярных выражений
         import re
         search_pattern = re.escape(search_lower)
         
@@ -561,20 +788,56 @@ if st_select_region != 'Регионы':
         )
         filtered_data_for_display = filtered_data_for_display[search_mask]
         
+        # Показываем количество найденных объектов
         st.markdown(f'<p style="color: #FFD700;">Найдено объектов по запросу "{st.session_state.search_query}": {len(filtered_data_for_display)}</p>', unsafe_allow_html=True)
     
-    # -------------------------------------------------------------------------------------------------------------
-    # РЕЖИМ ПРОСМОТРА
+    # Проверяем режим просмотра
     if st.session_state.view_mode == 'list':
-        # РЕЖИМ СПИСКА - ОДИН СКРОЛЛ, БЕЗ ВНУТРЕННЕГО СКРОЛЛА
-        st.session_state.all_filtered_data = filtered_data_for_display.copy()
-        page_data = filtered_data_for_display
         
+        # Сохраняем все данные для поиска
+        st.session_state.all_filtered_data = filtered_data_for_display.copy()
+        
+        # Пагинация
+        items_per_page = 50
+        total_items = len(filtered_data_for_display)
+        
+        # Если данных больше, чем на одну страницу, показываем пагинацию
+        if total_items > items_per_page:
+            # Определяем количество страниц
+            total_pages = (total_items + items_per_page - 1) // items_per_page
+            
+            # Создаем селектор для выбора страницы
+            page_options = [f"Страница {i+1}" for i in range(total_pages)]
+            selected_page = st.selectbox(
+                "",
+                page_options,
+                key=f"page_selector_{current_region_number}"
+            )
+            
+            # Определяем выбранный номер страницы
+            page_number = page_options.index(selected_page)
+            
+            # Вычисляем индексы для текущей страницы
+            start_idx = page_number * items_per_page
+            end_idx = min((page_number + 1) * items_per_page, total_items)
+            
+            # Получаем данные для текущей страницы
+            page_data = filtered_data_for_display.iloc[start_idx:end_idx]
+            
+        else:
+            # Если все помещается на одну страницу
+            page_data = filtered_data_for_display
+            total_pages = 1
+            page_number = 0
+        
+        # Подготавливаем данные для JavaScript из page_data
         objects_data = []
         for index, row in page_data.iterrows():
+            # Подготавливаем id_egora
             id_egora_value = '-'
             if pd.notna(row['id_egora']):
                 try:
+                    # Пробуем преобразовать в int
                     if isinstance(row['id_egora'], (int, float)):
                         id_egora_int = int(float(str(row['id_egora'])))
                         id_egora_value = str(id_egora_int)
@@ -583,10 +846,13 @@ if st_select_region != 'Регионы':
                 except:
                     id_egora_value = str(row['id_egora']).strip()
             
+            # Подготавливаем РФС_ID с проверкой
             rfs_id_value = '-'
             if row['Наличие в реестрах'] == 1:
+                # Если Наличие в реестрах == 1, всегда "-"
                 rfs_id_value = '-'
             elif pd.notna(row['РФС_ID']):
+                # Иначе обрабатываем как обычно
                 try:
                     if isinstance(row['РФС_ID'], (int, float)):
                         rfs_id_value = str(int(float(row['РФС_ID'])))
@@ -600,10 +866,12 @@ if st_select_region != 'Регионы':
                 except:
                     rfs_id_value = str(row['РФС_ID']).strip()
             
+            # Определяем цвет точки
             status_of_work = row['Статус работы'] if pd.notna(row['Статус работы']) else '0'
             in_reestr = row['Наличие в реестрах'] if pd.notna(row['Наличие в реестрах']) else 0
             color_class, color_description = get_color_class(status_of_work, in_reestr)
             
+            # Обработка информации для объектов со статусом работы '1' или '2'
             provided_data = ""
             info = row['То, что заполнили РОИВ'] if pd.notna(row['То, что заполнили РОИВ']) else ""
             
@@ -650,9 +918,11 @@ if st_select_region != 'Регионы':
                     if result_parts:
                         provided_data = '<br>'.join(result_parts)
             
+            # Подготавливаем все данные с целочисленными значениями размеров
             length_val = str(row['Длина футбольного поля']) if pd.notna(row['Длина футбольного поля']) else '-'
             width_val = str(row['Ширина футбольного поля']) if pd.notna(row['Ширина футбольного поля']) else '-'
             
+            # Пытаемся преобразовать к целым числам
             try:
                 if length_val != '-' and float(length_val).is_integer():
                     length_val = str(int(float(length_val)))
@@ -687,12 +957,12 @@ if st_select_region != 'Регионы':
                 'cd': color_description,
                 'sw': status_of_work,
                 'pd': provided_data,
-                'in_reestr': in_reestr
+                'in_reestr': in_reestr  # Добавляем информацию о наличии в реестрах
             }
             
             objects_data.append(full_info)
         
-        # HTML для списка - ИЗМЕНЕНО: убран внутренний скролл, убрана фиксированная высота
+        # HTML для компактных плашек с правильным расположением элементов
         objects_html = f"""
         <!DOCTYPE html>
         <html>
@@ -705,14 +975,16 @@ if st_select_region != 'Регионы':
                     padding: 0;
                     background-color: transparent;
                     width: 100%;
-                    overflow: visible;
+                    overflow-x: hidden;
                 }}
                 
                 .objects-container {{
                     width: 100%;
                     margin: 0 auto;
                     padding: 3px;
-                    overflow: visible; /* УБРАН ВНУТРЕННИЙ СКРОЛЛ */
+                    max-height: 850px;
+                    overflow-y: auto;
+                    scroll-behavior: smooth;
                 }}
                 
                 .card {{
@@ -724,10 +996,12 @@ if st_select_region != 'Регионы':
                     border-left: 2px solid #3b82f6;
                 }}
                 
+                /* Стиль для карточек со статусом 2 */
                 .card-status-2 {{
                     border-left: 2px solid #9444EF;
                 }}
                 
+                /* Строка 1: Полное название + Кнопка (кнопка сразу после названия) */
                 .row-1 {{
                     display: flex;
                     align-items: flex-start;
@@ -744,6 +1018,7 @@ if st_select_region != 'Регионы':
                     margin-bottom: 0;
                 }}
                 
+                /* Кнопка "Внести изменения" - сразу после названия */
                 .form-btn-compact {{
                     cursor: pointer;
                     background: #10b981;
@@ -772,6 +1047,7 @@ if st_select_region != 'Регионы':
                     cursor: not-allowed !important;
                 }}
                 
+                /* Строка 2: ID + Краткое + Адрес + Размер + Статус (все подряд) */
                 .row-2 {{
                     display: flex;
                     align-items: center;
@@ -782,6 +1058,7 @@ if st_select_region != 'Регионы':
                     color: #333;
                 }}
                 
+                /* ID с кнопкой копирования */
                 .id-container {{
                     display: flex;
                     align-items: center;
@@ -804,6 +1081,7 @@ if st_select_region != 'Регионы':
                     color: #2563eb;
                 }}
                 
+                /* Элементы второй строки - все подряд */
                 .info-item {{
                     display: flex;
                     align-items: center;
@@ -811,6 +1089,7 @@ if st_select_region != 'Регионы':
                     white-space: nowrap;
                 }}
                 
+                /* Цветовая метка статуса - просто элемент в строке */
                 .color-label-compact {{
                     display: inline-flex;
                     align-items: center;
@@ -836,6 +1115,7 @@ if st_select_region != 'Регионы':
                 .color-purple {{ background-color: #9444EF; }}
                 .color-red {{ background-color: #EF4444; }}
                 
+                /* Строка 3: Кнопка показа деталей */
                 .toggle-details-btn {{
                     background: none;
                     border: none;
@@ -851,6 +1131,7 @@ if st_select_region != 'Регионы':
                     text-decoration: underline;
                 }}
                 
+                /* Уведомление о копировании */
                 .notification {{
                     position: fixed;
                     top: 15px;
@@ -880,6 +1161,7 @@ if st_select_region != 'Регионы':
                     margin: 6px 0;
                 }}
                 
+                /* Секция деталей */
                 .details-section {{
                     background-color: #f8f9fa;
                     border: 1px solid #dee2e6;
@@ -912,6 +1194,7 @@ if st_select_region != 'Регионы':
                     word-break: break-word;
                 }}
                 
+                /* Ссылка РФС ID */
                 .rfs-id-link {{
                     color: #3b82f6;
                     text-decoration: none;
@@ -923,6 +1206,7 @@ if st_select_region != 'Регионы':
                     text-decoration: underline;
                 }}
                 
+                /* Предоставленные данные */
                 .provided-data-section {{
                     background-color: #F0F9FF;
                     border: 1px solid #93C5FD;
@@ -979,9 +1263,26 @@ if st_select_region != 'Регионы':
                     font-weight: bold;
                     color: #000000;
                 }}
+                
+                /* Пагинация информация */
+                .pagination-info {{
+                    background-color: #f0f9ff;
+                    border: 1px solid #bae6fd;
+                    border-radius: 4px;
+                    padding: 8px;
+                    margin: 10px 0;
+                    font-size: 10px;
+                    color: #0369a1;
+                    text-align: center;
+                }}
             </style>
         </head>
         <body>
+            <div class="pagination-info">
+                Показано объектов: {len(objects_data)} из {len(filtered_data_for_display)}
+                {f' (Страница {page_number + 1} из {total_pages})' if total_pages > 1 else ''}
+            </div>
+            
             <div class="objects-container" id="objects-container">
                 <!-- Объекты будут добавлены через JavaScript -->
             </div>
@@ -996,6 +1297,25 @@ if st_select_region != 'Регионы':
                 
                 let buttonStates = {{}};
                 let detailsStates = {{}};
+                let scrollPosition = 0;
+                
+                // Сохраняем позицию скролла
+                function saveScrollPosition() {{
+                    const container = document.getElementById('objects-container');
+                    if (container) {{
+                        scrollPosition = container.scrollTop;
+                    }}
+                }}
+                
+                // Восстанавливаем позицию скролла
+                function restoreScrollPosition() {{
+                    const container = document.getElementById('objects-container');
+                    if (container && scrollPosition > 0) {{
+                        setTimeout(() => {{
+                            container.scrollTop = scrollPosition;
+                        }}, 50);
+                    }}
+                }}
                 
                 function showNotification(message, duration = 1500) {{
                     const notification = document.getElementById('notification');
@@ -1016,13 +1336,17 @@ if st_select_region != 'Регионы':
                     }}, duration);
                 }}
                 
+                // Функция для открытия РФС ID ссылки
                 function openRfsIdLink(rfsId) {{
                     if (rfsId && rfsId !== '-' && rfsId !== 'nan') {{
                         window.open('https://platform.rfs.ru/infrastructure/' + rfsId, '_blank');
                     }}
                 }}
                 
+                // Функция для копирования ID
                 function copyId(id, index) {{
+                    saveScrollPosition(); // Сохраняем позицию перед копированием
+                    
                     if (navigator.clipboard && navigator.clipboard.writeText) {{
                         navigator.clipboard.writeText(id)
                             .then(() => {{
@@ -1061,6 +1385,8 @@ if st_select_region != 'Регионы':
                 }}
                 
                 function openForm(index, statusOfWork) {{
+                    saveScrollPosition(); // Сохраняем позицию перед открытием формы
+                    
                     if (statusOfWork === '1' || statusOfWork === '2') {{
                         return false;
                     }}
@@ -1086,6 +1412,7 @@ if st_select_region != 'Регионы':
                 function createObjectCard(obj, index) {{
                     const statusOfWork = obj.sw || '0';
                     
+                    // Для статуса 2 создаем упрощенную карточку
                     if (statusOfWork === '2') {{
                         const card = document.createElement('div');
                         card.className = 'card card-status-2';
@@ -1100,13 +1427,16 @@ if st_select_region != 'Регионы':
                             `;
                         }}
                         
+                        // Для статуса 2: только адрес и цветовая метка статуса
                         card.innerHTML = `
+                            <!-- Строка 1: Только цветовая метка статуса -->
                             <div class="row-2">
                                 <div class="color-label-compact">
                                     <span>${{obj.cd}}</span>
                                 </div>
                             </div>
                             
+                            <!-- Строка 2: Адрес -->
                             <div class="row-2" style="margin-top: 4px;">
                                 <div class="info-item">
                                     <span>📍</span>
@@ -1114,10 +1444,12 @@ if st_select_region != 'Регионы':
                                 </div>
                             </div>
                             
+                            <!-- Строка 3: Кнопка показа деталей (только предоставленные данные) -->
                             <button onclick="toggleStatus2Details(${{index}})" class="toggle-details-btn">
                                 ${{detailsStates[index] ? '▲ Скрыть предоставленные данные' : '▼ Показать предоставленные данные'}}
                             </button>
                             
+                            <!-- Детали (только предоставленные данные) -->
                             <div id="details-${{index}}" style="display: ${{detailsStates[index] ? 'block' : 'none'}};">
                                 ${{providedDataHTML}}
                             </div>
@@ -1126,6 +1458,7 @@ if st_select_region != 'Регионы':
                         return card;
                     }}
                     
+                    // Для остальных статусов - обычная карточка
                     const card = document.createElement('div');
                     card.className = 'card';
                     
@@ -1133,6 +1466,7 @@ if st_select_region != 'Регионы':
                         buttonStates[index] = false;
                     }}
                     
+                    // Восстанавливаем состояние из sessionStorage или инициализируем как false
                     if (detailsStates[index] === undefined) {{
                         const savedState = sessionStorage.getItem(`card_${{index}}_expanded`);
                         detailsStates[index] = savedState === 'true';
@@ -1151,6 +1485,7 @@ if st_select_region != 'Регионы':
                     }}
                     
                     let formButtonHTML = '';
+                    // Для статуса 1 и 2 не показываем кнопку
                     if (statusOfWork !== '1' && statusOfWork !== '2') {{
                         let formBtnClass = 'form-btn-compact';
                         let formBtnText = '✅ Внести изменения';
@@ -1172,10 +1507,13 @@ if st_select_region != 'Регионы':
                         `;
                     }}
                     
+                    // Создаем ссылку для РФС ID с проверкой наличия в реестрах
                     let rfsIdHTML = '-';
                     if (obj.in_reestr === 1) {{
+                        // Если Наличие в реестрах == 1, показываем просто "-" без ссылки
                         rfsIdHTML = '-';
                     }} else if (obj.rfs_id && obj.rfs_id !== '-' && obj.rfs_id !== 'nan') {{
+                        // Иначе показываем ссылку
                         rfsIdHTML = `<a href="https://platform.rfs.ru/infrastructure/${{obj.rfs_id}}" target="_blank" class="rfs-id-link">${{obj.rfs_id}}</a>`;
                     }}
                     
@@ -1242,12 +1580,15 @@ if st_select_region != 'Регионы':
                         </div>
                     `;
                     
+                    // КОМПАКТНЫЙ ФОРМАТ: 3 строки, все элементы подряд
                     card.innerHTML = `
+                        <!-- Строка 1: Полное название + Кнопка (сразу после названия) -->
                         <div class="row-1">
                             <div class="full-name">${{obj.fn}}</div>
                             ${{formButtonHTML}}
                         </div>
                         
+                        <!-- Строка 2: ID + Краткое + Адрес + Размер + Статус (все подряд) -->
                         <div class="row-2">
                             <div class="id-container">
                                 <span>ID: ${{obj.id}}</span>
@@ -1270,10 +1611,12 @@ if st_select_region != 'Регионы':
                             </div>
                         </div>
                         
+                        <!-- Строка 3: Кнопка показа деталей -->
                         <button onclick="toggleDetails(${{index}})" class="toggle-details-btn">
                             ${{detailsStates[index] ? '▲ Скрыть детали' : '▼ Показать все детали'}}
                         </button>
                         
+                        <!-- Детали и предоставленные данные -->
                         <div id="details-${{index}}" style="display: ${{detailsStates[index] ? 'block' : 'none'}};">
                             ${{detailsHTML}}
                             ${{providedDataHTML}}
@@ -1284,28 +1627,72 @@ if st_select_region != 'Регионы':
                 }}
                 
                 function toggleDetails(index) {{
+                    // Сохраняем текущую позицию скролла
+                    saveScrollPosition();
+                    
+                    // Меняем состояние
                     detailsStates[index] = !detailsStates[index];
+                    
+                    // Сохраняем в sessionStorage
                     sessionStorage.setItem(`card_${{index}}_expanded`, detailsStates[index]);
                     
+                    // Обновляем только конкретную карточку (чтобы не терять скролл)
                     const toggleButton = document.querySelector(`[onclick="toggleDetails(${{index}})"]`);
                     const detailsElement = document.getElementById('details-' + index);
                     
                     if (toggleButton && detailsElement) {{
+                        // Обновляем текст кнопки
                         toggleButton.textContent = detailsStates[index] ? '▲ Скрыть детали' : '▼ Показать все детали';
+                        
+                        // Показываем/скрываем детали
                         detailsElement.style.display = detailsStates[index] ? 'block' : 'none';
+                        
+                        // Плавно прокручиваем к карточке, если она раскрывается
+                        if (detailsStates[index]) {{
+                            setTimeout(() => {{
+                                toggleButton.scrollIntoView({{ behavior: 'smooth', block: 'nearest' }});
+                            }}, 10);
+                        }}
+                        
+                        // Восстанавливаем позицию скролла
+                        setTimeout(() => {{
+                            restoreScrollPosition();
+                        }}, 20);
                     }}
                 }}
                 
                 function toggleStatus2Details(index) {{
+                    // Сохраняем текущую позицию скролла
+                    saveScrollPosition();
+                    
+                    // Меняем состояние
                     detailsStates[index] = !detailsStates[index];
+                    
+                    // Сохраняем в sessionStorage
                     sessionStorage.setItem(`card_${{index}}_expanded`, detailsStates[index]);
                     
+                    // Обновляем только конкретную карточку (чтобы не терять скролл)
                     const toggleButton = document.querySelector(`[onclick="toggleStatus2Details(${{index}})"]`);
                     const detailsElement = document.getElementById('details-' + index);
                     
                     if (toggleButton && detailsElement) {{
+                        // Обновляем текст кнопки
                         toggleButton.textContent = detailsStates[index] ? '▲ Скрыть предоставленные данные' : '▼ Показать предоставленные данные';
+                        
+                        // Показываем/скрываем детали
                         detailsElement.style.display = detailsStates[index] ? 'block' : 'none';
+                        
+                        // Плавно прокручиваем к карточке, если она раскрывается
+                        if (detailsStates[index]) {{
+                            setTimeout(() => {{
+                                toggleButton.scrollIntoView({{ behavior: 'smooth', block: 'nearest' }});
+                            }}, 10);
+                        }}
+                        
+                        // Восстанавливаем позицию скролла
+                        setTimeout(() => {{
+                            restoreScrollPosition();
+                        }}, 20);
                     }}
                 }}
                 
@@ -1318,6 +1705,7 @@ if st_select_region != 'Регионы':
                         return;
                     }}
                     
+                    // Рендерим все карточки
                     for (let i = 0; i < objectsData.length; i++) {{
                         const obj = objectsData[i];
                         const card = createObjectCard(obj, i);
@@ -1328,9 +1716,19 @@ if st_select_region != 'Регионы':
                             container.appendChild(hr);
                         }}
                     }}
+                    
+                    // Восстанавливаем позицию скролла
+                    restoreScrollPosition();
                 }}
                 
                 document.addEventListener('DOMContentLoaded', function() {{
+                    // Сохраняем скролл при прокрутке
+                    const container = document.getElementById('objects-container');
+                    if (container) {{
+                        container.addEventListener('scroll', saveScrollPosition);
+                    }}
+                    
+                    // Загружаем сохраненные состояния кнопок
                     try {{
                         const savedButtonStates = sessionStorage.getItem('buttonStates');
                         if (savedButtonStates) {{
@@ -1342,6 +1740,7 @@ if st_select_region != 'Регионы':
                     
                     renderObjects();
                     
+                    // Сохраняем состояния при закрытии
                     window.addEventListener('beforeunload', function() {{
                         try {{
                             sessionStorage.setItem('buttonStates', JSON.stringify(buttonStates));
@@ -1361,35 +1760,35 @@ if st_select_region != 'Регионы':
         </html>
         """
         
-        # ИЗМЕНЕНО: используем height=None или '100%' вместо фиксированной высоты
-        st.components.v1.html(objects_html, height=800, scrolling=True)
+        # Увеличиваем высоту для показа большего количества объектов
+        st.components.v1.html(objects_html, height=9000, scrolling=True)
     
     else:
-        # РЕЖИМ КАРТЫ - ИЗМЕНЕНО: карта на всю высоту, без скролла
+        # Карта (режим карты) - используем filtered_data_for_display вместо data
         sirota = filtered_data_for_display['Широта']
         dolgota = filtered_data_for_display['Долгота']
         
-        full_name = filtered_data_for_display['Полное (официальное) название объекта']
-        short_name = filtered_data_for_display['Короткое (спортивное) название объекта']
-        adres = filtered_data_for_display['Адрес']
-        contact_name = filtered_data_for_display['Контактное лицо']
-        owner = filtered_data_for_display['Собственник (ОГРН)']
-        manager = filtered_data_for_display['Управляющая компания (ОГРН)']
-        user = filtered_data_for_display['Пользователь (ОГРН)']
-        rfs_id= filtered_data_for_display['РФС_ID']
-        type_objectt = filtered_data_for_display['Тип Объекта ']
-        disciplyne = filtered_data_for_display['Дисциплина ']
-        length = filtered_data_for_display['Длина футбольного поля']
-        width = filtered_data_for_display['Ширина футбольного поля']
-        design_feature = filtered_data_for_display['Конструктивная особенность']
-        type_of_coverage = filtered_data_for_display['Тип покрытия']
-        capacity = filtered_data_for_display['Количество мест для зрителей']
+        full_name = filtered_data_for_display['Полное (официальное) название объекта'] # 0
+        short_name = filtered_data_for_display['Короткое (спортивное) название объекта'] # 1
+        adres = filtered_data_for_display['Адрес'] # 2
+        contact_name = filtered_data_for_display['Контактное лицо'] # 3
+        owner = filtered_data_for_display['Собственник (ОГРН)'] # 4
+        manager = filtered_data_for_display['Управляющая компания (ОГРН)'] #5
+        user = filtered_data_for_display['Пользователь (ОГРН)'] #6
+        rfs_id= filtered_data_for_display['РФС_ID'] #7
+        type_objectt = filtered_data_for_display['Тип Объекта '] #8
+        disciplyne = filtered_data_for_display['Дисциплина '] #9
+        length = filtered_data_for_display['Длина футбольного поля'] # 10
+        width = filtered_data_for_display['Ширина футбольного поля'] # 11
+        design_feature = filtered_data_for_display['Конструктивная особенность'] # 12
+        type_of_coverage = filtered_data_for_display['Тип покрытия'] # 13
+        capacity = filtered_data_for_display['Количество мест для зрителей'] # 14
         capacity = capacity.astype(str)
-        drainage = filtered_data_for_display['Наличие дренажа']
-        heating = filtered_data_for_display['Наличие подогрева']
-        scoreboard = filtered_data_for_display['Наличие табло']
-        dress_room = filtered_data_for_display['Наличие раздевалок']
-        year = filtered_data_for_display['Год ввода в эксплуатацию/год капитального ремонта']
+        drainage = filtered_data_for_display['Наличие дренажа'] # 15
+        heating = filtered_data_for_display['Наличие подогрева'] # 16
+        scoreboard = filtered_data_for_display['Наличие табло'] # 17
+        dress_room = filtered_data_for_display['Наличие раздевалок'] # 18
+        year = filtered_data_for_display['Год ввода в эксплуатацию/год капитального ремонта'] # 19
         year = year.astype(str)
         in_reestr = filtered_data_for_display['Наличие в реестрах'].to_list()
         disp_2 = filtered_data_for_display['Дисциплина_2']
@@ -1399,8 +1798,10 @@ if st_select_region != 'Регионы':
 
         YANDEX_API_KEY = "7fe74d5b-be45-47d1-9fc0-a0765598a4d7"
 
+        # Подготовка данных для карты
         points_data = []
         for i in range(len(sirota)):
+            # Обработка информации для объектов со статусом работы '1' или '2'
             result_string = ""
             if status_of_work.iloc[i] in ('1', '2'):
                 to_slovar = filtered_data_for_display['То, что заполнили РОИВ'].iloc[i].replace('<br>', '|').split('|')
@@ -1444,14 +1845,18 @@ if st_select_region != 'Регионы':
                     if result_parts:
                         result_string = '<br>'.join(result_parts)
             
+            # Определяем цвет точки
             icon_color, _ = get_point_color(str(status_of_work.iloc[i]), in_reestr[i])
             
             current_id_egora = str(int(float(id_egora.iloc[i]))) if pd.notna(id_egora.iloc[i]) and str(id_egora.iloc[i]).replace('.0', '') != 'nan' else ""
             
+            # Подготавливаем РФС_ID с проверкой и заменой NaN на None
             current_rfs_id = None
             if in_reestr[i] == 1:
+                # Если Наличие в реестрах == 1, всегда None
                 current_rfs_id = None
             elif pd.notna(rfs_id.iloc[i]):
+                # Иначе обрабатываем как обычно
                 try:
                     if isinstance(rfs_id.iloc[i], (int, float)):
                         current_rfs_id = str(int(float(rfs_id.iloc[i])))
@@ -1465,6 +1870,7 @@ if st_select_region != 'Регионы':
                 except:
                     current_rfs_id = str(rfs_id.iloc[i]).strip()
             
+            # Преобразуем размеры в целые числа
             length_val = str(length.iloc[i]) if pd.notna(length.iloc[i]) else '-'
             width_val = str(width.iloc[i]) if pd.notna(width.iloc[i]) else '-'
             
@@ -1483,7 +1889,7 @@ if st_select_region != 'Регионы':
                 'index': i,
                 'id_egora': current_id_egora,
                 'rfs_id': current_rfs_id,
-                'in_reestr': in_reestr[i] if pd.notna(in_reestr[i]) else None,
+                'in_reestr': in_reestr[i] if pd.notna(in_reestr[i]) else None,  # Заменяем NaN на None
                 'status_of_work': str(status_of_work.iloc[i]) if pd.notna(status_of_work.iloc[i]) else "0",
                 'address': str(adres.iloc[i]).replace('"', '').replace('nan','-') if pd.notna(adres.iloc[i]) else '-',
                 'full_name': str(full_name.iloc[i]).replace('"', '').replace('nan','-') if pd.notna(full_name.iloc[i]) else '-',
@@ -1505,6 +1911,7 @@ if st_select_region != 'Регионы':
                 'provided_data': result_string
             })
 
+        # Центр карты - средние координаты
         if len(sirota) > 0 and not sirota.isna().all():
             if st_select_region == '87 Чукотский автономный округ':
                 center_lat, center_lon = 67.131709, 172.286661
@@ -1514,10 +1921,9 @@ if st_select_region != 'Регионы':
         else:
             center_lat, center_lon = 44.6, 40.1  
 
+        # HTML карты
         zoom = 5
         map_unique_id = st.session_state.map_refresh_key
-        
-        # ИЗМЕНЕНО: карта на всю высоту (100vh)
         map_html = f"""
 <!DOCTYPE html>
 <html>
@@ -1533,9 +1939,8 @@ if st_select_region != 'Регионы':
         }}
         #map-{map_unique_id} {{
             width: 100%;
-            height: 100vh; /* ИЗМЕНЕНО: 100vh вместо фиксированной высоты */
+            height: 100vh;
         }}
-        /* Все остальные стили карты ПОЛНОСТЬЮ СОХРАНЕНЫ */
         .address-info {{
             position: absolute;
             background: white;
@@ -1730,8 +2135,10 @@ if st_select_region != 'Регионы':
     <div id="copy-success" class="copy-success">✓ Скопировано в буфер обмена!</div>
 
     <script>
+        // Передаём данные точек с заменой NaN на null
         const POINTS_DATA = JSON.parse('{safe_json_for_js(points_data)}');
         
+        // Глобальные переменные
         let map;
         let lastClickCoords = null;
         let lastClickAddress = null;
@@ -1763,10 +2170,13 @@ if st_select_region != 'Регионы':
             const statusOfWork = pointData.status_of_work || '0';
             const providedData = pointData.provided_data || '';
             
+            // Создаем ссылку для РФС ID с проверкой наличия в реестрах
             let rfsIdHTML = '-';
             if (pointData.in_reestr === 1) {{
+                // Если Наличие в реестрах == 1, показываем просто "-" без ссылки
                 rfsIdHTML = '-';
             }} else if (pointData.rfs_id && pointData.rfs_id !== '-' && pointData.rfs_id !== 'nan' && pointData.rfs_id !== null) {{
+                // Иначе показываем ссылку
                 rfsIdHTML = `<a href="https://platform.rfs.ru/infrastructure/${{pointData.rfs_id}}" target="_blank" class="rfs-id-link">${{pointData.rfs_id}}</a>`;
             }}
             
@@ -1906,6 +2316,7 @@ if st_select_region != 'Регионы':
                 draggable: false
             }});
             
+            // Добавляем обработчик клика на черную точку
             blackPlacemark.events.add('click', function(e) {{
                 createAddressInfo(coords);
             }});
@@ -1968,6 +2379,7 @@ if st_select_region != 'Регионы':
                 oldInfo.remove();
             }}
             
+            // Если адрес не предоставлен, геокодируем координаты
             if (!address) {{
                 ymaps.geocode(coords).then(function(res) {{
                     const firstGeoObject = res.geoObjects.get(0);
@@ -2177,28 +2589,32 @@ if st_select_region != 'Регионы':
         </html>
         """
         
-        # ИЗМЕНЕНО: карта на всю высоту, без скролла
-        st.components.v1.html(map_html, height=800, scrolling=True)
+        # Показываем карту
+        st.components.v1.html(map_html, height=600, scrolling=False)
     
     # -------------------------------------------------------------------------------------------------------------
-    # СТАТИСТИКА В САЙДБАРЕ (ПОЛНОСТЬЮ СОХРАНЕНА)
     st.sidebar.markdown("---")
+    # Используем оригинальные данные для статистики (до фильтрации)
     st.sidebar.write(f'Всего объектов: {original_data.shape[0]}')
     st.sidebar.markdown("---")
     st.sidebar.write('Типы точек:')
-    st.sidebar.write(f'🔵 Есть в РОИВ, но нет в ЦП - {original_data[original_data["Наличие в реестрах"] == 1].shape[0]}')
-    st.sidebar.write(f'🟡 Есть только в ЦП - {original_data[original_data["Наличие в реестрах"] == 2].shape[0]}')
-    st.sidebar.write(f'🟢 Есть в РОИВ и в ЦП - {original_data[original_data["Наличие в реестрах"] == 3].shape[0]}')
-    st.sidebar.write(f'''🟣 Добавили новое поле, в стадии рассмотрения - {original_data[original_data["Статус работы"] == '2'].shape[0]}''')
-    st.sidebar.write(f'''🔴 Внесли изменения, в стадии рассмотрения - {original_data[original_data["Статус работы"] == '1'].shape[0]}''')
-    st.sidebar.write('⚪ Нажали "Внести изменения", но не отправили анкету')
-    st.sidebar.write('⚫ Нажали "Здесь поле", но не отправили анкету')
+    st.sidebar.write(f'🔵 Есть в РОИВ, но нет в ЦП - {original_data[original_data["Наличие в реестрах"] == 1].shape[0]}')  # Синий
+    st.sidebar.write(f'🟡 Есть только в ЦП - {original_data[original_data["Наличие в реестрах"] == 2].shape[0]}')          # Желтый
+    st.sidebar.write(f'🟢 Есть в РОИВ и в ЦП - {original_data[original_data["Наличие в реестрах"] == 3].shape[0]}')       # Зеленый
+    st.sidebar.write(f'''🟣 Добавили новое поле, в стадии рассмотрения - {original_data[original_data["Статус работы"] == '2'].shape[0]}''')  # Фиолетовый
+    st.sidebar.write(f'''🔴 Внесли изменения, в стадии рассмотрения - {original_data[original_data["Статус работы"] == '1'].shape[0]}''')       # Красный
+    st.sidebar.write('⚪ Нажали "Внести изменения", но не отправили анкету')  # Серый
+    st.sidebar.write('⚫ Нажали "Здесь поле", но не отправили анкету')        # Черный
 
     st.sidebar.markdown("---")
     st.sidebar.write(f'Дополнительно:')
+    # Используем оригинальные данные для статистики
+    # ЗАМЕНА СТАТИСТИКИ ПО ТИПАМ ПОКРЫТИЙ
     st.sidebar.write(f'Натуральных полей: {original_data[original_data["Тип покрытия"] == "Натуральное"].shape[0]}')
     st.sidebar.write(f'Искусственная трава: {original_data[original_data["Тип покрытия"] == "Искусственная трава"].shape[0]}')
     st.sidebar.write(f'Спортивное (резина, крошка и тп): {original_data[original_data["Тип покрытия"] == "Спортивное (резина, крошка и тп)"].shape[0]}')
     st.sidebar.write(f'Доска (паркет): {original_data[original_data["Тип покрытия"] == "Доска (паркет)"].shape[0]}')
     st.sidebar.write(f'Иное: {original_data[original_data["Тип покрытия"] == "Иное"].shape[0]}')
     st.sidebar.write(f'Нет информации: {original_data[original_data["Тип покрытия"] == "Нет информации"].shape[0]}')
+
+
