@@ -797,38 +797,8 @@ if st_select_region != 'Регионы':
         # Сохраняем все данные для поиска
         st.session_state.all_filtered_data = filtered_data_for_display.copy()
         
-        # Пагинация
-        items_per_page = 50
-        total_items = len(filtered_data_for_display)
-        
-        # Если данных больше, чем на одну страницу, показываем пагинацию
-        if total_items > items_per_page:
-            # Определяем количество страниц
-            total_pages = (total_items + items_per_page - 1) // items_per_page
-            
-            # Создаем селектор для выбора страницы
-            page_options = [f"Страница {i+1}" for i in range(total_pages)]
-            selected_page = st.selectbox(
-                "",
-                page_options,
-                key=f"page_selector_{current_region_number}"
-            )
-            
-            # Определяем выбранный номер страницы
-            page_number = page_options.index(selected_page)
-            
-            # Вычисляем индексы для текущей страницы
-            start_idx = page_number * items_per_page
-            end_idx = min((page_number + 1) * items_per_page, total_items)
-            
-            # Получаем данные для текущей страницы
-            page_data = filtered_data_for_display.iloc[start_idx:end_idx]
-            
-        else:
-            # Если все помещается на одну страницу
-            page_data = filtered_data_for_display
-            total_pages = 1
-            page_number = 0
+        # Получаем все данные для отображения (без пагинации)
+        page_data = filtered_data_for_display
         
         # Подготавливаем данные для JavaScript из page_data
         objects_data = []
@@ -1263,26 +1233,9 @@ if st_select_region != 'Регионы':
                     font-weight: bold;
                     color: #000000;
                 }}
-                
-                /* Пагинация информация */
-                .pagination-info {{
-                    background-color: #f0f9ff;
-                    border: 1px solid #bae6fd;
-                    border-radius: 4px;
-                    padding: 8px;
-                    margin: 10px 0;
-                    font-size: 10px;
-                    color: #0369a1;
-                    text-align: center;
-                }}
             </style>
         </head>
         <body>
-            <div class="pagination-info">
-                Показано объектов: {len(objects_data)} из {len(filtered_data_for_display)}
-                {f' (Страница {page_number + 1} из {total_pages})' if total_pages > 1 else ''}
-            </div>
-            
             <div class="objects-container" id="objects-container">
                 <!-- Объекты будут добавлены через JavaScript -->
             </div>
@@ -2616,5 +2569,3 @@ if st_select_region != 'Регионы':
     st.sidebar.write(f'Доска (паркет): {original_data[original_data["Тип покрытия"] == "Доска (паркет)"].shape[0]}')
     st.sidebar.write(f'Иное: {original_data[original_data["Тип покрытия"] == "Иное"].shape[0]}')
     st.sidebar.write(f'Нет информации: {original_data[original_data["Тип покрытия"] == "Нет информации"].shape[0]}')
-
-
