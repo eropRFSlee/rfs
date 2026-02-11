@@ -329,11 +329,11 @@ def show_instructions():
         """)
        
         st.subheader('''Пример''')
-        st.subheader('''"Карта" -> "✅ Внести изменения"''')
+        st.subheader('''Карта -> ✅ Внести изменения''')
         show_video("инструкция/Карта форма.mp4")
-        st.subheader('''"Список" -> "✅ Внести изменения"''')
+        st.subheader('''Список -> ✅ Внести изменения''')
         show_video("инструкция/Список форма изменения.mp4")
-        st.subheader('''"Карта" -> "⚽ Здесь футбольное поле"''')
+        st.subheader('''Карта -> ⚽ Здесь футбольное поле''')
         show_video("инструкция/Карта новое поле.mp4")
     
     # Шаг 6
@@ -447,6 +447,7 @@ def show_instructions():
 
 if __name__ == "__main__":
     show_instructions()
+
 
 
 
