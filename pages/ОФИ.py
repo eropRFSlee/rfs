@@ -421,8 +421,8 @@ def safe_json_for_js(data):
     Безопасно конвертирует Python данные в JSON строку для вставки в JavaScript.
     Решает проблему с эмодзи, кавычками и спецсимволами.
     """
-    # Сначала получаем обычный JSON
-    json_str = json.dumps(data, ensure_ascii=False)
+    # Сначала получаем обычный JSON с заменой NaN на null
+    json_str = json.dumps(data, ensure_ascii=False, default=lambda x: None if pd.isna(x) else x)
     
     # Экранируем символы, которые могут сломать JavaScript
     # 1. Обратные слэши
@@ -1847,11 +1847,11 @@ if st_select_region != 'Регионы':
             
             current_id_egora = str(int(float(id_egora.iloc[i]))) if pd.notna(id_egora.iloc[i]) and str(id_egora.iloc[i]).replace('.0', '') != 'nan' else ""
             
-            # Подготавливаем РФС_ID с проверкой
-            current_rfs_id = '-'
+            # Подготавливаем РФС_ID с проверкой и заменой NaN на None
+            current_rfs_id = None
             if in_reestr[i] == 1:
-                # Если Наличие в реестрах == 1, всегда "-"
-                current_rfs_id = '-'
+                # Если Наличие в реестрах == 1, всегда None
+                current_rfs_id = None
             elif pd.notna(rfs_id.iloc[i]):
                 # Иначе обрабатываем как обычно
                 try:
@@ -1886,7 +1886,7 @@ if st_select_region != 'Регионы':
                 'index': i,
                 'id_egora': current_id_egora,
                 'rfs_id': current_rfs_id,
-                'in_reestr': in_reestr[i],  # Добавляем информацию о наличии в реестрах
+                'in_reestr': in_reestr[i] if pd.notna(in_reestr[i]) else None,  # Заменяем NaN на None
                 'status_of_work': str(status_of_work.iloc[i]) if pd.notna(status_of_work.iloc[i]) else "0",
                 'address': str(adres.iloc[i]).replace('"', '').replace('nan','-') if pd.notna(adres.iloc[i]) else '-',
                 'full_name': str(full_name.iloc[i]).replace('"', '').replace('nan','-') if pd.notna(full_name.iloc[i]) else '-',
@@ -2132,7 +2132,7 @@ if st_select_region != 'Регионы':
     <div id="copy-success" class="copy-success">✓ Скопировано в буфер обмена!</div>
 
     <script>
-        // Передаём данные точек
+        // Передаём данные точек с заменой NaN на null
         const POINTS_DATA = JSON.parse('{safe_json_for_js(points_data)}');
         
         // Глобальные переменные
@@ -2172,7 +2172,7 @@ if st_select_region != 'Регионы':
             if (pointData.in_reestr === 1) {{
                 // Если Наличие в реестрах == 1, показываем просто "-" без ссылки
                 rfsIdHTML = '-';
-            }} else if (pointData.rfs_id && pointData.rfs_id !== '-' && pointData.rfs_id !== 'nan') {{
+            }} else if (pointData.rfs_id && pointData.rfs_id !== '-' && pointData.rfs_id !== 'nan' && pointData.rfs_id !== null) {{
                 // Иначе показываем ссылку
                 rfsIdHTML = `<a href="https://platform.rfs.ru/infrastructure/${{pointData.rfs_id}}" target="_blank" class="rfs-id-link">${{pointData.rfs_id}}</a>`;
             }}
