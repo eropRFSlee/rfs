@@ -34,9 +34,82 @@ st.markdown("""
         background-color: white !important;
     }
     
+    /* ВСЕ элементы в сайдбаре - черный текст */
     section[data-testid="stSidebar"],
     section[data-testid="stSidebar"] * {
         color: black !important;
+    }
+    
+    /* Переопределяем золотой цвет для сайдбара */
+    section[data-testid="stSidebar"] .stMarkdown,
+    section[data-testid="stSidebar"] .stMarkdown p,
+    section[data-testid="stSidebar"] .stMarkdown span,
+    section[data-testid="stSidebar"] .stMarkdown div,
+    section[data-testid="stSidebar"] .stMarkdown h1,
+    section[data-testid="stSidebar"] .stMarkdown h2,
+    section[data-testid="stSidebar"] .stMarkdown h3,
+    section[data-testid="stSidebar"] .stMarkdown h4,
+    section[data-testid="stSidebar"] .stMarkdown h5,
+    section[data-testid="stSidebar"] .stMarkdown h6,
+    section[data-testid="stSidebar"] .stWrite,
+    section[data-testid="stSidebar"] .stWrite p,
+    section[data-testid="stSidebar"] .stWrite span,
+    section[data-testid="stSidebar"] .stWrite div,
+    section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"],
+    section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] *,
+    section[data-testid="stSidebar"] .element-container,
+    section[data-testid="stSidebar"] .sidebar-content,
+    section[data-testid="stSidebar"] p,
+    section[data-testid="stSidebar"] span,
+    section[data-testid="stSidebar"] div {
+        color: black !important;
+    }
+    
+    /* Статистика с эмодзи в сайдбаре */
+    section[data-testid="stSidebar"] .stMarkdown p:contains("🔵"),
+    section[data-testid="stSidebar"] .stMarkdown p:contains("🟡"),
+    section[data-testid="stSidebar"] .stMarkdown p:contains("🟢"),
+    section[data-testid="stSidebar"] .stMarkdown p:contains("🟣"),
+    section[data-testid="stSidebar"] .stMarkdown p:contains("🔴"),
+    section[data-testid="stSidebar"] .stMarkdown p:contains("⚪"),
+    section[data-testid="stSidebar"] .stMarkdown p:contains("⚫"),
+    section[data-testid="stSidebar"] .stMarkdown p:contains("Всего объектов"),
+    section[data-testid="stSidebar"] .stMarkdown p:contains("Типы точек"),
+    section[data-testid="stSidebar"] .stMarkdown p:contains("Дополнительно"),
+    section[data-testid="stSidebar"] .stMarkdown p:contains("Натуральных полей"),
+    section[data-testid="stSidebar"] .stMarkdown p:contains("Искусственная трава"),
+    section[data-testid="stSidebar"] .stMarkdown p:contains("Спортивное"),
+    section[data-testid="stSidebar"] .stMarkdown p:contains("Доска"),
+    section[data-testid="stSidebar"] .stMarkdown p:contains("Иное"),
+    section[data-testid="stSidebar"] .stMarkdown p:contains("Нет информации") {
+        color: black !important;
+    }
+    
+    /* Селектбоксы в сайдбаре */
+    section[data-testid="stSidebar"] [data-baseweb="select"] * {
+        color: black !important;
+    }
+    
+    /* Кнопки в сайдбаре */
+    section[data-testid="stSidebar"] .stButton button {
+        color: #FFD700 !important;
+        border-color: #FFD700 !important;
+    }
+    
+    section[data-testid="stSidebar"] .stButton button:hover {
+        background-color: rgba(255, 215, 0, 0.1) !important;
+    }
+    
+    /* Кнопки режима просмотра в сайдбаре */
+    section[data-testid="stSidebar"] .stButton button[key="map_btn"],
+    section[data-testid="stSidebar"] .stButton button[key="list_btn"] {
+        color: black !important;
+        border-color: #ccc !important;
+    }
+    
+    section[data-testid="stSidebar"] .stButton button[key="map_btn"]:hover,
+    section[data-testid="stSidebar"] .stButton button[key="list_btn"]:hover {
+        background-color: #f0f0f0 !important;
     }
     
     header {
@@ -46,14 +119,14 @@ st.markdown("""
     /* ГЛАВНОЕ ОКНО - ЗОЛОТОЙ ТЕКСТ */
     .main .block-container {
         background-color: #2a4a80;
-        color: #FFD700 !important; /* Золотой цвет */
+        color: #FFD700 !important;
         border-radius: 10px;
         padding: 2rem;
         margin-top: 1rem;
     }
     
     /* ВСЕ элементы в основном окне - золотой цвет */
-    .main .block-container *:not([data-baseweb="select"] *):not([role="listbox"] *):not([role="option"] *) {
+    .main .block-container *:not([data-baseweb="select"] *):not([role="listbox"] *):not([role="option"] *):not(section[data-testid="stSidebar"] *) {
         color: #FFD700 !important;
     }
     
@@ -66,38 +139,32 @@ st.markdown("""
     .main .block-container h6,
     .main .block-container p,
     .main .block-container span,
-    .main .block-container div:not([data-baseweb="select"]):not([role="listbox"]):not([role="option"]),
+    .main .block-container div:not([data-baseweb="select"]):not([role="listbox"]):not([role="option"]):not(section[data-testid="stSidebar"]),
     .main .block-container label {
         color: #FFD700 !important;
     }
     
     /* ★★★ ВСЕ КОМБОБОКСЫ - БЕЛЫЙ фон, черный текст ★★★ */
-    /* Фон самого комбобокса */
     [data-baseweb="select"] {
         background-color: white !important;
     }
     
-    /* Внутренняя часть комбобокса */
     [data-baseweb="select"] > div {
         background-color: white !important;
     }
     
-    /* Кнопка комбобокса */
     [data-baseweb="select"] [role="button"] {
         background-color: white !important;
     }
     
-    /* ★★★ Текст в комбобоксах - ЧЁРНЫЙ ★★★ */
     [data-baseweb="select"] * {
         color: black !important;
     }
     
-    /* Выбранное значение */
     [data-baseweb="select"] [aria-selected="true"] {
         color: black !important;
     }
     
-    /* Выпадающий список */
     [role="listbox"] {
         background-color: white !important;
     }
@@ -112,12 +179,10 @@ st.markdown("""
         color: black !important;
     }
     
-    /* Текст в комбобоксах в основном блоке - черный */
     .main .block-container [data-baseweb="select"] * {
         color: black !important;
     }
     
-    /* Текст в input полях поиска */
     .stTextInput input {
         color: #000000 !important;
         background-color: white !important;
@@ -127,7 +192,6 @@ st.markdown("""
         color: #FFD700 !important;
     }
     
-    /* Кнопки в основном окне */
     .stButton button {
         color: #FFD700 !important;
         border-color: #FFD700 !important;
@@ -137,8 +201,6 @@ st.markdown("""
         background-color: rgba(255, 215, 0, 0.1) !important;
     }
     
-    /* ★★★ ВСЕ ИНФОРМАЦИОННЫЕ СООБЩЕНИЯ В ОСНОВНОМ ОКНЕ - ЗОЛОТОЙ ★★★ */
-    /* Сообщение "Загрузка данных..." и другие текстовые элементы */
     .stSpinner + div,
     .stSpinner > div > div,
     .stAlert,
@@ -152,14 +214,12 @@ st.markdown("""
         color: #FFD700 !important;
     }
     
-    /* Специально для информационных сообщений */
     div[data-testid="stToast"],
     div[data-testid="stNotification"],
     .st-emotion-cache-1q7spjk {
         color: #FFD700 !important;
     }
     
-    /* Текст внутри информационных блоков */
     .stAlert *,
     .stInfo *,
     .stWarning *,
@@ -168,7 +228,6 @@ st.markdown("""
         color: #FFD700 !important;
     }
     
-    /* Границы информационных сообщений */
     .stInfo,
     .stWarning,
     .stSuccess,
@@ -176,7 +235,6 @@ st.markdown("""
         border-color: #FFD700 !important;
     }
     
-    /* Стили для карточек объектов */
     .card {
         background-color: rgba(255, 255, 255, 0.9);
         border-radius: 10px;
@@ -190,7 +248,6 @@ st.markdown("""
         color: #000000 !important;
     }
     
-    /* Стили для цветового индикатора */
     .color-indicator {
         display: inline-block;
         width: 12px;
@@ -230,34 +287,14 @@ st.markdown("""
         background-color: #EF4444;
     }
     
-    /* Стили для спиннера */
     .stSpinner > div {
         border-color: #FFD700 transparent transparent transparent !important;
     }
     
-    /* Текст статуса загрузки */
     .stSpinner + div {
         color: #FFD700 !important;
     }
     
-    /* Заголовки в сайдбаре */
-    .sidebar-content h1,
-    .sidebar-content h2,
-    .sidebar-content h3,
-    .sidebar-content h4,
-    .sidebar-content h5,
-    .sidebar-content h6 {
-        color: black !important;
-    }
-    
-    /* Параграфы и текст в сайдбаре */
-    .sidebar-content p,
-    .sidebar-content span,
-    .sidebar-content div {
-        color: black !important;
-    }
-    
-    /* Исправление высоты для режима списка */
     .main .block-container {
         overflow-y: auto !important;
     }
@@ -540,20 +577,20 @@ st_select_region = st.sidebar.selectbox("Выберите свой регион"
     '67 Смоленская область',
     '68 Тамбовская область',
     '69 Тверская область',
-    '70 Томская область',
-    '71 Тульская область',
-    '72 Тюменская область',
-    '73 Ульяновская область',
-    '74 Челябинская область',
-    '75 Забайкальский край',
-    '76 Ярославская область',
-    '77 Москва',
-    '78 Санкт-Петербург',
-    '79 Еврейская автономная область',
-    '83 Ненецкий автономный округ',
-    '86 Ханты-Мансийский автономный округ — Югра',
-    '87 Чукотский автономный округ',
-    '89 Ямало-Ненецкий автономный округ'
+    '70 Тульская область',
+    '71 Тюменская область',
+    '72 Ульяновская область',
+    '73 Челябинская область',
+    '74 Забайкальский край',
+    '75 Ярославская область',
+    '76 Москва',
+    '77 Санкт-Петербург',
+    '78 Еврейская автономная область',
+    '79 Ненецкий автономный округ',
+    '83 Ханты-Мансийский автономный округ — Югра',
+    '86 Чукотский автономный округ',
+    '87 Ямало-Ненецкий автономный округ',
+    '89'
 ])
 
 # Кнопка в сайдбаре для перезагрузки данных
