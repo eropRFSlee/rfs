@@ -306,6 +306,51 @@ st.markdown("""
     iframe {
         max-height: none !important;
     }
+                /* Скролл только у всего сайдбара, убираем скроллы у внутренних элементов */
+    section[data-testid="stSidebar"] > div:first-child {
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+    }
+    
+    /* Убираем скроллы у всех внутренних элементов */
+    section[data-testid="stSidebar"] .stMarkdown,
+    section[data-testid="stSidebar"] .element-container,
+    section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"],
+    section[data-testid="stSidebar"] .stMarkdown p,
+    section[data-testid="stSidebar"] .stWrite,
+    section[data-testid="stSidebar"] .st-br,
+    section[data-testid="stSidebar"] .st-c0,
+    section[data-testid="stSidebar"] .st-d5 {
+        overflow-y: visible !important;
+        overflow-x: visible !important;
+    }
+    
+    /* Разрешаем скролл только для выпадающих списков */
+    section[data-testid="stSidebar"] [data-baseweb="select"] *,
+    section[data-testid="stSidebar"] [role="listbox"] * {
+        overflow-y: auto !important;
+    }
+    /* Нормальный скролл только у сайдбара */
+    section[data-testid="stSidebar"] > div:first-child {
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+    }
+    
+    /* Убираем скроллы у всех внутренних элементов, КРОМЕ selectbox */
+    section[data-testid="stSidebar"] .stMarkdown,
+    section[data-testid="stSidebar"] .element-container,
+    section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"],
+    section[data-testid="stSidebar"] .stMarkdown p,
+    section[data-testid="stSidebar"] .stWrite {
+        overflow-y: visible !important;
+        overflow-x: visible !important;
+    }
+    
+    /* НЕ ТРОГАЕМ selectbox - оставляем как есть */
+    /* Убираем только если есть лишние скроллы у самих контейнеров selectbox */
+    section[data-testid="stSidebar"] [data-baseweb="select"] {
+        overflow-y: visible !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
