@@ -256,6 +256,19 @@ st.markdown("""
     .sidebar-content div {
         color: black !important;
     }
+    
+    /* Исправление высоты для режима списка */
+    .main .block-container {
+        overflow-y: auto !important;
+    }
+    
+    .stMarkdown, .stHtml {
+        overflow-y: auto !important;
+    }
+    
+    iframe {
+        max-height: none !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -634,24 +647,36 @@ if st_select_region != 'Регионы':
     condition_reestr.append('🔴 Внесли изменения, в стадии рассмотрения')       # Красный
     
     conditional_size = []
-
+    
+    # ИЗМЕНЕНИЕ 1: Добавляем "Не указан размер" в список дисциплин
     for x in sorted(data['Дисциплина_2'].unique()):
         if x != '-':  # Убираем '-'
             conditional_size.append(x)
+    
+    # Добавляем "Не указан размер" в список
+    conditional_size.append('Не указан размер')
+    
     under_list_size = ['Все']
 
     if '11x11' in conditional_size:
         under_list_size.append([conditional_size[conditional_size.index('11x11')]])
         conditional_size.remove('11x11')
     if ('6x6' in conditional_size) or ('7x7' in conditional_size)  or ('8x8' in conditional_size)  or ('Спортивная площадка' in conditional_size):
-        under_list_size.append(conditional_size[:])
+        # Убираем 'Не указан размер' из этой группы, если он там есть
+        size_group = []
+        for item in conditional_size[:]:
+            if item not in ['Зал', 'Не указан размер']:
+                size_group.append(item)
+        under_list_size.append(size_group)
 
     if len(under_list_size) > 2:
-        lst_to_combo = [under_list_size[0],str(under_list_size[1])[1:-2].replace("'",""), str(under_list_size[2])[1:-2].replace("'","")]
+        lst_to_combo = [under_list_size[0], str(under_list_size[1])[1:-2].replace("'",""), str(under_list_size[2])[1:-2].replace("'","")]
         lst_to_combo.append('Зал')
+        lst_to_combo.append('Не указан размер')
     else:
-        lst_to_combo = [under_list_size[0],str(under_list_size[1])[1:-2].replace("'","")]
+        lst_to_combo = [under_list_size[0], str(under_list_size[1])[1:-2].replace("'","")]
         lst_to_combo.append('Зал')
+        lst_to_combo.append('Не указан размер')
 
     # -------------------------------------------------------------------------------------------------------------
 
@@ -707,11 +732,14 @@ if st_select_region != 'Регионы':
     elif st_select_reestr == '🟢 Есть в РОИВ и в ЦП':
         data = data[(data['Наличие в реестрах'] == 3) & (data['Статус работы'] != '1') & (data['Статус работы'] != '2')]
 
+    # ИЗМЕНЕНИЕ 2: Применяем фильтр по дисциплине с учетом "Не указан размер"
     if st_select_desciplyne != 'Все':
         if st_select_desciplyne == '11x11':
             data = data[data['Дисциплина_2'].isin([lst_to_combo[1]])]
-        elif st_select_desciplyne =='Зал':
+        elif st_select_desciplyne == 'Зал':
             data = data[data['Дисциплина_2'].isin(['Зал'])]
+        elif st_select_desciplyne == 'Не указан размер':
+            data = data[data['Дисциплина_2'] == 'Не указан размер']
         else:
             data = data[data['Дисциплина_2'].isin(lst_to_combo[2].split(', '))]
 
@@ -784,7 +812,8 @@ if st_select_region != 'Регионы':
             filtered_data_for_display['Тип покрытия'].astype(str).str.lower().str.contains(search_pattern, na=False, regex=True) |
             filtered_data_for_display['Год ввода в эксплуатацию/год капитального ремонта'].astype(str).str.lower().str.contains(search_pattern, na=False, regex=True) |
             filtered_data_for_display['Дисциплина_2'].astype(str).str.lower().str.contains(search_pattern, na=False, regex=True) |
-            filtered_data_for_display['id_egora'].astype(str).str.lower().str.contains(search_pattern, na=False, regex=True)
+            filtered_data_for_display['id_egora'].astype(str).str.lower().str.contains(search_pattern, na=False, regex=True) |
+            filtered_data_for_display['РФС_ID'].astype(str).str.lower().str.contains(search_pattern, na=False, regex=True) 
         )
         filtered_data_for_display = filtered_data_for_display[search_mask]
         
@@ -952,7 +981,7 @@ if st_select_region != 'Регионы':
                     width: 100%;
                     margin: 0 auto;
                     padding: 3px;
-                    max-height: 850px;
+                    max-height: 650px;  /* ИЗМЕНЕНИЕ 3: Уменьшена высота с 850px до 650px */
                     overflow-y: auto;
                     scroll-behavior: smooth;
                 }}
@@ -1713,8 +1742,8 @@ if st_select_region != 'Регионы':
         </html>
         """
         
-        # Увеличиваем высоту для показа большего количества объектов
-        st.components.v1.html(objects_html, height=9000, scrolling=True)
+        # ИЗМЕНЕНИЕ 4: Уменьшена высота компонента с 9000 до 700
+        st.components.v1.html(objects_html, height=700, scrolling=True)
     
     else:
         # Карта (режим карты) - используем filtered_data_for_display вместо data
