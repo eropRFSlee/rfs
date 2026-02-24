@@ -144,34 +144,82 @@ st.markdown("""
         color: #FFD700 !important;
     }
     
-    /* ★★★ ВСЕ КОМБОБОКСЫ - БЕЛЫЙ фон, черный текст ★★★ */
+    /* ===== ИСПРАВЛЕНО: УСИЛЕННЫЕ СТИЛИ ДЛЯ КОМБОБОКСОВ ===== */
+    /* ★★★ ВСЕ КОМБОБОКСЫ - БЕЛЫЙ фон, черный текст, ellipsis, защита от темной темы ★★★ */
     [data-baseweb="select"] {
         background-color: white !important;
+        color-scheme: light !important; /* Принудительно светлая схема */
+        border: 1px solid #ccc !important;
+        border-radius: 4px !important;
     }
     
     [data-baseweb="select"] > div {
         background-color: white !important;
+        color-scheme: light !important;
     }
     
     [data-baseweb="select"] [role="button"] {
         background-color: white !important;
+        color-scheme: light !important;
+        min-height: 38px !important;
     }
     
+    /* Убираем скроллы и добавляем ellipsis для текста внутри кнопки */
+    [data-baseweb="select"] [role="button"] span {
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+        max-width: 100% !important;
+        display: block !important;
+        color: black !important;
+        padding-right: 24px !important; /* Место для стрелки */
+    }
+    
+    /* Все текстовые элементы внутри комбобокса */
     [data-baseweb="select"] * {
         color: black !important;
+        background-color: white !important;
+        color-scheme: light !important;
     }
     
+    /* Контейнер с текстом */
+    [data-baseweb="select"] [role="button"] div {
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+        color: black !important;
+        scrollbar-width: none !important; /* Firefox */
+        -ms-overflow-style: none !important; /* IE/Edge */
+    }
+    
+    [data-baseweb="select"] [role="button"] div::-webkit-scrollbar {
+        display: none !important; /* Chrome/Safari */
+    }
+    
+    /* Выбранный элемент */
     [data-baseweb="select"] [aria-selected="true"] {
         color: black !important;
+        background-color: #f0f0f0 !important;
     }
     
+    /* Выпадающий список */
     [role="listbox"] {
         background-color: white !important;
+        color-scheme: light !important;
+        border: 1px solid #ccc !important;
+        max-height: 300px !important;
+        overflow-y: auto !important; /* Вертикальный скролл для списка */
+        overflow-x: hidden !important; /* Убираем горизонтальный */
     }
     
+    /* Элементы выпадающего списка */
     [role="option"] {
         color: black !important;
         background-color: white !important;
+        white-space: normal !important; /* В списке текст может переноситься */
+        word-wrap: break-word !important;
+        padding: 8px 12px !important;
+        border-bottom: 1px solid #f0f0f0 !important;
     }
     
     [role="option"]:hover {
@@ -179,9 +227,31 @@ st.markdown("""
         color: black !important;
     }
     
-    .main .block-container [data-baseweb="select"] * {
+    [role="option"][aria-selected="true"] {
+        background-color: #e0e0e0 !important;
         color: black !important;
     }
+    
+    /* Фикс для темной темы браузера - максимальный приоритет */
+    .main .block-container [data-baseweb="select"] *,
+    .stSelectbox *,
+    div[data-testid="stSelectbox"] * {
+        color: black !important;
+        background-color: white !important;
+    }
+    
+    /* Дополнительная защита для сайдбара */
+    section[data-testid="stSidebar"] [data-baseweb="select"] * {
+        color: black !important;
+        background-color: white !important;
+    }
+    
+    /* Стрелка выпадающего списка */
+    [data-baseweb="select"] [role="button"] svg {
+        fill: #666 !important;
+        color: #666 !important;
+    }
+    /* ===== КОНЕЦ ИСПРАВЛЕННЫХ СТИЛЕЙ ===== */
     
     .stTextInput input {
         color: #000000 !important;
@@ -356,7 +426,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# ===== ИСПРАВЛЕНО: Блок очистки sessionStorage с версионированием =====
+# ===== Блок очистки sessionStorage с версионированием =====
 if 'force_clear' in st.session_state and st.session_state.force_clear:
     # Генерируем новую версию данных на основе текущего времени
     new_version = str(int(time.time()))
@@ -378,7 +448,7 @@ if 'force_clear' in st.session_state and st.session_state.force_clear:
     st.session_state.force_clear = False
     # Сохраняем версию в session_state для последующего использования
     st.session_state.data_version = new_version
-# ===== КОНЕЦ исправленного блока =====
+# ===== КОНЕЦ блока =====
 
 FULL_BALLOONS_DATA = []
 
@@ -536,7 +606,7 @@ def get_color_class(status_of_work, in_reestr):
     else:
         return 'color-green', '🟢 Есть в РОИВ и в ЦП'
 
-# ===== ИСПРАВЛЕНО: Новая функция для генерации стабильного ID объекта =====
+# Функция для генерации стабильного ID объекта
 def get_stable_object_id(row, index=None):
     """
     Генерирует стабильный ID объекта, который не зависит от фильтрации и индексации.
@@ -575,7 +645,6 @@ def get_stable_object_id(row, index=None):
         return f"gen_{index}_{name_part}_{addr_part}"
     else:
         return f"gen_{name_part}_{addr_part}"
-# ===== КОНЕЦ новой функции =====
 
 # Функция для безопасной конвертации данных в JSON для JavaScript
 def safe_json_for_js(data):
@@ -619,7 +688,7 @@ if 'data_loaded' not in st.session_state:
     st.session_state.search_triggered = False
     st.session_state.single_object_mode = False
     st.session_state.single_object_id = None
-    # ===== ИСПРАВЛЕНО: Добавляем версию данных =====
+    # Добавляем версию данных
     st.session_state.data_version = str(int(time.time()))
 
 st_select_region = st.sidebar.selectbox("Выберите свой регион", ['Регионы',\
@@ -723,7 +792,7 @@ if st_select_region != 'Регионы':
         st.session_state.last_data_update = time.time()
         st.session_state.single_object_mode = False
         st.session_state.single_object_id = None
-        # ===== ИСПРАВЛЕНО: Обновляем версию данных =====
+        # Обновляем версию данных
         st.session_state.data_version = str(int(time.time()))
         st.rerun()
     
@@ -913,6 +982,21 @@ if st_select_region != 'Регионы':
         st.session_state.search_query = search_query
     
     filtered_data_for_display = data.copy()
+    
+    # ===== ИСПРАВЛЕНО: СОРТИРОВКА ПО КООРДИНАТАМ (широта + долгота) =====
+    # Преобразуем широту и долготу в числа для сортировки
+    filtered_data_for_display['Широта'] = pd.to_numeric(filtered_data_for_display['Широта'], errors='coerce')
+    filtered_data_for_display['Долгота'] = pd.to_numeric(filtered_data_for_display['Долгота'], errors='coerce')
+    
+    # Сортировка: сначала по широте (с севера на юг), потом по долготе (с запада на восток)
+    # Объекты без координат (NaN) отправляются в конец
+    filtered_data_for_display = filtered_data_for_display.sort_values(
+        by=['Широта', 'Долгота'], 
+        ascending=[False, True],  # False для широты = сначала большие (север), True для долготы = сначала маленькие (запад)
+        na_position='last'
+    )
+    # ===== КОНЕЦ СОРТИРОВКИ =====
+    
     if st.session_state.search_query:
         search_lower = st.session_state.search_query.lower()
         import re
@@ -1041,7 +1125,7 @@ if st_select_region != 'Регионы':
             except:
                 pass
             
-            # ===== ИСПРАВЛЕНО: Используем стабильную функцию для генерации ID =====
+            # Используем стабильную функцию для генерации ID
             object_id = get_stable_object_id(row, index)
             
             full_info = {
@@ -1074,16 +1158,14 @@ if st_select_region != 'Регионы':
                 'lat': float(row['Широта']) if pd.notna(row['Широта']) else None,
                 'lon': float(row['Долгота']) if pd.notna(row['Долгота']) else None,
                 'index': index,
-                'object_id': object_id,  # Используем стабильный ID
-                # ===== ИСПРАВЛЕНО: Добавляем флаг, была ли уже открыта форма =====
-                'form_opened': False  # Это будет обновляться в JavaScript
+                'object_id': object_id,
+                'form_opened': False
             }
             
             objects_data.append(full_info)
         
         YANDEX_API_KEY = "7fe74d5b-be45-47d1-9fc0-a0765598a4d7"
         
-        # ===== ИСПРАВЛЕНО: Добавляем версию данных в HTML =====
         data_version = st.session_state.get('data_version', str(int(time.time())))
         
         objects_html = f"""
@@ -1621,11 +1703,9 @@ if st_select_region != 'Регионы':
     <div id="copy-success" class="copy-success">✓ Скопировано в буфер обмена!</div>
     
     <script>
-        // ===== ИСПРАВЛЕНО: Проверка версии данных =====
         const DATA_VERSION = '{data_version}';
         const storedVersion = sessionStorage.getItem('data_version');
         
-        // Если версия не совпадает или это новое обновление, очищаем состояния
         if (storedVersion !== DATA_VERSION || sessionStorage.getItem('data_refreshed') === 'true') {{
             console.log('Data version changed or refreshed, clearing button states');
             sessionStorage.removeItem('buttonStates');
@@ -1646,7 +1726,6 @@ if st_select_region != 'Регионы':
         let backButton = null;
         let backToMapButton = null;
         
-        // ===== ИСПРАВЛЕНО: Загружаем состояния с проверкой версии =====
         try {{
             const savedButtonStates = sessionStorage.getItem('buttonStates');
             if (savedButtonStates) {{
@@ -1740,7 +1819,6 @@ if st_select_region != 'Регионы':
             }}
         }}
         
-        // ===== ИСПРАВЛЕНО: Функция для получения данных объекта по ID =====
         function findObjectById(objectId) {{
             return objectsData.find(obj => obj.object_id === objectId);
         }}
@@ -1815,7 +1893,6 @@ if st_select_region != 'Регионы':
             }}
             
             const showConfirmButton = (statusOfWork !== '1' && statusOfWork !== '2');
-            // ===== ИСПРАВЛЕНО: Используем objectId вместо индекса =====
             const confirmButtonSection = showConfirmButton ? `
                 <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #e5e7eb;">
                     <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
@@ -1827,6 +1904,12 @@ if st_select_region != 'Регионы':
                                 ${{statusOfWork === '1' || statusOfWork === '2' ? 'disabled' : ''}}
                                 title="${{statusOfWork === '1' || statusOfWork === '2' ? 'Объект на рассмотрении, изменения внести нельзя' : 'Внести изменения'}}">
                             ${{statusOfWork === '1' || statusOfWork === '2' ? '⏳ На рассмотрении' : '✅ Внести изменения'}}
+                        </button>
+                        <button onclick='showInListFromMap("${{objectId}}")' 
+                                style="cursor: pointer; background: #8b5cf6; 
+                                       border: none; padding: 6px 12px; border-radius: 3px; 
+                                       color: white; font-weight: bold; font-size: 11px;">
+                            📋 В списке
                         </button>
                     </div>
                 </div>
@@ -1908,7 +1991,6 @@ if st_select_region != 'Регионы':
             blackPlacemarks.push(blackPlacemark);
         }}
         
-        // ===== ИСПРАВЛЕНО: Функция для обработки клика на карте =====
         function handleConfirmClickFromMap(objectId) {{
             const pointData = findObjectById(objectId);
             if (!pointData) {{
@@ -1925,11 +2007,9 @@ if st_select_region != 'Регионы':
             
             window.open("https://school-eev.bitrix24site.ru/crm_form_drmcv/", "_blank");
             
-            // Сохраняем состояние
             buttonStates[objectId] = true;
             sessionStorage.setItem('buttonStates', JSON.stringify(buttonStates));
             
-            // Обновляем кнопку в карточке списка, если она существует
             const listButton = document.getElementById('form-btn-' + objectId);
             if (listButton) {{
                 listButton.textContent = '📋 Форма была открыта';
@@ -1939,10 +2019,7 @@ if st_select_region != 'Регионы':
                 }};
             }}
             
-            // Обновляем точку на карте
             if (currentMap) {{
-                // Ищем placemark по objectId (нужно будет добавить идентификацию)
-                // Пока просто перезагрузим карту
                 setTimeout(() => {{
                     if (currentMap) {{
                         const placemark = currentMap.geoObjects.get(0);
@@ -1958,7 +2035,6 @@ if st_select_region != 'Регионы':
             return true;
         }}
         
-        // ===== ИСПРАВЛЕНО: Функция для обработки клика в списке =====
         function handleConfirmClick(objectId) {{
             const pointData = findObjectById(objectId);
             if (!pointData) {{
@@ -2144,7 +2220,6 @@ if st_select_region != 'Регионы':
             }}
         }}
         
-        // ===== ИСПРАВЛЕНО: Функция инициализации карты для одного объекта =====
         function initMap(pointData) {{
             if (!pointData.lat || !pointData.lon) return;
             
@@ -2177,7 +2252,6 @@ if st_select_region != 'Регионы':
                     currentMap.destroy();
                     currentMap = null;
                 }}
-                // Перерисовываем список при возврате
                 renderObjects();
             }};
             document.body.appendChild(backButton);
@@ -2268,7 +2342,6 @@ if st_select_region != 'Регионы':
                 }});
             }});
             
-            // Восстанавливаем черные точки
             for (let key in buttonStates) {{
                 if (key.startsWith('black_')) {{
                     const parts = key.split('_');
@@ -2473,7 +2546,6 @@ if st_select_region != 'Регионы':
             if (statusOfWork !== '1' && statusOfWork !== '2') {{
                 let formBtnClass = 'form-btn-compact';
                 let formBtnText = '✅ Внести изменения';
-                // ===== ИСПРАВЛЕНО: Используем objectId вместо индекса =====
                 let formBtnOnclick = `handleConfirmClick("${{objectId}}")`;
                 
                 if (wasButtonClicked) {{
@@ -2672,7 +2744,6 @@ if st_select_region != 'Регионы':
                 return;
             }}
             
-            // Перезагружаем состояния из sessionStorage перед рендерингом
             try {{
                 const savedButtonStates = sessionStorage.getItem('buttonStates');
                 if (savedButtonStates) {{
@@ -2828,7 +2899,6 @@ if st_select_region != 'Регионы':
             except:
                 pass
             
-            # ===== ИСПРАВЛЕНО: Используем стабильную функцию для генерации ID =====
             row_dict = {
                 'id_egora': current_id_egora,
                 'РФС_ID': current_rfs_id,
@@ -2878,7 +2948,6 @@ if st_select_region != 'Регионы':
 
         zoom = 5
         map_unique_id = st.session_state.map_refresh_key
-        # ===== ИСПРАВЛЕНО: Добавляем версию данных в карту =====
         data_version = st.session_state.get('data_version', str(int(time.time())))
         
         map_html = f"""
@@ -3093,11 +3162,9 @@ if st_select_region != 'Регионы':
     <div id="copy-success" class="copy-success">✓ Скопировано в буфер обмена!</div>
 
     <script>
-        // ===== ИСПРАВЛЕНО: Проверка версии данных =====
         const DATA_VERSION = '{data_version}';
         const storedVersion = sessionStorage.getItem('data_version');
         
-        // Если версия не совпадает, очищаем состояния
         if (storedVersion !== DATA_VERSION) {{
             console.log('Data version changed, clearing button states');
             sessionStorage.removeItem('buttonStates');
@@ -3122,12 +3189,10 @@ if st_select_region != 'Регионы':
             console.error('Error loading button states for map:', e);
         }}
         
-        // ===== ИСПРАВЛЕНО: Функция для поиска точки по ID =====
         function findPointById(objectId) {{
             return POINTS_DATA.find(p => p.object_id === objectId);
         }}
         
-        // ===== ИСПРАВЛЕНО: Функция обработки клика на карте =====
         function handleConfirmClick(objectId) {{
             const pointData = findPointById(objectId);
             if (!pointData) {{
@@ -3147,7 +3212,6 @@ if st_select_region != 'Регионы':
             buttonStates[objectId] = true;
             sessionStorage.setItem('buttonStates', JSON.stringify(buttonStates));
             
-            // Обновляем точку на карте
             if (placemarks[pointData.index]) {{
                 const placemark = placemarks[pointData.index];
                 placemark.options.set('iconColor', '#808080');
@@ -3228,7 +3292,6 @@ if st_select_region != 'Регионы':
             }}
             
             const showConfirmButton = (statusOfWork !== '1' && statusOfWork !== '2');
-            // ===== ИСПРАВЛЕНО: Используем objectId вместо индекса =====
             const confirmButtonSection = showConfirmButton ? `
                 <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #e5e7eb;">
                     <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
@@ -3240,6 +3303,12 @@ if st_select_region != 'Регионы':
                                 ${{statusOfWork === '1' || statusOfWork === '2' ? 'disabled' : ''}}
                                 title="${{statusOfWork === '1' || statusOfWork === '2' ? 'Объект на рассмотрении, изменения внести нельзя' : 'Внести изменения'}}">
                             ${{statusOfWork === '1' || statusOfWork === '2' ? '⏳ На рассмотрении' : '✅ Внести изменения'}}
+                        </button>
+                        <button onclick='showInListFromMap("${{objectId}}")' 
+                                style="cursor: pointer; background: #8b5cf6; 
+                                       border: none; padding: 6px 12px; border-radius: 3px; 
+                                       color: white; font-weight: bold; font-size: 11px;">
+                            📋 В списке
                         </button>
                     </div>
                 </div>
@@ -3586,7 +3655,6 @@ if st_select_region != 'Регионы':
             
             map.geoObjects.add(geoObjects);
             
-            // Восстанавливаем черные точки
             for (let key in buttonStates) {{
                 if (key.startsWith('black_')) {{
                     const parts = key.split('_');
