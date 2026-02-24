@@ -477,10 +477,28 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 # Сбрасываем флаг после очистки
-st.session_state.force_clear = False
-# Сохраняем версию в session_state для последующего использования
-st.session_state.data_version = new_version
-# ===== КОНЕЦ блока =====
+if 'force_clear' in st.session_state and st.session_state.force_clear:
+    # Генерируем новую версию данных на основе текущего времени
+    new_version = str(int(time.time()))
+    st.components.v1.html(f"""
+    <script>
+        // Полная очистка sessionStorage
+        console.log('Очищаем sessionStorage перед загрузкой');
+        sessionStorage.clear();
+        
+        // Устанавливаем новую версию данных
+        sessionStorage.setItem('data_version', '{new_version}');
+        sessionStorage.setItem('clean_start', 'true');
+        
+        // Устанавливаем флаг, что это новое обновление
+        sessionStorage.setItem('data_refreshed', 'true');
+    </script>
+    """, height=0)
+    # Сбрасываем флаг после очистки
+    st.session_state.force_clear = False
+    # Сохраняем версию в session_state для последующего использования
+    st.session_state.data_version = new_version
+# ===== КОНЕЦ блока =======
 
 FULL_BALLOONS_DATA = []
 
@@ -3757,5 +3775,6 @@ if st_select_region != 'Регионы':
     st.sidebar.write(f'Доска (паркет): {original_data[original_data["Тип покрытия"] == "Доска (паркет)"].shape[0]}')
     st.sidebar.write(f'Иное: {original_data[original_data["Тип покрытия"] == "Иное"].shape[0]}')
     st.sidebar.write(f'Нет информации: {original_data[original_data["Тип покрытия"] == "Нет информации"].shape[0]}')
+
 
 
