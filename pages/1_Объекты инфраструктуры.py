@@ -1955,12 +1955,6 @@ if st_select_region != 'Регионы':
                                 title="${{statusOfWork === '1' || statusOfWork === '2' ? 'Объект на рассмотрении, изменения внести нельзя' : 'Внести изменения'}}">
                             ${{statusOfWork === '1' || statusOfWork === '2' ? '⏳ На рассмотрении' : '✅ Внести изменения'}}
                         </button>
-                        <button onclick='showInListFromMap("${{objectId}}")' 
-                                style="cursor: pointer; background: #8b5cf6; 
-                                       border: none; padding: 6px 12px; border-radius: 3px; 
-                                       color: white; font-weight: bold; font-size: 11px;">
-                            📋 В списке
-                        </button>
                     </div>
                 </div>
             ` : '';
@@ -2533,7 +2527,7 @@ if st_select_region != 'Регионы':
                 if (obj.lat && obj.lon) {{
                     mapButtonHTML = `
                         <button onclick="showOnMap(${{index}})" class="map-btn-purple" title="Показать на карте">
-                            👁️ На карте
+                            Просмотр а карте
                         </button>
                     `;
                 }}
@@ -2618,7 +2612,7 @@ if st_select_region != 'Регионы':
             if (obj.lat && obj.lon) {{
                 mapButtonHTML = `
                     <button onclick="showOnMap(${{index}})" class="map-btn-compact" title="Показать на карте">
-                        👁️ На карте
+                        Просмотр на карте
                     </button>
                 `;
             }}
@@ -3354,12 +3348,6 @@ if st_select_region != 'Регионы':
                                 title="${{statusOfWork === '1' || statusOfWork === '2' ? 'Объект на рассмотрении, изменения внести нельзя' : 'Внести изменения'}}">
                             ${{statusOfWork === '1' || statusOfWork === '2' ? '⏳ На рассмотрении' : '✅ Внести изменения'}}
                         </button>
-                        <button onclick='showInListFromMap("${{objectId}}")' 
-                                style="cursor: pointer; background: #8b5cf6; 
-                                       border: none; padding: 6px 12px; border-radius: 3px; 
-                                       color: white; font-weight: bold; font-size: 11px;">
-                            📋 В списке
-                        </button>
                     </div>
                 </div>
             ` : '';
@@ -3775,6 +3763,7 @@ if st_select_region != 'Регионы':
     st.sidebar.write(f'Доска (паркет): {original_data[original_data["Тип покрытия"] == "Доска (паркет)"].shape[0]}')
     st.sidebar.write(f'Иное: {original_data[original_data["Тип покрытия"] == "Иное"].shape[0]}')
     st.sidebar.write(f'Нет информации: {original_data[original_data["Тип покрытия"] == "Нет информации"].shape[0]}')
+
 
 
 
