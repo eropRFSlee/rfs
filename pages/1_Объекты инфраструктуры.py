@@ -1244,44 +1244,50 @@ if st_select_region != 'Регионы':
         }}
         
         .back-button {{
-            position: fixed;
-            top: 10px;
-            right: 300px;
-            z-index: 10000;
-            background: #3b82f6;
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 11px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }}
-        
-        .back-button:hover {{
-            background: #2563eb;
-        }}
-        
-        .back-to-map-button {{
-            position: fixed;
-            top: 10px;
-            right: 15px;
-            z-index: 10000;
-            background: #8b5cf6;
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 11px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }}
-        
-        .back-to-map-button:hover {{
-            background: #7c3aed;
-        }}
+    position: absolute;
+    top: 13px;
+    left: 1130px;
+    z-index: 10000;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    padding: 4px 12px;  /* Уменьшил отступы */
+    border-radius: 4px;  /* Прямоугольная с легким скруглением */
+    cursor: pointer;
+    font-weight: normal;  /* Убрал жирность */
+    font-size: 12px;      /* Уменьшил шрифт */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    transition: background-color 0.2s;
+    height: 28px;         /* Уменьшил высоту */
+    line-height: 20px;
+}}
+
+.back-button:hover {{
+    background: #2563eb;
+}}
+
+.back-to-map-button {{
+    position: absolute;
+    top: 10px;
+    left: 460px;
+    z-index: 10000;
+    background: #8b5cf6;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 13px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    transition: background-color 0.2s;
+    height: 36px;
+    line-height: 20px;
+}}
+
+.back-to-map-button:hover {{
+    background: #7c3aed;
+}}
         
         .card {{
             background-color: white;
@@ -2271,26 +2277,26 @@ if st_select_region != 'Регионы':
             }}
             
             backButton = document.createElement('button');
-            backButton.className = 'back-button';
-            backButton.innerHTML = '← Назад к списку';
-            backButton.onclick = function() {{
-                mapContainer.style.display = 'none';
-                document.getElementById('objects-container').style.display = 'block';
-                if (backButton && backButton.parentNode) {{
-                    backButton.parentNode.removeChild(backButton);
-                    backButton = null;
-                }}
-                if (backToMapButton && backToMapButton.parentNode) {{
-                    backToMapButton.parentNode.removeChild(backToMapButton);
-                    backToMapButton = null;
-                }}
-                if (currentMap) {{
-                    currentMap.destroy();
-                    currentMap = null;
-                }}
-                renderObjects();
-            }};
-            document.body.appendChild(backButton);
+backButton.className = 'back-button';
+backButton.innerHTML = '← Назад к списку';
+backButton.onclick = function() {{
+    mapContainer.style.display = 'none';
+    document.getElementById('objects-container').style.display = 'block';
+    if (backButton && backButton.parentNode) {{
+        backButton.parentNode.removeChild(backButton);
+        backButton = null;
+    }}
+    if (backToMapButton && backToMapButton.parentNode) {{
+        backToMapButton.parentNode.removeChild(backToMapButton);
+        backToMapButton = null;
+    }}
+    if (currentMap) {{
+        currentMap.destroy();
+        currentMap = null;
+    }}
+    renderObjects();
+}};
+document.querySelector('.map-container').appendChild(backButton);
             
             if (isSingleObjectMode) {{
                 backToMapButton = document.createElement('button');
@@ -3755,7 +3761,6 @@ if st_select_region != 'Регионы':
     st.sidebar.write(f'Доска (паркет): {original_data[original_data["Тип покрытия"] == "Доска (паркет)"].shape[0]}')
     st.sidebar.write(f'Иное: {original_data[original_data["Тип покрытия"] == "Иное"].shape[0]}')
     st.sidebar.write(f'Нет информации: {original_data[original_data["Тип покрытия"] == "Нет информации"].shape[0]}')
-
 
 
 
