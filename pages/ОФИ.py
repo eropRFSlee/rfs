@@ -306,7 +306,8 @@ st.markdown("""
     iframe {
         max-height: none !important;
     }
-                /* Скролл только у всего сайдбара, убираем скроллы у внутренних элементов */
+    
+    /* Скролл только у всего сайдбара, убираем скроллы у внутренних элементов */
     section[data-testid="stSidebar"] > div:first-child {
         overflow-y: auto !important;
         overflow-x: hidden !important;
@@ -330,6 +331,7 @@ st.markdown("""
     section[data-testid="stSidebar"] [role="listbox"] * {
         overflow-y: auto !important;
     }
+    
     /* Нормальный скролл только у сайдбара */
     section[data-testid="stSidebar"] > div:first-child {
         overflow-y: auto !important;
@@ -353,6 +355,30 @@ st.markdown("""
     }
 </style>
 """, unsafe_allow_html=True)
+
+# ===== ИСПРАВЛЕНО: Блок очистки sessionStorage с версионированием =====
+if 'force_clear' in st.session_state and st.session_state.force_clear:
+    # Генерируем новую версию данных на основе текущего времени
+    new_version = str(int(time.time()))
+    st.components.v1.html(f"""
+    <script>
+        // Полная очистка sessionStorage
+        console.log('Очищаем sessionStorage перед загрузкой');
+        sessionStorage.clear();
+        
+        // Устанавливаем новую версию данных
+        sessionStorage.setItem('data_version', '{new_version}');
+        sessionStorage.setItem('clean_start', 'true');
+        
+        // Устанавливаем флаг, что это новое обновление
+        sessionStorage.setItem('data_refreshed', 'true');
+    </script>
+    """, height=0)
+    # Сбрасываем флаг после очистки
+    st.session_state.force_clear = False
+    # Сохраняем версию в session_state для последующего использования
+    st.session_state.data_version = new_version
+# ===== КОНЕЦ исправленного блока =====
 
 FULL_BALLOONS_DATA = []
 
@@ -510,6 +536,47 @@ def get_color_class(status_of_work, in_reestr):
     else:
         return 'color-green', '🟢 Есть в РОИВ и в ЦП'
 
+# ===== ИСПРАВЛЕНО: Новая функция для генерации стабильного ID объекта =====
+def get_stable_object_id(row, index=None):
+    """
+    Генерирует стабильный ID объекта, который не зависит от фильтрации и индексации.
+    Приоритет: id_egora > РФС_ID > комбинация полей
+    """
+    # Пробуем получить id_egora
+    id_egora = row.get('id_egora') if isinstance(row, dict) else row.get('id_egora', None)
+    if id_egora and id_egora != '-' and id_egora != 'nan' and pd.notna(id_egora):
+        try:
+            if isinstance(id_egora, (int, float)):
+                return str(int(float(id_egora)))
+            return str(id_egora).strip()
+        except:
+            return str(id_egora).strip()
+    
+    # Пробуем получить РФС_ID
+    rfs_id = row.get('РФС_ID') if isinstance(row, dict) else row.get('РФС_ID', None)
+    if rfs_id and rfs_id != '-' and rfs_id != 'nan' and pd.notna(rfs_id):
+        try:
+            if isinstance(rfs_id, (int, float)):
+                return f"rfs_{int(float(rfs_id))}"
+            return f"rfs_{str(rfs_id).strip()}"
+        except:
+            return f"rfs_{str(rfs_id).strip()}"
+    
+    # Если нет ни того, ни другого, создаем ID на основе названия и адреса
+    full_name = row.get('Полное (официальное) название объекта', '') if isinstance(row, dict) else row.get('Полное (официальное) название объекта', '')
+    address = row.get('Адрес', '') if isinstance(row, dict) else row.get('Адрес', '')
+    
+    # Берем первые 20 символов названия и адреса, убираем пробелы
+    name_part = str(full_name)[:20].replace(' ', '_') if full_name else 'noname'
+    addr_part = str(address)[:20].replace(' ', '_') if address else 'noaddr'
+    
+    # Добавляем индекс, если передан
+    if index is not None:
+        return f"gen_{index}_{name_part}_{addr_part}"
+    else:
+        return f"gen_{name_part}_{addr_part}"
+# ===== КОНЕЦ новой функции =====
+
 # Функция для безопасной конвертации данных в JSON для JavaScript
 def safe_json_for_js(data):
     """
@@ -541,16 +608,19 @@ if 'data_loaded' not in st.session_state:
     st.session_state.current_region = None
     st.session_state.last_region = None
     st.session_state.force_reload = False
-    st.session_state.widget_reset_key = 0  # Ключ для сброса виджетов
-    st.session_state.map_refresh_key = str(uuid.uuid4())  # Уникальный ключ для карты
-    st.session_state.map_refresh_counter = 0  # Счетчик обновлений карты
-    st.session_state.last_data_update = None  # Время последнего обновления данных
-    st.session_state.view_mode = 'map'  # Режим просмотра: 'map' или 'list'
-    st.session_state.copied_id = None  # Для отслеживания скопированного ID
-    st.session_state.search_query = ''  # Поисковый запрос
-    st.session_state.search_triggered = False  # Флаг для отслеживания нажатия Enter
-
-# Создаем одну кнопку обновления в сайдбаре ДО выбора региона
+    st.session_state.force_clear = False
+    st.session_state.widget_reset_key = 0
+    st.session_state.map_refresh_key = str(uuid.uuid4())
+    st.session_state.map_refresh_counter = 0
+    st.session_state.last_data_update = None
+    st.session_state.view_mode = 'map'
+    st.session_state.copied_id = None
+    st.session_state.search_query = ''
+    st.session_state.search_triggered = False
+    st.session_state.single_object_mode = False
+    st.session_state.single_object_id = None
+    # ===== ИСПРАВЛЕНО: Добавляем версию данных =====
+    st.session_state.data_version = str(int(time.time()))
 
 st_select_region = st.sidebar.selectbox("Выберите свой регион", ['Регионы',\
     '01 Республика Адыгея',
@@ -638,7 +708,6 @@ st_select_region = st.sidebar.selectbox("Выберите свой регион"
     '89'
 ])
 
-# Кнопка в сайдбаре для перезагрузки данных
 if st_select_region != 'Регионы':
     if st_select_region == 'Сибирь':
         current_region_number = 0
@@ -646,24 +715,18 @@ if st_select_region != 'Регионы':
     else:
         current_region_number = int(st_select_region[0:2])
     
-    # Переносим кнопку "Обновить карту и данные" в сайдбар
-
     if st.sidebar.button("🔄 Обновить данные", key="refresh_all_btn"):
-        # 1. Загружаем новые данные из Битрикса
+        st.session_state.force_clear = True
         st.session_state.force_reload = True
-        # 2. Обновляем карту (черные/серые точки исчезнут)
         st.session_state.map_refresh_key = str(uuid.uuid4())
         st.session_state.map_refresh_counter += 1
-        st.session_state.last_data_update = time.time()  # Запоминаем время обновления
-        # 3. Используем JavaScript для обновления страницы
-        st.markdown("""
-        <script>
-            window.location.reload();
-        </script>
-        """, unsafe_allow_html=True)
+        st.session_state.last_data_update = time.time()
+        st.session_state.single_object_mode = False
+        st.session_state.single_object_id = None
+        # ===== ИСПРАВЛЕНО: Обновляем версию данных =====
+        st.session_state.data_version = str(int(time.time()))
+        st.rerun()
     
-    # -------------------------------------------------------------------------------------------------------------
-    # ПЕРЕМЕЩАЕМ КНОПКИ ВЫБОРА РЕЖИМА В САЙДБАР ПОСЛЕ ВЫБОРА РЕГИОНА
     st.sidebar.markdown("---")
     st.sidebar.write("**Режим просмотра:**")
     col1, col2 = st.sidebar.columns(2)
@@ -671,14 +734,17 @@ if st_select_region != 'Регионы':
         if st.button("Карта", key="map_btn" if st.session_state.view_mode == 'map' else "secondary", 
                      help="Переключить на карту", use_container_width=True):
             st.session_state.view_mode = 'map'
+            st.session_state.single_object_mode = False
+            st.session_state.single_object_id = None
             st.rerun()
     with col2:
         if st.button("Список", key="list_btn" if st.session_state.view_mode == 'list' else "secondary",
                      help="Переключить на список", use_container_width=True):
             st.session_state.view_mode = 'list'
+            st.session_state.single_object_mode = False
+            st.session_state.single_object_id = None
             st.rerun()  
     
-    # Загружаем данные если они еще не загружены, изменился регион или принудительное обновление
     if (not st.session_state.data_loaded or 
         st.session_state.current_region != current_region_number or 
         st.session_state.clear_data is None or
@@ -691,13 +757,11 @@ if st_select_region != 'Регионы':
             st.session_state.current_region = current_region_number
             st.session_state.last_region = current_region_number
             st.session_state.force_reload = False
+            st.session_state.single_object_mode = False
+            st.session_state.single_object_id = None
     
-
-    
-    # Используем данные из session_state
     clear_data = st.session_state.clear_data
     
-    #----------------------------------------------------------------
     data = pd.DataFrame(data=clear_data, columns = ['РФС_ID', 'Полное (официальное) название объекта', 
     'Короткое (спортивное) название объекта', 'Регион', 'Номер региона', 'Адрес', 'Контактное лицо', 'Собственник (ОГРН)',
     'Управляющая компания (ОГРН)', 'Пользователь (ОГРН)', 'Тип Объекта ', 'Дисциплина ','Длина футбольного поля',
@@ -711,7 +775,6 @@ if st_select_region != 'Регионы':
     data['Долгота'] = pd.to_numeric(data['Долгота'], errors='coerce')
 
     all_object = data.shape[0]
-
     one_object = data[data['Наличие в реестрах'] == 1].shape[0]
     two_object = data[data['Наличие в реестрах'] == 2].shape[0]
     three_object = data[data['Наличие в реестрах'] == 3].shape[0]
@@ -722,20 +785,18 @@ if st_select_region != 'Регионы':
 
     condition_reestr = []
     condition_reestr.append('Все')
-    condition_reestr.append('🔵 Есть в РОИВ, но нет в ЦП')  # Синий
-    condition_reestr.append('🟡 Есть только в ЦП')          # Желтый
-    condition_reestr.append('🟢 Есть в РОИВ и в ЦП')       # Зеленый
-    condition_reestr.append('🟣 Добавили новое поле, в стадии рассмотрения')  # Фиолетовый
-    condition_reestr.append('🔴 Внесли изменения, в стадии рассмотрения')       # Красный
+    condition_reestr.append('🔵 Есть в РОИВ, но нет в ЦП')
+    condition_reestr.append('🟡 Есть только в ЦП')
+    condition_reestr.append('🟢 Есть в РОИВ и в ЦП')
+    condition_reestr.append('🟣 Добавили новое поле, в стадии рассмотрения')
+    condition_reestr.append('🔴 Внесли изменения, в стадии рассмотрения')
     
     conditional_size = []
     
-    # ИЗМЕНЕНИЕ 1: Добавляем "Не указан размер" в список дисциплин
     for x in sorted(data['Дисциплина_2'].unique()):
-        if x != '-':  # Убираем '-'
+        if x != '-':
             conditional_size.append(x)
     
-    # Добавляем "Не указан размер" в список
     conditional_size.append('Не указан размер')
     
     under_list_size = ['Все']
@@ -744,7 +805,6 @@ if st_select_region != 'Регионы':
         under_list_size.append([conditional_size[conditional_size.index('11x11')]])
         conditional_size.remove('11x11')
     if ('6x6' in conditional_size) or ('7x7' in conditional_size)  or ('8x8' in conditional_size)  or ('Спортивная площадка' in conditional_size):
-        # Убираем 'Не указан размер' из этой группы, если он там есть
         size_group = []
         for item in conditional_size[:]:
             if item not in ['Зал', 'Не указан размер']:
@@ -760,9 +820,6 @@ if st_select_region != 'Регионы':
         lst_to_combo.append('Зал')
         lst_to_combo.append('Не указан размер')
 
-    # -------------------------------------------------------------------------------------------------------------
-
-    # Добавляем список для фильтра по типу покрытия (в раздел с другими фильтрами)
     conditional_dop = ['Все']
     conditional_dop.append('Наличие табло')
     conditional_dop.append('Наличие дренажа')
@@ -775,9 +832,6 @@ if st_select_region != 'Регионы':
     conditional_dop.append('Иное') 
     conditional_dop.append('Нет информации') 
 
-    # -------------------------------------------------------------------------------------------------------------
-
-    # Создаем ключи для виджетов, зависящие от региона и ключа сброса
     st_select_desciplyne = st.sidebar.selectbox(
         "Выбор дисциплины", 
         lst_to_combo,
@@ -785,7 +839,6 @@ if st_select_region != 'Регионы':
     )
     st.sidebar.markdown("---")
 
-    # ДОБАВЛЯЕМ НОВЫЙ ФИЛЬТР ПО ТИПУ ПОКРЫТИЯ
     st_select_covering = st.sidebar.selectbox(
         "Фильтр по типу покрытия/особенностям",
         conditional_dop,
@@ -798,10 +851,7 @@ if st_select_region != 'Регионы':
         key=f"reestr_{current_region_number}_{st.session_state.widget_reset_key}"
     )
 
-    # -------------------------------------------------------------------------------------------------------------
-
-    # Применяем фильтры
-    original_data = data.copy()  # Сохраняем исходные данные для статистики
+    original_data = data.copy()
 
     if st_select_reestr == '🔴 Внесли изменения, в стадии рассмотрения':
         data = data[data['Статус работы'] == '1']
@@ -814,7 +864,6 @@ if st_select_region != 'Регионы':
     elif st_select_reestr == '🟢 Есть в РОИВ и в ЦП':
         data = data[(data['Наличие в реестрах'] == 3) & (data['Статус работы'] != '1') & (data['Статус работы'] != '2')]
 
-    # ИЗМЕНЕНИЕ 2: Применяем фильтр по дисциплине с учетом "Не указан размер"
     if st_select_desciplyne != 'Все':
         if st_select_desciplyne == '11x11':
             data = data[data['Дисциплина_2'].isin([lst_to_combo[1]])]
@@ -825,7 +874,6 @@ if st_select_region != 'Регионы':
         else:
             data = data[data['Дисциплина_2'].isin(lst_to_combo[2].split(', '))]
 
-    # ДОБАВЛЯЕМ ПРИМЕНЕНИЕ ФИЛЬТРА ПО ТИПУ ПОКРЫТИЯ
     if st_select_covering == 'Натуральное':
         data = data[data['Тип покрытия'] == 'Натуральное']
     elif st_select_covering == 'Искусственная трава':
@@ -847,14 +895,9 @@ if st_select_region != 'Регионы':
     elif st_select_covering == 'Наличие подогрева':
         data = data[data['Наличие подогрева'] == 'Y']
 
-     # -------------------------------------------------------------------------------------------------------------
-    
-    # ДОБАВЛЕН ПОИСК ПО КЛЮЧЕВЫМ СЛОВАМ С ИСПРАВЛЕННОЙ ЛОГИКОЙ
-    # Создаем контейнер для поиска
     search_container = st.container()
     
     with search_container:
-        # Используем key для управления состояния поля поиска
         search_query = st.text_input(
             "Поиск",
             value=st.session_state.get('search_query', ''),
@@ -863,22 +906,15 @@ if st_select_region != 'Регионы':
             key="search_input_field"
         )
     
-    # Обработка нажатия Enter и очистки поля
-    # Если поле поиска пустое, очищаем session_state.search_query
     if search_query == "" and st.session_state.search_query != "":
         st.session_state.search_query = ""
-        # Используем rerun для немедленного обновления
         st.rerun()
-    
-    # Если в поле есть текст, сохраняем его в session_state
     elif search_query != "" and search_query != st.session_state.search_query:
         st.session_state.search_query = search_query
     
-    # Применяем поисковый фильтр ко всем данным (и для карты, и для списка)
     filtered_data_for_display = data.copy()
     if st.session_state.search_query:
         search_lower = st.session_state.search_query.lower()
-        # Экранируем специальные символы регулярных выражений
         import re
         search_pattern = re.escape(search_lower)
         
@@ -899,26 +935,26 @@ if st_select_region != 'Регионы':
         )
         filtered_data_for_display = filtered_data_for_display[search_mask]
         
-        # Показываем количество найденных объектов
         st.markdown(f'<p style="color: #FFD700;">Найдено объектов по запросу "{st.session_state.search_query}": {len(filtered_data_for_display)}</p>', unsafe_allow_html=True)
     
-    # Проверяем режим просмотра
+    if st.session_state.single_object_mode and st.session_state.single_object_id:
+        single_object_data = filtered_data_for_display[filtered_data_for_display['id_egora'].astype(str) == st.session_state.single_object_id]
+        if len(single_object_data) > 0:
+            filtered_data_for_display = single_object_data
+        else:
+            st.session_state.single_object_mode = False
+            st.session_state.single_object_id = None
+    
     if st.session_state.view_mode == 'list':
         
-        # Сохраняем все данные для поиска
         st.session_state.all_filtered_data = filtered_data_for_display.copy()
-        
-        # Получаем все данные для отображения (без пагинации)
         page_data = filtered_data_for_display
         
-        # Подготавливаем данные для JavaScript из page_data
         objects_data = []
         for index, row in page_data.iterrows():
-            # Подготавливаем id_egora
             id_egora_value = '-'
             if pd.notna(row['id_egora']):
                 try:
-                    # Пробуем преобразовать в int
                     if isinstance(row['id_egora'], (int, float)):
                         id_egora_int = int(float(str(row['id_egora'])))
                         id_egora_value = str(id_egora_int)
@@ -927,13 +963,10 @@ if st_select_region != 'Регионы':
                 except:
                     id_egora_value = str(row['id_egora']).strip()
             
-            # Подготавливаем РФС_ID с проверкой
             rfs_id_value = '-'
             if row['Наличие в реестрах'] == 1:
-                # Если Наличие в реестрах == 1, всегда "-"
                 rfs_id_value = '-'
             elif pd.notna(row['РФС_ID']):
-                # Иначе обрабатываем как обычно
                 try:
                     if isinstance(row['РФС_ID'], (int, float)):
                         rfs_id_value = str(int(float(row['РФС_ID'])))
@@ -947,12 +980,10 @@ if st_select_region != 'Регионы':
                 except:
                     rfs_id_value = str(row['РФС_ID']).strip()
             
-            # Определяем цвет точки
             status_of_work = row['Статус работы'] if pd.notna(row['Статус работы']) else '0'
             in_reestr = row['Наличие в реестрах'] if pd.notna(row['Наличие в реестрах']) else 0
             color_class, color_description = get_color_class(status_of_work, in_reestr)
             
-            # Обработка информации для объектов со статусом работы '1' или '2'
             provided_data = ""
             info = row['То, что заполнили РОИВ'] if pd.notna(row['То, что заполнили РОИВ']) else ""
             
@@ -999,11 +1030,9 @@ if st_select_region != 'Регионы':
                     if result_parts:
                         provided_data = '<br>'.join(result_parts)
             
-            # Подготавливаем все данные с целочисленными значениями размеров
             length_val = str(row['Длина футбольного поля']) if pd.notna(row['Длина футбольного поля']) else '-'
             width_val = str(row['Ширина футбольного поля']) if pd.notna(row['Ширина футбольного поля']) else '-'
             
-            # Пытаемся преобразовать к целым числам
             try:
                 if length_val != '-' and float(length_val).is_integer():
                     length_val = str(int(float(length_val)))
@@ -1011,6 +1040,9 @@ if st_select_region != 'Регионы':
                     width_val = str(int(float(width_val)))
             except:
                 pass
+            
+            # ===== ИСПРАВЛЕНО: Используем стабильную функцию для генерации ID =====
+            object_id = get_stable_object_id(row, index)
             
             full_info = {
                 'fn': str(row['Полное (официальное) название объекта']) if pd.notna(row['Полное (официальное) название объекта']) else '-',
@@ -1038,821 +1070,1678 @@ if st_select_region != 'Регионы':
                 'cd': color_description,
                 'sw': status_of_work,
                 'pd': provided_data,
-                'in_reestr': in_reestr  # Добавляем информацию о наличии в реестрах
+                'in_reestr': in_reestr,
+                'lat': float(row['Широта']) if pd.notna(row['Широта']) else None,
+                'lon': float(row['Долгота']) if pd.notna(row['Долгота']) else None,
+                'index': index,
+                'object_id': object_id,  # Используем стабильный ID
+                # ===== ИСПРАВЛЕНО: Добавляем флаг, была ли уже открыта форма =====
+                'form_opened': False  # Это будет обновляться в JavaScript
             }
             
             objects_data.append(full_info)
         
-        # HTML для компактных плашек с правильным расположением элементов
+        YANDEX_API_KEY = "7fe74d5b-be45-47d1-9fc0-a0765598a4d7"
+        
+        # ===== ИСПРАВЛЕНО: Добавляем версию данных в HTML =====
+        data_version = st.session_state.get('data_version', str(int(time.time())))
+        
         objects_html = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="utf-8">
-            <style>
-                body {{
-                    font-family: Arial, sans-serif;
-                    margin: 0;
-                    padding: 0;
-                    background-color: transparent;
-                    width: 100%;
-                    overflow-x: hidden;
-                }}
-                
-                .objects-container {{
-                    width: 100%;
-                    margin: 0 auto;
-                    padding: 3px;
-                    max-height: 650px;  /* ИЗМЕНЕНИЕ 3: Уменьшена высота с 850px до 650px */
-                    overflow-y: auto;
-                    scroll-behavior: smooth;
-                }}
-                
-                .card {{
-                    background-color: white;
-                    border-radius: 6px;
-                    padding: 8px;
-                    margin-bottom: 6px;
-                    box-shadow: 0 1px 2px rgba(0,0,0,0.08);
-                    border-left: 2px solid #3b82f6;
-                }}
-                
-                /* Стиль для карточек со статусом 2 */
-                .card-status-2 {{
-                    border-left: 2px solid #9444EF;
-                }}
-                
-                /* Строка 1: Полное название + Кнопка (кнопка сразу после названия) */
-                .row-1 {{
-                    display: flex;
-                    align-items: flex-start;
-                    margin-bottom: 6px;
-                    gap: 5px;
-                }}
-                
-                .full-name {{
-                    color: #2a4a80;
-                    font-weight: bold;
-                    font-size: 13px;
-                    line-height: 1.3;
-                    margin-top: 0;
-                    margin-bottom: 0;
-                }}
-                
-                /* Кнопка "Внести изменения" - сразу после названия */
-                .form-btn-compact {{
-                    cursor: pointer;
-                    background: #10b981;
-                    border: none;
-                    padding: 4px 8px;
-                    border-radius: 3px;
-                    color: white;
-                    font-weight: bold;
-                    font-size: 10px;
-                    white-space: nowrap;
-                    height: 24px;
-                }}
-                
-                .form-btn-compact:hover {{
-                    background: #059669;
-                }}
-                
-                .form-btn-opened {{
-                    background: #6b7280;
-                    cursor: default !important;
-                }}
-                
-                .form-btn-disabled {{
-                    background: #9ca3af;
-                    opacity: 0.7;
-                    cursor: not-allowed !important;
-                }}
-                
-                /* Строка 2: ID + Краткое + Адрес + Размер + Статус (все подряд) */
-                .row-2 {{
-                    display: flex;
-                    align-items: center;
-                    flex-wrap: wrap;
-                    gap: 8px;
-                    margin-bottom: 6px;
-                    font-size: 11px;
-                    color: #333;
-                }}
-                
-                /* ID с кнопкой копирования */
-                .id-container {{
-                    display: flex;
-                    align-items: center;
-                    gap: 3px;
-                    background: #f3f4f6;
-                    padding: 2px 6px;
-                    border-radius: 3px;
-                    white-space: nowrap;
-                }}
-                
-                .copy-icon-small {{
-                    cursor: pointer;
-                    color: #3b82f6;
-                    font-size: 10px;
-                    transition: color 0.2s;
-                    margin-left: 2px;
-                }}
-                
-                .copy-icon-small:hover {{
-                    color: #2563eb;
-                }}
-                
-                /* Элементы второй строки - все подряд */
-                .info-item {{
-                    display: flex;
-                    align-items: center;
-                    gap: 2px;
-                    white-space: nowrap;
-                }}
-                
-                /* Цветовая метка статуса - просто элемент в строке */
-                .color-label-compact {{
-                    display: inline-flex;
-                    align-items: center;
-                    gap: 3px;
-                    padding: 1px 5px;
-                    border-radius: 3px;
-                    font-size: 9px;
-                    font-weight: bold;
-                    background: #f3f4f6;
-                    white-space: nowrap;
-                }}
-                
-                .color-indicator-small {{
-                    display: inline-block;
-                    width: 6px;
-                    height: 6px;
-                    border-radius: 50%;
-                }}
-                
-                .color-blue {{ background-color: #3B82F6; }}
-                .color-yellow {{ background-color: #FFA500; }}
-                .color-green {{ background-color: #10B981; }}
-                .color-purple {{ background-color: #9444EF; }}
-                .color-red {{ background-color: #EF4444; }}
-                
-                /* Строка 3: Кнопка показа деталей */
-                .toggle-details-btn {{
-                    background: none;
-                    border: none;
-                    color: #3b82f6;
-                    cursor: pointer;
-                    font-size: 10px;
-                    padding: 2px 0;
-                    text-align: left;
-                    margin: 0;
-                }}
-                
-                .toggle-details-btn:hover {{
-                    text-decoration: underline;
-                }}
-                
-                /* Уведомление о копировании */
-                .notification {{
-                    position: fixed;
-                    top: 15px;
-                    right: 15px;
-                    background-color: #10b981;
-                    color: white;
-                    padding: 6px 12px;
-                    border-radius: 4px;
-                    z-index: 10000;
-                    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-                    display: flex;
-                    align-items: center;
-                    gap: 5px;
-                    opacity: 0;
-                    transition: opacity 0.3s;
-                    font-size: 11px;
-                }}
-                
-                .notification.show {{
-                    opacity: 1;
-                }}
-                
-                hr {{
-                    border: none;
-                    height: 0.5px;
-                    background-color: #e5e7eb;
-                    margin: 6px 0;
-                }}
-                
-                /* Секция деталей */
-                .details-section {{
-                    background-color: #f8f9fa;
-                    border: 1px solid #dee2e6;
-                    border-radius: 4px;
-                    padding: 6px;
-                    margin: 5px 0;
-                }}
-                
-                .details-grid {{
-                    display: grid;
-                    grid-template-columns: 1fr 1fr;
-                    gap: 5px;
-                }}
-                
-                .details-item {{
-                    display: flex;
-                    flex-direction: column;
-                }}
-                
-                .details-label {{
-                    font-weight: bold;
-                    color: #495057;
-                    font-size: 9px;
-                    margin-bottom: 1px;
-                }}
-                
-                .details-value {{
-                    color: #212529;
-                    font-size: 9px;
-                    word-break: break-word;
-                }}
-                
-                /* Ссылка РФС ID */
-                .rfs-id-link {{
-                    color: #3b82f6;
-                    text-decoration: none;
-                    font-weight: bold;
-                    cursor: pointer;
-                }}
-                
-                .rfs-id-link:hover {{
-                    text-decoration: underline;
-                }}
-                
-                /* Предоставленные данные */
-                .provided-data-section {{
-                    background-color: #F0F9FF;
-                    border: 1px solid #93C5FD;
-                    border-radius: 4px;
-                    padding: 6px;
-                    margin: 5px 0;
-                }}
-                
-                .provided-data-section-red {{
-                    background-color: #FEF2F2;
-                    border: 1px solid #FCA5A5;
-                    border-radius: 4px;
-                    padding: 6px;
-                    margin: 5px 0;
-                }}
-                
-                .provided-data-section-purple {{
-                    background-color: #F3E8FF;
-                    border: 1px solid #9444EF;
-                    border-radius: 4px;
-                    padding: 6px;
-                    margin: 5px 0;
-                }}
-                
-                .provided-data-title {{
-                    color: #1D4ED8;
-                    font-weight: bold;
-                    font-size: 9px;
-                    margin-bottom: 4px;
-                }}
-                
-                .provided-data-title-red {{
-                    color: #DC2626;
-                    font-weight: bold;
-                    font-size: 9px;
-                    margin-bottom: 4px;
-                }}
-                
-                .provided-data-title-purple {{
-                    color: #9444EF;
-                    font-weight: bold;
-                    font-size: 9px;
-                    margin-bottom: 4px;
-                }}
-                
-                .provided-data-content {{
-                    color: #000000;
-                    font-size: 9px;
-                    white-space: pre-line;
-                    line-height: 1.2;
-                }}
-                
-                .provided-data-content strong {{
-                    font-weight: bold;
-                    color: #000000;
-                }}
-            </style>
-        </head>
-        <body>
-            <div class="objects-container" id="objects-container">
-                <!-- Объекты будут добавлены через JavaScript -->
-            </div>
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <script src="https://api-maps.yandex.ru/2.1/?apikey={YANDEX_API_KEY}&lang=ru_RU"></script>
+    <style>
+        body {{
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: transparent;
+            width: 100%;
+            overflow-x: hidden;
+        }}
+        
+        .objects-container {{
+            width: 100%;
+            margin: 0 auto;
+            padding: 3px;
+            max-height: 650px;
+            overflow-y: auto;
+            scroll-behavior: smooth;
+        }}
+        
+        .map-container {{
+            width: 100%;
+            height: 600px;
+            margin: 0 auto;
+            padding: 3px;
+            position: relative;
+        }}
+        
+        .back-button {{
+            position: fixed;
+            top: 10px;
+            right: 300px;
+            z-index: 10000;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 11px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }}
+        
+        .back-button:hover {{
+            background: #2563eb;
+        }}
+        
+        .back-to-map-button {{
+            position: fixed;
+            top: 10px;
+            right: 15px;
+            z-index: 10000;
+            background: #8b5cf6;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 11px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }}
+        
+        .back-to-map-button:hover {{
+            background: #7c3aed;
+        }}
+        
+        .card {{
+            background-color: white;
+            border-radius: 6px;
+            padding: 8px;
+            margin-bottom: 6px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+            border-left: 2px solid #3b82f6;
+        }}
+        
+        .card-status-2 {{
+            border-left: 2px solid #9444EF;
+        }}
+        
+        .row-1 {{
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 6px;
+            gap: 5px;
+        }}
+        
+        .full-name {{
+            color: #2a4a80;
+            font-weight: bold;
+            font-size: 13px;
+            line-height: 1.3;
+            margin-top: 0;
+            margin-bottom: 0;
+        }}
+        
+        .form-btn-compact {{
+            cursor: pointer;
+            background: #10b981;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 3px;
+            color: white;
+            font-weight: bold;
+            font-size: 10px;
+            white-space: nowrap;
+            height: 24px;
+        }}
+        
+        .form-btn-compact:hover {{
+            background: #059669;
+        }}
+        
+        .form-btn-opened {{
+            background: #6b7280;
+            cursor: pointer !important;
+        }}
+        
+        .form-btn-opened:hover {{
+            background: #4b5563 !important;
+        }}
+        
+        .form-btn-disabled {{
+            background: #9ca3af;
+            opacity: 0.7;
+            cursor: not-allowed !important;
+        }}
+        
+        .map-btn-compact {{
+            cursor: pointer;
+            background: #3b82f6;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 3px;
+            color: white;
+            font-weight: bold;
+            font-size: 10px;
+            white-space: nowrap;
+            height: 24px;
+        }}
+        
+        .map-btn-compact:hover {{
+            background: #2563eb;
+        }}
+        
+        .map-btn-purple {{
+            cursor: pointer;
+            background: #9444EF;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 3px;
+            color: white;
+            font-weight: bold;
+            font-size: 10px;
+            white-space: nowrap;
+            height: 24px;
+        }}
+        
+        .map-btn-purple:hover {{
+            background: #7e3ac7;
+        }}
+        
+        .row-2 {{
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 6px;
+            font-size: 11px;
+            color: #333;
+        }}
+        
+        .id-container {{
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            background: #f3f4f6;
+            padding: 2px 6px;
+            border-radius: 3px;
+            white-space: nowrap;
+        }}
+        
+        .copy-icon-small {{
+            cursor: pointer;
+            color: #3b82f6;
+            font-size: 10px;
+            transition: color 0.2s;
+            margin-left: 2px;
+        }}
+        
+        .copy-icon-small:hover {{
+            color: #2563eb;
+        }}
+        
+        .info-item {{
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            white-space: nowrap;
+        }}
+        
+        .color-label-compact {{
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            padding: 1px 5px;
+            border-radius: 3px;
+            font-size: 9px;
+            font-weight: bold;
+            background: #f3f4f6;
+            white-space: nowrap;
+        }}
+        
+        .color-indicator-small {{
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+        }}
+        
+        .color-blue {{ background-color: #3B82F6; }}
+        .color-yellow {{ background-color: #FFA500; }}
+        .color-green {{ background-color: #10B981; }}
+        .color-purple {{ background-color: #9444EF; }}
+        .color-red {{ background-color: #EF4444; }}
+        
+        .toggle-details-btn {{
+            background: none;
+            border: none;
+            color: #3b82f6;
+            cursor: pointer;
+            font-size: 10px;
+            padding: 2px 0;
+            text-align: left;
+            margin: 0;
+        }}
+        
+        .toggle-details-btn:hover {{
+            text-decoration: underline;
+        }}
+        
+        .notification {{
+            position: fixed;
+            top: 10px;
+            right: 15px;
+            background-color: #10b981;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 4px;
+            z-index: 10000;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 10px;
+        }}
+        
+        .notification.show {{
+            opacity: 1;
+        }}
+        
+        hr {{
+            border: none;
+            height: 0.5px;
+            background-color: #e5e7eb;
+            margin: 6px 0;
+        }}
+        
+        .details-section {{
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 6px;
+            margin: 5px 0;
+        }}
+        
+        .details-grid {{
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 5px;
+        }}
+        
+        .details-item {{
+            display: flex;
+            flex-direction: column;
+        }}
+        
+        .details-label {{
+            font-weight: bold;
+            color: #495057;
+            font-size: 9px;
+            margin-bottom: 1px;
+        }}
+        
+        .details-value {{
+            color: #212529;
+            font-size: 9px;
+            word-break: break-word;
+        }}
+        
+        .rfs-id-link {{
+            color: #3b82f6;
+            text-decoration: none;
+            font-weight: bold;
+            cursor: pointer;
+        }}
+        
+        .rfs-id-link:hover {{
+            text-decoration: underline;
+        }}
+        
+        .provided-data-section {{
+            background-color: #F0F9FF;
+            border: 1px solid #93C5FD;
+            border-radius: 4px;
+            padding: 6px;
+            margin: 5px 0;
+        }}
+        
+        .provided-data-section-red {{
+            background-color: #FEF2F2;
+            border: 1px solid #FCA5A5;
+            border-radius: 4px;
+            padding: 6px;
+            margin: 5px 0;
+        }}
+        
+        .provided-data-section-purple {{
+            background-color: #F3E8FF;
+            border: 1px solid #9444EF;
+            border-radius: 4px;
+            padding: 6px;
+            margin: 5px 0;
+        }}
+        
+        .provided-data-title {{
+            color: #1D4ED8;
+            font-weight: bold;
+            font-size: 9px;
+            margin-bottom: 4px;
+        }}
+        
+        .provided-data-title-red {{
+            color: #DC2626;
+            font-weight: bold;
+            font-size: 9px;
+            margin-bottom: 4px;
+        }}
+        
+        .provided-data-title-purple {{
+            color: #9444EF;
+            font-weight: bold;
+            font-size: 9px;
+            margin-bottom: 4px;
+        }}
+        
+        .provided-data-content {{
+            color: #000000;
+            font-size: 9px;
+            white-space: pre-line;
+            line-height: 1.2;
+        }}
+        
+        .provided-data-content strong {{
+            font-weight: bold;
+            color: #000000;
+        }}
+        
+        .address-info {{
+            position: absolute;
+            background: white;
+            padding: 12px;
+            border-radius: 6px;
+            box-shadow: 0 3px 15px rgba(0,0,0,0.2);
+            max-width: 320px;
+            z-index: 1000;
+            border: 2px solid #3b82f6;
+            font-family: Arial, sans-serif;
+            left: 15px;
+            bottom: 15px;
+        }}
+        .close-btn {{
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #3b82f6;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            text-align: center;
+            line-height: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }}
+        .close-btn:hover {{
+            background: #2563eb;
+        }}
+        .address-title {{
+            color: #3b82f6;
+            margin-bottom: 6px;
+            font-size: 14px;
+        }}
+        .coords {{
+            color: #666;
+            font-size: 12px;
+            margin-top: 6px;
+            font-family: monospace;
+        }}
+        .field-btn {{
+            margin-top: 8px;
+            text-align: center;
+        }}
+        .field-btn button {{
+            cursor: pointer;
+            background: #3b82f6;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 3px;
+            color: white;
+            font-weight: bold;
+            font-size: 11px;
+            width: 100%;
+        }}
+        .field-btn button:hover {{
+            background: #2563eb;
+        }}
+        .copy-btn {{
+            margin-top: 8px;
+            text-align: center;
+        }}
+        .copy-btn button {{
+            cursor: pointer;
+            background: #8b5cf6;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 3px;
+            color: white;
+            font-weight: bold;
+            font-size: 11px;
+            width: 100%;
+        }}
+        .copy-btn button:hover {{
+            background: #7c3aed;
+        }}
+        .copy-success {{
+            position: fixed;
+            top: 10px;
+            right: 15px;
+            background: #10b981;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 4px;
+            z-index: 9999;
+            box-shadow: 0 3px 5px rgba(0, 0, 0, 0.1);
+            display: none;
+            font-size: 10px;
+        }}
+        .address-item {{
+            margin-bottom: 8px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #e5e7eb;
+        }}
+        .address-item:last-child {{
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }}
+        .item-header {{
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 3px;
+        }}
+        .item-label {{
+            font-weight: bold;
+            color: #3b82f6;
+            font-size: 12px;
+        }}
+        .copy-icon-btn {{
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 2px;
+            font-size: 16px;
+            color: #666;
+            transition: color 0.2s;
+        }}
+        .copy-icon-btn:hover {{
+            color: #8b5cf6;
+        }}
+        .status-warning {{
+            background-color: #F3E8FF;
+            border: 2px solid #9444EF;
+            border-radius: 6px;
+            padding: 12px;
+            margin: 8px 0;
+        }}
+        .status-warning-title {{
+            color: #9444EF;
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 8px;
+            text-align: center;
+        }}
+        .status-warning-text {{
+            color: #6B21A8;
+            font-size: 12px;
+        }}
+    </style>
+</head>
+<body>
+    <div id="map-container" class="map-container" style="display: none;"></div>
+    <div class="objects-container" id="objects-container">
+        <!-- Объекты будут добавлены через JavaScript -->
+    </div>
+    
+    <div id="notification" class="notification" style="display: none;">
+        <span class="notification-icon">✓</span>
+        <span id="notification-text"></span>
+    </div>
+    
+    <div id="copy-success" class="copy-success">✓ Скопировано в буфер обмена!</div>
+    
+    <script>
+        // ===== ИСПРАВЛЕНО: Проверка версии данных =====
+        const DATA_VERSION = '{data_version}';
+        const storedVersion = sessionStorage.getItem('data_version');
+        
+        // Если версия не совпадает или это новое обновление, очищаем состояния
+        if (storedVersion !== DATA_VERSION || sessionStorage.getItem('data_refreshed') === 'true') {{
+            console.log('Data version changed or refreshed, clearing button states');
+            sessionStorage.removeItem('buttonStates');
+            sessionStorage.setItem('data_version', DATA_VERSION);
+            sessionStorage.removeItem('data_refreshed');
+        }}
+        
+        const objectsData = JSON.parse('{safe_json_for_js(objects_data)}');
+        const YANDEX_API_KEY = "{YANDEX_API_KEY}";
+        const REGION_NUMBER = {int(st_select_region[0:2])};
+        const isSingleObjectMode = {str(st.session_state.single_object_mode).lower()};
+        
+        let buttonStates = {{}};
+        let detailsStates = {{}};
+        let scrollPosition = 0;
+        let currentMap = null;
+        let blackPlacemarks = [];
+        let backButton = null;
+        let backToMapButton = null;
+        
+        // ===== ИСПРАВЛЕНО: Загружаем состояния с проверкой версии =====
+        try {{
+            const savedButtonStates = sessionStorage.getItem('buttonStates');
+            if (savedButtonStates) {{
+                buttonStates = JSON.parse(savedButtonStates);
+                console.log('Loaded button states:', Object.keys(buttonStates).length);
+            }}
+        }} catch (e) {{
+            console.error('Error loading button states:', e);
+        }}
+        
+        function saveScrollPosition() {{
+            const container = document.getElementById('objects-container');
+            if (container) {{
+                scrollPosition = container.scrollTop;
+            }}
+        }}
+        
+        function restoreScrollPosition() {{
+            const container = document.getElementById('objects-container');
+            if (container && scrollPosition > 0) {{
+                setTimeout(() => {{
+                    container.scrollTop = scrollPosition;
+                }}, 50);
+            }}
+        }}
+        
+        function showNotification(message, duration = 1500) {{
+            const notification = document.getElementById('notification');
+            const notificationText = document.getElementById('notification-text');
             
-            <div id="notification" class="notification" style="display: none;">
-                <span class="notification-icon">✓</span>
-                <span id="notification-text"></span>
-            </div>
+            notificationText.textContent = message;
+            notification.style.display = 'flex';
             
-            <script>
-                const objectsData = JSON.parse('{safe_json_for_js(objects_data)}');
-                
-                let buttonStates = {{}};
-                let detailsStates = {{}};
-                let scrollPosition = 0;
-                
-                // Сохраняем позицию скролла
-                function saveScrollPosition() {{
-                    const container = document.getElementById('objects-container');
-                    if (container) {{
-                        scrollPosition = container.scrollTop;
-                    }}
-                }}
-                
-                // Восстанавливаем позицию скролла
-                function restoreScrollPosition() {{
-                    const container = document.getElementById('objects-container');
-                    if (container && scrollPosition > 0) {{
-                        setTimeout(() => {{
-                            container.scrollTop = scrollPosition;
-                        }}, 50);
-                    }}
-                }}
-                
-                function showNotification(message, duration = 1500) {{
-                    const notification = document.getElementById('notification');
-                    const notificationText = document.getElementById('notification-text');
-                    
-                    notificationText.textContent = message;
-                    notification.style.display = 'flex';
-                    
-                    setTimeout(() => {{
-                        notification.classList.add('show');
-                    }}, 10);
-                    
-                    setTimeout(() => {{
-                        notification.classList.remove('show');
-                        setTimeout(() => {{
-                            notification.style.display = 'none';
-                        }}, 300);
-                    }}, duration);
-                }}
-                
-                // Функция для открытия РФС ID ссылки
-                function openRfsIdLink(rfsId) {{
-                    if (rfsId && rfsId !== '-' && rfsId !== 'nan') {{
-                        window.open('https://platform.rfs.ru/infrastructure/' + rfsId, '_blank');
-                    }}
-                }}
-                
-                // Функция для копирования ID
-                function copyId(id, index) {{
-                    saveScrollPosition(); // Сохраняем позицию перед копированием
-                    
-                    if (navigator.clipboard && navigator.clipboard.writeText) {{
-                        navigator.clipboard.writeText(id)
-                            .then(() => {{
-                                showNotification('ID скопирован: ' + id);
-                            }})
-                            .catch(err => {{
-                                console.error('Clipboard API error:', err);
-                                fallbackCopy(id);
-                            }});
-                    }} else {{
-                        fallbackCopy(id);
-                    }}
-                    
-                    function fallbackCopy(textToCopy) {{
-                        const textArea = document.createElement('textarea');
-                        textArea.value = textToCopy;
-                        textArea.style.position = 'fixed';
-                        textArea.style.left = '-999999px';
-                        document.body.appendChild(textArea);
-                        textArea.select();
-                        
-                        try {{
-                            const successful = document.execCommand('copy');
-                            if (successful) {{
-                                showNotification('ID скопирован: ' + textToCopy);
-                            }} else {{
-                                showNotification('❌ Не удалось скопировать');
-                            }}
-                        }} catch (err) {{
-                            console.error('execCommand error:', err);
-                            showNotification('❌ Ошибка при копировании');
-                        }} finally {{
-                            document.body.removeChild(textArea);
-                        }}
-                    }}
-                }}
-                
-                function openForm(index, statusOfWork) {{
-                    saveScrollPosition(); // Сохраняем позицию перед открытием формы
-                    
-                    if (statusOfWork === '1' || statusOfWork === '2') {{
-                        return false;
-                    }}
-                    
-                    const url = "https://school-eev.bitrix24site.ru/crm_form_drmcv/";
-                    
-                    buttonStates[index] = true;
-                    
-                    const button = document.getElementById('form-btn-' + index);
-                    if (button) {{
-                        button.textContent = '📋 Форма была открыта';
-                        button.className = 'form-btn-compact form-btn-opened';
-                        
-                        button.onclick = function() {{
-                            window.open(url, '_blank');
-                        }};
-                    }}
-                    
-                    window.open(url, '_blank');
-                    return true;
-                }}
-                
-                function createObjectCard(obj, index) {{
-                    const statusOfWork = obj.sw || '0';
-                    
-                    // Для статуса 2 создаем упрощенную карточку
-                    if (statusOfWork === '2') {{
-                        const card = document.createElement('div');
-                        card.className = 'card card-status-2';
-                        
-                        let providedDataHTML = '';
-                        if (obj.pd) {{
-                            providedDataHTML = `
-                                <div class="provided-data-section-purple" style="margin-top: 8px;">
-                                    <div class="provided-data-title-purple">🟣 Добавили новое поле, в стадии рассмотрения</div>
-                                    <div class="provided-data-content">${{obj.pd}}</div>
-                                </div>
-                            `;
-                        }}
-                        
-                        // Для статуса 2: только адрес и цветовая метка статуса
-                        card.innerHTML = `
-                            <!-- Строка 1: Только цветовая метка статуса -->
-                            <div class="row-2">
-                                <div class="color-label-compact">
-                                    <span>${{obj.cd}}</span>
-                                </div>
+            setTimeout(() => {{
+                notification.classList.add('show');
+            }}, 10);
+            
+            setTimeout(() => {{
+                notification.classList.remove('show');
+                setTimeout(() => {{
+                    notification.style.display = 'none';
+                }}, 300);
+            }}, duration);
+        }}
+        
+        function showSuccessNotification() {{
+            const successDiv = document.getElementById('copy-success');
+            successDiv.style.display = 'block';
+            setTimeout(function() {{
+                successDiv.style.display = 'none';
+            }}, 1500);
+        }}
+        
+        function copyToClipboard(text) {{
+            if (navigator.clipboard && navigator.clipboard.writeText) {{
+                navigator.clipboard.writeText(text).then(function() {{
+                    showSuccessNotification();
+                }});
+            }} else {{
+                const textArea = document.createElement("textarea");
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand("copy");
+                document.body.removeChild(textArea);
+                showSuccessNotification();
+            }}
+        }}
+        
+        function copyAddress() {{
+            if (lastClickAddress) {{
+                copyToClipboard(lastClickAddress);
+            }}
+        }}
+        
+        function copyCoords() {{
+            if (lastClickCoords) {{
+                const coordsText = `${{lastClickCoords[0].toFixed(6)}}, ${{lastClickCoords[1].toFixed(6)}}`;
+                copyToClipboard(coordsText);
+            }}
+        }}
+        
+        function copyRegionNumber() {{
+            copyToClipboard(String(REGION_NUMBER));
+        }}
+        
+        function copyEgoraId(egoraId) {{
+            if (egoraId && egoraId !== '-' && egoraId !== 'nan') {{
+                copyToClipboard(egoraId);
+                showSuccessNotification();
+            }}
+        }}
+        
+        // ===== ИСПРАВЛЕНО: Функция для получения данных объекта по ID =====
+        function findObjectById(objectId) {{
+            return objectsData.find(obj => obj.object_id === objectId);
+        }}
+        
+        function getBalloonContent(pointData, isChanged = false) {{
+            const statusOfWork = pointData.sw || '0';
+            const providedData = pointData.pd || '';
+            const objectId = pointData.object_id;
+            
+            let rfsIdHTML = '-';
+            if (pointData.in_reestr === 1) {{
+                rfsIdHTML = '-';
+            }} else if (pointData.rfs_id && pointData.rfs_id !== '-' && pointData.rfs_id !== 'nan' && pointData.rfs_id !== null) {{
+                rfsIdHTML = `<a href="https://platform.rfs.ru/infrastructure/${{pointData.rfs_id}}" target="_blank" class="rfs-id-link">${{pointData.rfs_id}}</a>`;
+            }}
+            
+            if (statusOfWork === '2') {{
+                let providedDataHTML = '';
+                if (providedData) {{
+                    providedDataHTML = `
+                        <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
+                            <div style="color: #9444EF; font-weight: bold; font-size: 11px; margin-bottom: 4px;">
+                                📋 Предоставленные данные:
                             </div>
-                            
-                            <!-- Строка 2: Адрес -->
-                            <div class="row-2" style="margin-top: 4px;">
-                                <div class="info-item">
-                                    <span>📍</span>
-                                    <span>${{obj.ad}}</span>
-                                </div>
-                            </div>
-                            
-                            <!-- Строка 3: Кнопка показа деталей (только предоставленные данные) -->
-                            <button onclick="toggleStatus2Details(${{index}})" class="toggle-details-btn">
-                                ${{detailsStates[index] ? '▲ Скрыть предоставленные данные' : '▼ Показать предоставленные данные'}}
-                            </button>
-                            
-                            <!-- Детали (только предоставленные данные) -->
-                            <div id="details-${{index}}" style="display: ${{detailsStates[index] ? 'block' : 'none'}};">
-                                ${{providedDataHTML}}
-                            </div>
-                        `;
-                        
-                        return card;
-                    }}
-                    
-                    // Для остальных статусов - обычная карточка
-                    const card = document.createElement('div');
-                    card.className = 'card';
-                    
-                    if (buttonStates[index] === undefined) {{
-                        buttonStates[index] = false;
-                    }}
-                    
-                    // Восстанавливаем состояние из sessionStorage или инициализируем как false
-                    if (detailsStates[index] === undefined) {{
-                        const savedState = sessionStorage.getItem(`card_${{index}}_expanded`);
-                        detailsStates[index] = savedState === 'true';
-                    }}
-                    
-                    let providedDataHTML = '';
-                    if (obj.pd) {{
-                        if (statusOfWork === '1') {{
-                            providedDataHTML = `
-                                <div class="provided-data-section-red">
-                                    <div class="provided-data-title-red">🔴 Внесли изменения, в стадии рассмотрения</div>
-                                    <div class="provided-data-content">${{obj.pd}}</div>
-                                </div>
-                            `;
-                        }}
-                    }}
-                    
-                    let formButtonHTML = '';
-                    // Для статуса 1 и 2 не показываем кнопку
-                    if (statusOfWork !== '1' && statusOfWork !== '2') {{
-                        let formBtnClass = 'form-btn-compact';
-                        let formBtnText = '✅ Внести изменения';
-                        let formBtnOnclick = `openForm(${{index}}, '${{statusOfWork}}')`;
-                        
-                        if (buttonStates[index]) {{
-                            formBtnClass = 'form-btn-compact form-btn-opened';
-                            formBtnText = '📋 Форма была открыта';
-                            formBtnOnclick = `window.open('https://school-eev.bitrix24site.ru/crm_form_drmcv/', '_blank')`;
-                        }}
-                        
-                        formButtonHTML = `
-                            <button id="form-btn-${{index}}" 
-                                    onclick="${{formBtnOnclick}}" 
-                                    class="${{formBtnClass}}" 
-                                    title="Открыть форму для внесения изменений">
-                                ${{formBtnText}}
-                            </button>
-                        `;
-                    }}
-                    
-                    // Создаем ссылку для РФС ID с проверкой наличия в реестрах
-                    let rfsIdHTML = '-';
-                    if (obj.in_reestr === 1) {{
-                        // Если Наличие в реестрах == 1, показываем просто "-" без ссылки
-                        rfsIdHTML = '-';
-                    }} else if (obj.rfs_id && obj.rfs_id !== '-' && obj.rfs_id !== 'nan') {{
-                        // Иначе показываем ссылку
-                        rfsIdHTML = `<a href="https://platform.rfs.ru/infrastructure/${{obj.rfs_id}}" target="_blank" class="rfs-id-link">${{obj.rfs_id}}</a>`;
-                    }}
-                    
-                    const detailsHTML = `
-                        <div class="details-section">
-                            <div class="details-grid">
-                                <div class="details-item">
-                                    <span class="details-label">РФС ID:</span>
-                                    <span class="details-value">${{rfsIdHTML}}</span>
-                                </div>
-                                <div class="details-item">
-                                    <span class="details-label">📞 Контакт:</span>
-                                    <span class="details-value">${{obj.ct}}</span>
-                                </div>
-                                <div class="details-item">
-                                    <span class="details-label">👤 Собственник:</span>
-                                    <span class="details-value">${{obj.ow}}</span>
-                                </div>
-                                <div class="details-item">
-                                    <span class="details-label">🏢 Управляющая:</span>
-                                    <span class="details-value">${{obj.mg}}</span>
-                                </div>
-                                <div class="details-item">
-                                    <span class="details-label">👥 Пользователь:</span>
-                                    <span class="details-value">${{obj.us}}</span>
-                                </div>
-                                <div class="details-item">
-                                    <span class="details-label">Тип:</span>
-                                    <span class="details-value">${{obj.tp}}</span>
-                                </div>
-                                <div class="details-item">
-                                    <span class="details-label">Дисциплина:</span>
-                                    <span class="details-value">${{obj.d2}}</span>
-                                </div>
-                                <div class="details-item">
-                                    <span class="details-label">Покрытие:</span>
-                                    <span class="details-value">${{obj.cv}}</span>
-                                </div>
-                                <div class="details-item">
-                                    <span class="details-label">Мест:</span>
-                                    <span class="details-value">${{obj.cp}}</span>
-                                </div>
-                                <div class="details-item">
-                                    <span class="details-label">Дренаж:</span>
-                                    <span class="details-value">${{obj.dr}}</span>
-                                </div>
-                                <div class="details-item">
-                                    <span class="details-label">Подогрев:</span>
-                                    <span class="details-value">${{obj.ht}}</span>
-                                </div>
-                                <div class="details-item">
-                                    <span class="details-label">Табло:</span>
-                                    <span class="details-value">${{obj.sc}}</span>
-                                </div>
-                                <div class="details-item">
-                                    <span class="details-label">Раздевалки:</span>
-                                    <span class="details-value">${{obj.ds}}</span>
-                                </div>
-                                <div class="details-item">
-                                    <span class="details-label">Год:</span>
-                                    <span class="details-value">${{obj.yr}}</span>
-                                </div>
-                            </div>
+                            <div style="color: #000000; font-size: 10px;">${{providedData}}</div>
                         </div>
                     `;
-                    
-                    // КОМПАКТНЫЙ ФОРМАТ: 3 строки, все элементы подряд
-                    card.innerHTML = `
-                        <!-- Строка 1: Полное название + Кнопка (сразу после названия) -->
-                        <div class="row-1">
-                            <div class="full-name">${{obj.fn}}</div>
-                            ${{formButtonHTML}}
+                }}
+                
+                return `
+                    <div style="font-size: 9px; max-width: 450px; padding: 6px; line-height: 1.3;">
+                        <div style="margin-bottom: 5px; padding-top: 5px;">
+                            <strong>📍 Адрес:</strong><br>
+                            <span>${{pointData.ad}}</span>
                         </div>
                         
-                        <!-- Строка 2: ID + Краткое + Адрес + Размер + Статус (все подряд) -->
-                        <div class="row-2">
-                            <div class="id-container">
-                                <span>ID: ${{obj.id}}</span>
-                                <span onclick="copyId('${{obj.id}}', ${{index}})" class="copy-icon-small" title="Скопировать ID">📄</span>
-                            </div>
-                            <div class="info-item">
-                                <span>⚽</span>
-                                <span>${{obj.sn}}</span>
-                            </div>
-                            <div class="info-item">
-                                <span>📍</span>
-                                <span>${{obj.ad}}</span>
-                            </div>
-                            <div class="info-item">
-                                <span>📏</span>
-                                <span>${{obj.sz}}</span>
-                            </div>
-                            <div class="color-label-compact">
-                                <span>${{obj.cd}}</span>
-                            </div>
-                        </div>
-                        
-                        <!-- Строка 3: Кнопка показа деталей -->
-                        <button onclick="toggleDetails(${{index}})" class="toggle-details-btn">
-                            ${{detailsStates[index] ? '▲ Скрыть детали' : '▼ Показать все детали'}}
-                        </button>
-                        
-                        <!-- Детали и предоставленные данные -->
-                        <div id="details-${{index}}" style="display: ${{detailsStates[index] ? 'block' : 'none'}};">
-                            ${{detailsHTML}}
+                        <div class="status-warning">
+                            <div class="status-warning-title">🟣 Добавили новое поле, в стадии рассмотрения</div>
                             ${{providedDataHTML}}
                         </div>
+                    </div>
+                `;
+            }}
+            
+            let statusHTML = '';
+            if (isChanged || statusOfWork === '1') {{
+                let providedDataHTML = '';
+                if (providedData && !isChanged) {{
+                    if (statusOfWork === '1') {{
+                        providedDataHTML = `
+                            <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
+                                <div style="color: #DC2626; font-weight: bold; font-size: 11px; margin-bottom: 4px;">
+                                    📋 Предоставленные данные:
+                                </div>
+                                <div style="color: #000000; font-size: 10px;">${{providedData}}</div>
+                            </div>
+                        `;
+                    }}
+                }}
+                
+                statusHTML = `
+                    <div style="background-color: ${{isChanged ? '#F3F4F6' : '#FEF2F2'}}; 
+                         border: 1px solid ${{isChanged ? '#D1D5DB' : '#FCA5A5'}}; 
+                         padding: 8px; border-radius: 3px; margin-bottom: 8px;">
+                        <div style="color: ${{isChanged ? '#6B7280' : '#DC2626'}}; font-weight: bold; display: flex; align-items: center; gap: 4px;">
+                            <span>${{isChanged ? '⚪' : '🔴'}}</span>
+                            <span>${{isChanged ? 'Нажали "Внести изменения", но не отправили анкету' : 'Внесли изменения, в стадии рассмотрения'}}</span>
+                        </div>
+                        ${{providedDataHTML}}
+                    </div>
+                `;
+            }}
+            
+            const showConfirmButton = (statusOfWork !== '1' && statusOfWork !== '2');
+            // ===== ИСПРАВЛЕНО: Используем objectId вместо индекса =====
+            const confirmButtonSection = showConfirmButton ? `
+                <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #e5e7eb;">
+                    <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+                        <button onclick='handleConfirmClickFromMap("${{objectId}}")' 
+                                style="cursor: pointer; background: ${{statusOfWork === '1' || statusOfWork === '2' ? '#9ca3af' : '#10b981'}}; 
+                                       border: none; padding: 6px 12px; border-radius: 3px; 
+                                       color: white; font-weight: bold; font-size: 11px;
+                                       ${{statusOfWork === '1' || statusOfWork === '2' ? 'cursor: not-allowed;' : ''}}"
+                                ${{statusOfWork === '1' || statusOfWork === '2' ? 'disabled' : ''}}
+                                title="${{statusOfWork === '1' || statusOfWork === '2' ? 'Объект на рассмотрении, изменения внести нельзя' : 'Внести изменения'}}">
+                            ${{statusOfWork === '1' || statusOfWork === '2' ? '⏳ На рассмотрении' : '✅ Внести изменения'}}
+                        </button>
+                    </div>
+                </div>
+            ` : '';
+            
+            return `
+                <div style="font-size: 9px; max-width: 450px; padding: 6px; line-height: 1.3;">
+                    ${{statusHTML}}
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 6px; padding-top: 6px; border-top: 1px solid #e5e7eb;">
+                        <div><strong>📋 Полное название:</strong><br><span>${{pointData.fn}}</span></div>
+                        <div><strong>⚽ Короткое название:</strong><br><span>${{pointData.sn}}</span></div>
+                    </div>
+                    <div style="margin-bottom: 5px; padding-top: 5px; border-top: 1px solid #e5e7eb;">
+                        <strong>📍 Адрес:</strong><br>
+                        <span>${{pointData.ad}}</span>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 6px; padding-top: 6px; border-top: 1px solid #e5e7eb;">
+                        <div><strong>📞 Контакт:</strong><br><span>${{pointData.ct}}</span></div>
+                        <div><strong>👤 Собственник:</strong><br><span>${{pointData.ow}}</span></div>
+                        <div><strong>🏢 Управляющая:</strong><br><span>${{pointData.mg}}</span></div>
+                        <div><strong>👥 Пользователь:</strong><br><span>${{pointData.us}}</span></div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 6px; padding-top: 6px; border-top: 1px solid #e5e7eb;">
+                        <div><strong>🌐 РФС ID:</strong><br><span>${{rfsIdHTML}}</span></div>
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 4px;">
+                                <strong>🌐 ID объекта:</strong>
+                                <button onclick="copyEgoraId('${{pointData.id}}')" class="copy-icon-btn" title="Скопировать ID объекта" style="font-size: 12px; background: none; border: none; padding: 0; cursor: pointer; color: #666;">
+                                    📄
+                                </button>
+                            </div>
+                            <span>${{pointData.id}}</span>
+                        </div>
+                        <div><strong>Тип:</strong><br><span>${{pointData.tp}}</span></div>
+                        <div><strong>Дисциплина:</strong><br><span>${{pointData.d2}}</span></div>
+                        <div><strong>Размер:</strong><br><span>${{pointData.sz}} м</span></div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 6px; padding-top: 6px; border-top: 1px solid #e5e7eb;">
+                        <div><strong>Покрытие:</strong><br><span>${{pointData.cv}}</span></div>
+                        <div><strong>Мест:</strong><br><span>${{pointData.cp}}</span></div>
+                        <div><strong>Дренаж:</strong><br><span>${{pointData.dr}}</span></div>
+                        <div><strong>Подогрев:</strong><br><span>${{pointData.ht}}</span></div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-top: 6px; padding-top: 6px; border-top: 1px solid #e5e7eb;">
+                        <div><strong>Табло:</strong><br><span>${{pointData.sc}}</span></div>
+                        <div><strong>Раздевалки:</strong><br><span>${{pointData.ds}}</span></div>
+                        <div><strong>Год:</strong><br><span>${{pointData.yr}}</span></div>
+                    </div>
+                    ${{confirmButtonSection}}
+                </div>
+            `;
+        }}
+        
+        function handleFieldHereClick(coords) {{
+            window.open("https://school-eev.bitrix24site.ru/crm_form_saeda/", "_blank");
+            
+            const blackKey = 'black_' + Date.now() + '_' + coords[0].toFixed(6) + '_' + coords[1].toFixed(6);
+            buttonStates[blackKey] = true;
+            sessionStorage.setItem('buttonStates', JSON.stringify(buttonStates));
+            
+            if (!currentMap) return;
+            
+            const blackPlacemark = new ymaps.Placemark(coords, {{
+                balloonContent: '',
+                hasBalloon: false,
+                isBlack: true,
+                coords: coords
+            }}, {{
+                preset: 'islands#circleDotIcon',
+                iconColor: "#000000",
+                draggable: false
+            }});
+            
+            blackPlacemark.events.add('click', function(e) {{
+                createAddressInfo(coords);
+            }});
+            
+            currentMap.geoObjects.add(blackPlacemark);
+            blackPlacemarks.push(blackPlacemark);
+        }}
+        
+        // ===== ИСПРАВЛЕНО: Функция для обработки клика на карте =====
+        function handleConfirmClickFromMap(objectId) {{
+            const pointData = findObjectById(objectId);
+            if (!pointData) {{
+                console.error('Object not found:', objectId);
+                return false;
+            }}
+            
+            const statusOfWork = pointData.sw || '0';
+            
+            if (statusOfWork === '1' || statusOfWork === '2') {{
+                alert('Внесли изменения, в стадии рассмотрения. Внести изменения нельзя.');
+                return false;
+            }}
+            
+            window.open("https://school-eev.bitrix24site.ru/crm_form_drmcv/", "_blank");
+            
+            // Сохраняем состояние
+            buttonStates[objectId] = true;
+            sessionStorage.setItem('buttonStates', JSON.stringify(buttonStates));
+            
+            // Обновляем кнопку в карточке списка, если она существует
+            const listButton = document.getElementById('form-btn-' + objectId);
+            if (listButton) {{
+                listButton.textContent = '📋 Форма была открыта';
+                listButton.className = 'form-btn-compact form-btn-opened';
+                listButton.onclick = function() {{
+                    window.open('https://school-eev.bitrix24site.ru/crm_form_drmcv/', '_blank');
+                }};
+            }}
+            
+            // Обновляем точку на карте
+            if (currentMap) {{
+                // Ищем placemark по objectId (нужно будет добавить идентификацию)
+                // Пока просто перезагрузим карту
+                setTimeout(() => {{
+                    if (currentMap) {{
+                        const placemark = currentMap.geoObjects.get(0);
+                        if (placemark) {{
+                            placemark.options.set('iconColor', '#808080');
+                            const updatedBalloon = getBalloonContent(pointData, true);
+                            placemark.properties.set('balloonContent', updatedBalloon);
+                        }}
+                    }}
+                }}, 100);
+            }}
+            
+            return true;
+        }}
+        
+        // ===== ИСПРАВЛЕНО: Функция для обработки клика в списке =====
+        function handleConfirmClick(objectId) {{
+            const pointData = findObjectById(objectId);
+            if (!pointData) {{
+                console.error('Object not found:', objectId);
+                return false;
+            }}
+            
+            const statusOfWork = pointData.sw || '0';
+            
+            if (statusOfWork === '1' || statusOfWork === '2') {{
+                alert('Внесли изменения, в стадии рассмотрения. Внести изменения нельзя.');
+                return false;
+            }}
+            
+            window.open("https://school-eev.bitrix24site.ru/crm_form_drmcv/", "_blank");
+            
+            buttonStates[objectId] = true;
+            sessionStorage.setItem('buttonStates', JSON.stringify(buttonStates));
+            
+            const button = document.getElementById('form-btn-' + objectId);
+            if (button) {{
+                button.textContent = '📋 Форма была открыта';
+                button.className = 'form-btn-compact form-btn-opened';
+                button.onclick = function() {{
+                    window.open('https://school-eev.bitrix24site.ru/crm_form_drmcv/', '_blank');
+                }};
+            }}
+            
+            return true;
+        }}
+        
+        function showInListFromMap(objectId) {{
+            window.parent.postMessage({{
+                type: 'streamlit:setComponentValue',
+                value: {{ 
+                    single_object_mode: true,
+                    single_object_id: objectId,
+                    view_mode: 'list'
+                }}
+            }}, '*');
+        }}
+        
+        let lastClickCoords = null;
+        let lastClickAddress = null;
+        
+        function createAddressInfo(coords, address) {{
+            const oldInfo = document.querySelector('.address-info');
+            if (oldInfo) {{
+                oldInfo.remove();
+            }}
+            
+            if (!address) {{
+                ymaps.geocode(coords).then(function(res) {{
+                    const firstGeoObject = res.geoObjects.get(0);
+                    let fetchedAddress = 'Адрес не определен';
+                    
+                    if (firstGeoObject) {{
+                        fetchedAddress = firstGeoObject.getAddressLine();
+                    }}
+                    
+                    lastClickAddress = fetchedAddress;
+                    lastClickCoords = coords;
+                    
+                    const infoDiv = document.createElement('div');
+                    infoDiv.className = 'address-info';
+                    infoDiv.innerHTML = `
+                        <div class="close-btn" onclick="this.parentElement.remove()">×</div>
+                        <div class="address-title">📍 Информация о местоположении</div>
+                        
+                        <div class="address-item">
+                            <div class="item-header">
+                                <div class="item-label">Адрес:</div>
+                                <button onclick="copyAddress()" class="copy-icon-btn" title="Скопировать адрес">
+                                    📄
+                                </button>
+                            </div>
+                            <div class="item-content">${{fetchedAddress}}</div>
+                        </div>
+                        
+                        <div class="address-item">
+                            <div class="item-header">
+                                <div class="item-label">Координаты:</div>
+                                <button onclick="copyCoords()" class="copy-icon-btn" title="Скопировать координаты">
+                                    📄
+                                </button>
+                            </div>
+                            <div class="item-content">
+                                ${{coords[0].toFixed(6)}}, ${{coords[1].toFixed(6)}}
+                            </div>
+                        </div>
+                        
+                        <div class="address-item">
+                            <div class="item-header">
+                                <div class="item-label">Номер региона:</div>
+                                <button onclick="copyRegionNumber()" class="copy-icon-btn" title="Скопировать номер региона">
+                                    📄
+                                </button>
+                            </div>
+                            <div class="item-content">
+                                ${{REGION_NUMBER}}
+                            </div>
+                        </div>
+                        
+                        <div class="field-btn">
+                            <button onclick="handleFieldHereClick([${{coords[0]}}, ${{coords[1]}}])">
+                                ⚽ Здесь футбольное поле
+                            </button>
+                        </div>
                     `;
                     
-                    return card;
-                }}
+                    document.querySelector('.map-container').appendChild(infoDiv);
+                    
+                    setTimeout(() => {{
+                        document.addEventListener('click', function closeOnOutsideClick(event) {{
+                            if (!infoDiv.contains(event.target)) {{
+                                infoDiv.remove();
+                                document.removeEventListener('click', closeOnOutsideClick);
+                            }}
+                        }});
+                    }}, 10);
+                }});
+            }} else {{
+                lastClickAddress = address;
+                lastClickCoords = coords;
                 
-                function toggleDetails(index) {{
-                    // Сохраняем текущую позицию скролла
-                    saveScrollPosition();
+                const infoDiv = document.createElement('div');
+                infoDiv.className = 'address-info';
+                infoDiv.innerHTML = `
+                    <div class="close-btn" onclick="this.parentElement.remove()">×</div>
+                    <div class="address-title">📍 Информация о местоположении</div>
                     
-                    // Меняем состояние
-                    detailsStates[index] = !detailsStates[index];
+                    <div class="address-item">
+                        <div class="item-header">
+                            <div class="item-label">Адрес:</div>
+                            <button onclick="copyAddress()" class="copy-icon-btn" title="Скопировать адрес">
+                                📄
+                            </button>
+                        </div>
+                        <div class="item-content">${{address}}</div>
+                    </div>
                     
-                    // Сохраняем в sessionStorage
-                    sessionStorage.setItem(`card_${{index}}_expanded`, detailsStates[index]);
+                    <div class="address-item">
+                        <div class="item-header">
+                            <div class="item-label">Координаты:</div>
+                            <button onclick="copyCoords()" class="copy-icon-btn" title="Скопировать координаты">
+                                📄
+                            </button>
+                        </div>
+                        <div class="item-content">
+                            ${{coords[0].toFixed(6)}}, ${{coords[1].toFixed(6)}}
+                        </div>
+                    </div>
                     
-                    // Обновляем только конкретную карточку (чтобы не терять скролл)
-                    const toggleButton = document.querySelector(`[onclick="toggleDetails(${{index}})"]`);
-                    const detailsElement = document.getElementById('details-' + index);
+                    <div class="address-item">
+                        <div class="item-header">
+                            <div class="item-label">Номер региона:</div>
+                            <button onclick="copyRegionNumber()" class="copy-icon-btn" title="Скопировать номер региона">
+                                📄
+                            </button>
+                        </div>
+                        <div class="item-content">
+                            ${{REGION_NUMBER}}
+                        </div>
+                    </div>
                     
-                    if (toggleButton && detailsElement) {{
-                        // Обновляем текст кнопки
-                        toggleButton.textContent = detailsStates[index] ? '▲ Скрыть детали' : '▼ Показать все детали';
-                        
-                        // Показываем/скрываем детали
-                        detailsElement.style.display = detailsStates[index] ? 'block' : 'none';
-                        
-                        // Плавно прокручиваем к карточке, если она раскрывается
-                        if (detailsStates[index]) {{
-                            setTimeout(() => {{
-                                toggleButton.scrollIntoView({{ behavior: 'smooth', block: 'nearest' }});
-                            }}, 10);
-                        }}
-                        
-                        // Восстанавливаем позицию скролла
-                        setTimeout(() => {{
-                            restoreScrollPosition();
-                        }}, 20);
-                    }}
-                }}
+                    <div class="field-btn">
+                        <button onclick="handleFieldHereClick([${{coords[0]}}, ${{coords[1]}}])">
+                            ⚽ Здесь футбольное поле
+                        </button>
+                    </div>
+                `;
                 
-                function toggleStatus2Details(index) {{
-                    // Сохраняем текущую позицию скролла
-                    saveScrollPosition();
-                    
-                    // Меняем состояние
-                    detailsStates[index] = !detailsStates[index];
-                    
-                    // Сохраняем в sessionStorage
-                    sessionStorage.setItem(`card_${{index}}_expanded`, detailsStates[index]);
-                    
-                    // Обновляем только конкретную карточку (чтобы не терять скролл)
-                    const toggleButton = document.querySelector(`[onclick="toggleStatus2Details(${{index}})"]`);
-                    const detailsElement = document.getElementById('details-' + index);
-                    
-                    if (toggleButton && detailsElement) {{
-                        // Обновляем текст кнопки
-                        toggleButton.textContent = detailsStates[index] ? '▲ Скрыть предоставленные данные' : '▼ Показать предоставленные данные';
-                        
-                        // Показываем/скрываем детали
-                        detailsElement.style.display = detailsStates[index] ? 'block' : 'none';
-                        
-                        // Плавно прокручиваем к карточке, если она раскрывается
-                        if (detailsStates[index]) {{
-                            setTimeout(() => {{
-                                toggleButton.scrollIntoView({{ behavior: 'smooth', block: 'nearest' }});
-                            }}, 10);
-                        }}
-                        
-                        // Восстанавливаем позицию скролла
-                        setTimeout(() => {{
-                            restoreScrollPosition();
-                        }}, 20);
-                    }}
-                }}
+                document.querySelector('.map-container').appendChild(infoDiv);
                 
-                function renderObjects() {{
-                    const container = document.getElementById('objects-container');
-                    container.innerHTML = '';
-                    
-                    if (objectsData.length === 0) {{
-                        container.innerHTML = '<div class="card"><p style="text-align: center; color: #666;">Объекты не найдены</p></div>';
-                        return;
-                    }}
-                    
-                    // Рендерим все карточки
-                    for (let i = 0; i < objectsData.length; i++) {{
-                        const obj = objectsData[i];
-                        const card = createObjectCard(obj, i);
-                        container.appendChild(card);
-                        
-                        if (i < objectsData.length - 1) {{
-                            const hr = document.createElement('hr');
-                            container.appendChild(hr);
-                        }}
-                    }}
-                    
-                    // Восстанавливаем позицию скролла
-                    restoreScrollPosition();
-                }}
-                
-                document.addEventListener('DOMContentLoaded', function() {{
-                    // Сохраняем скролл при прокрутке
-                    const container = document.getElementById('objects-container');
-                    if (container) {{
-                        container.addEventListener('scroll', saveScrollPosition);
-                    }}
-                    
-                    // Загружаем сохраненные состояния кнопок
-                    try {{
-                        const savedButtonStates = sessionStorage.getItem('buttonStates');
-                        if (savedButtonStates) {{
-                            buttonStates = JSON.parse(savedButtonStates);
-                        }}
-                    }} catch (e) {{
-                        console.error('Error loading button states:', e);
-                    }}
-                    
-                    renderObjects();
-                    
-                    // Сохраняем состояния при закрытии
-                    window.addEventListener('beforeunload', function() {{
-                        try {{
-                            sessionStorage.setItem('buttonStates', JSON.stringify(buttonStates));
-                        }} catch (e) {{
-                            console.error('Error saving button states:', e);
+                setTimeout(() => {{
+                    document.addEventListener('click', function closeOnOutsideClick(event) {{
+                        if (!infoDiv.contains(event.target)) {{
+                            infoDiv.remove();
+                            document.removeEventListener('click', closeOnOutsideClick);
                         }}
                     }});
-                }});
-                
-                if (document.readyState === 'loading') {{
-                    document.addEventListener('DOMContentLoaded', renderObjects);
-                }} else {{
-                    setTimeout(renderObjects, 100);
+                }}, 10);
+            }}
+        }}
+        
+        // ===== ИСПРАВЛЕНО: Функция инициализации карты для одного объекта =====
+        function initMap(pointData) {{
+            if (!pointData.lat || !pointData.lon) return;
+            
+            const mapContainer = document.getElementById('map-container');
+            mapContainer.style.display = 'block';
+            mapContainer.innerHTML = '';
+            
+            if (backButton && backButton.parentNode) {{
+                backButton.parentNode.removeChild(backButton);
+            }}
+            if (backToMapButton && backToMapButton.parentNode) {{
+                backToMapButton.parentNode.removeChild(backToMapButton);
+            }}
+            
+            backButton = document.createElement('button');
+            backButton.className = 'back-button';
+            backButton.innerHTML = '← Назад к списку';
+            backButton.onclick = function() {{
+                mapContainer.style.display = 'none';
+                document.getElementById('objects-container').style.display = 'block';
+                if (backButton && backButton.parentNode) {{
+                    backButton.parentNode.removeChild(backButton);
+                    backButton = null;
                 }}
-            </script>
-        </body>
-        </html>
+                if (backToMapButton && backToMapButton.parentNode) {{
+                    backToMapButton.parentNode.removeChild(backToMapButton);
+                    backToMapButton = null;
+                }}
+                if (currentMap) {{
+                    currentMap.destroy();
+                    currentMap = null;
+                }}
+                // Перерисовываем список при возврате
+                renderObjects();
+            }};
+            document.body.appendChild(backButton);
+            
+            if (isSingleObjectMode) {{
+                backToMapButton = document.createElement('button');
+                backToMapButton.className = 'back-to-map-button';
+                backToMapButton.innerHTML = '← Назад к карте';
+                backToMapButton.onclick = function() {{
+                    window.parent.postMessage({{
+                        type: 'streamlit:setComponentValue',
+                        value: {{ 
+                            single_object_mode: false,
+                            single_object_id: null
+                        }}
+                    }}, '*');
+                }};
+                document.body.appendChild(backToMapButton);
+            }}
+            
+            const mapDiv = document.createElement('div');
+            mapDiv.style.width = '100%';
+            mapDiv.style.height = '100%';
+            mapContainer.appendChild(mapDiv);
+            
+            let pointColor = '#3B82F6';
+            
+            if (pointData.sw === '1') {{
+                pointColor = '#EF4444';
+            }}
+            else if (pointData.sw === '2') {{
+                pointColor = '#9444EF';
+            }}
+            else if (pointData.cl) {{
+                if (pointData.cl.includes('blue')) pointColor = '#3B82F6';
+                else if (pointData.cl.includes('yellow')) pointColor = '#FFA500';
+                else if (pointData.cl.includes('green')) pointColor = '#10B981';
+                else if (pointData.cl.includes('purple')) pointColor = '#9444EF';
+                else if (pointData.cl.includes('red')) pointColor = '#EF4444';
+            }}
+            
+            if (buttonStates[pointData.object_id] && pointData.sw !== '1' && pointData.sw !== '2') {{
+                pointColor = '#808080';
+            }}
+            
+            currentMap = new ymaps.Map(mapDiv, {{
+                center: [pointData.lat, pointData.lon],
+                zoom: 15,
+                type: 'yandex#satellite'
+            }});
+            
+            const placemark = new ymaps.Placemark(
+                [pointData.lat, pointData.lon],
+                {{
+                    balloonContent: getBalloonContent(pointData),
+                    balloonMaxWidth: 480,
+                    balloonMinWidth: 420,
+                    object_id: pointData.object_id
+                }},
+                {{
+                    preset: 'islands#circleDotIcon',
+                    iconColor: pointColor,
+                    draggable: false
+                }}
+            );
+            
+            placemark.events.add('click', function(e) {{
+                const balloonContent = getBalloonContent(pointData);
+                placemark.properties.set('balloonContent', balloonContent);
+            }});
+            
+            currentMap.geoObjects.add(placemark);
+            
+            currentMap.events.add('click', function(e) {{
+                const coords = e.get('coords');
+                lastClickCoords = coords;
+                
+                ymaps.geocode(coords).then(function(res) {{
+                    const firstGeoObject = res.geoObjects.get(0);
+                    let address = 'Адрес не определен';
+                    
+                    if (firstGeoObject) {{
+                        address = firstGeoObject.getAddressLine();
+                    }}
+                    
+                    lastClickAddress = address;
+                    createAddressInfo(coords, address);
+                }});
+            }});
+            
+            // Восстанавливаем черные точки
+            for (let key in buttonStates) {{
+                if (key.startsWith('black_')) {{
+                    const parts = key.split('_');
+                    if (parts.length >= 4) {{
+                        const lat = parseFloat(parts[2]);
+                        const lon = parseFloat(parts[3]);
+                        if (!isNaN(lat) && !isNaN(lon)) {{
+                            const blackPlacemark = new ymaps.Placemark([lat, lon], {{
+                                balloonContent: '',
+                                hasBalloon: false,
+                                isBlack: true
+                            }}, {{
+                                preset: 'islands#circleDotIcon',
+                                iconColor: "#000000",
+                                draggable: false
+                            }});
+                            blackPlacemark.events.add('click', function(e) {{
+                                createAddressInfo([lat, lon]);
+                            }});
+                            currentMap.geoObjects.add(blackPlacemark);
+                            blackPlacemarks.push(blackPlacemark);
+                        }}
+                    }}
+                }}
+            }}
+        }}
+        
+        function showOnMap(index) {{
+            const pointData = objectsData[index];
+            if (!pointData.lat || !pointData.lon) {{
+                alert('У этого объекта нет координат');
+                return;
+            }}
+            
+            document.getElementById('objects-container').style.display = 'none';
+            
+            if (typeof ymaps !== 'undefined' && ymaps.ready) {{
+                ymaps.ready(() => initMap(pointData));
+            }} else {{
+                const script = document.createElement('script');
+                script.src = `https://api-maps.yandex.ru/2.1/?apikey=${{YANDEX_API_KEY}}&lang=ru_RU`;
+                script.onload = () => ymaps.ready(() => initMap(pointData));
+                document.head.appendChild(script);
+            }}
+        }}
+        
+        function openRfsIdLink(rfsId) {{
+            if (rfsId && rfsId !== '-' && rfsId !== 'nan') {{
+                window.open('https://platform.rfs.ru/infrastructure/' + rfsId, '_blank');
+            }}
+        }}
+        
+        function copyId(id, objectId) {{
+            saveScrollPosition();
+            
+            if (navigator.clipboard && navigator.clipboard.writeText) {{
+                navigator.clipboard.writeText(id)
+                    .then(() => {{
+                        showNotification('ID скопирован: ' + id);
+                    }})
+                    .catch(err => {{
+                        console.error('Clipboard API error:', err);
+                        fallbackCopy(id);
+                    }});
+            }} else {{
+                fallbackCopy(id);
+            }}
+            
+            function fallbackCopy(textToCopy) {{
+                const textArea = document.createElement('textarea');
+                textArea.value = textToCopy;
+                textArea.style.position = 'fixed';
+                textArea.style.left = '-999999px';
+                document.body.appendChild(textArea);
+                textArea.select();
+                
+                try {{
+                    const successful = document.execCommand('copy');
+                    if (successful) {{
+                        showNotification('ID скопирован: ' + textToCopy);
+                    }} else {{
+                        showNotification('❌ Не удалось скопировать');
+                    }}
+                }} catch (err) {{
+                    console.error('execCommand error:', err);
+                    showNotification('❌ Ошибка при копировании');
+                }} finally {{
+                    document.body.removeChild(textArea);
+                }}
+            }}
+        }}
+        
+        function openForm(objectId, statusOfWork) {{
+            saveScrollPosition();
+            
+            if (statusOfWork === '1' || statusOfWork === '2') {{
+                return false;
+            }}
+            
+            const url = "https://school-eev.bitrix24site.ru/crm_form_drmcv/";
+            
+            buttonStates[objectId] = true;
+            sessionStorage.setItem('buttonStates', JSON.stringify(buttonStates));
+            
+            const button = document.getElementById('form-btn-' + objectId);
+            if (button) {{
+                button.textContent = '📋 Форма была открыта';
+                button.className = 'form-btn-compact form-btn-opened';
+                button.onclick = function() {{
+                    window.open(url, '_blank');
+                }};
+            }}
+            
+            window.open(url, '_blank');
+            return true;
+        }}
+        
+        function createObjectCard(obj, index) {{
+            const statusOfWork = obj.sw || '0';
+            const objectId = obj.object_id;
+            
+            const wasButtonClicked = buttonStates[objectId];
+            
+            if (statusOfWork === '2') {{
+                const card = document.createElement('div');
+                card.className = 'card card-status-2';
+                
+                let providedDataHTML = '';
+                if (obj.pd) {{
+                    providedDataHTML = `
+                        <div class="provided-data-section-purple" style="margin-top: 8px;">
+                            <div class="provided-data-title-purple">🟣 Добавили новое поле, в стадии рассмотрения</div>
+                            <div class="provided-data-content">${{obj.pd}}</div>
+                        </div>
+                    `;
+                }}
+                
+                let mapButtonHTML = '';
+                if (obj.lat && obj.lon) {{
+                    mapButtonHTML = `
+                        <button onclick="showOnMap(${{index}})" class="map-btn-purple" title="Показать на карте">
+                            👁️ На карте
+                        </button>
+                    `;
+                }}
+                
+                card.innerHTML = `
+                    <div class="row-1">
+                        <div class="full-name">${{obj.fn}}</div>
+                        ${{mapButtonHTML}}
+                    </div>
+                    <div class="row-2">
+                        <div class="color-label-compact">
+                            <span>${{obj.cd}}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="row-2" style="margin-top: 4px;">
+                        <div class="info-item">
+                            <span>📍</span>
+                            <span>${{obj.ad}}</span>
+                        </div>
+                    </div>
+                    
+                    <button onclick="toggleStatus2Details(${{index}})" class="toggle-details-btn">
+                        ${{detailsStates[index] ? '▲ Скрыть предоставленные данные' : '▼ Показать предоставленные данные'}}
+                    </button>
+                    
+                    <div id="details-${{index}}" style="display: ${{detailsStates[index] ? 'block' : 'none'}};">
+                        ${{providedDataHTML}}
+                    </div>
+                `;
+                
+                return card;
+            }}
+            
+            const card = document.createElement('div');
+            card.className = 'card';
+            
+            if (buttonStates[objectId] === undefined) {{
+                buttonStates[objectId] = false;
+            }}
+            
+            if (detailsStates[index] === undefined) {{
+                const savedState = sessionStorage.getItem(`card_${{index}}_expanded`);
+                detailsStates[index] = savedState === 'true';
+            }}
+            
+            let providedDataHTML = '';
+            if (obj.pd) {{
+                if (statusOfWork === '1') {{
+                    providedDataHTML = `
+                        <div class="provided-data-section-red">
+                            <div class="provided-data-title-red">🔴 Внесли изменения, в стадии рассмотрения</div>
+                            <div class="provided-data-content">${{obj.pd}}</div>
+                        </div>
+                    `;
+                }}
+            }}
+            
+            let formButtonHTML = '';
+            if (statusOfWork !== '1' && statusOfWork !== '2') {{
+                let formBtnClass = 'form-btn-compact';
+                let formBtnText = '✅ Внести изменения';
+                // ===== ИСПРАВЛЕНО: Используем objectId вместо индекса =====
+                let formBtnOnclick = `handleConfirmClick("${{objectId}}")`;
+                
+                if (wasButtonClicked) {{
+                    formBtnClass = 'form-btn-compact form-btn-opened';
+                    formBtnText = '📋 Форма была открыта';
+                    formBtnOnclick = `window.open('https://school-eev.bitrix24site.ru/crm_form_drmcv/', '_blank')`;
+                }}
+                
+                formButtonHTML = `
+                    <button id="form-btn-${{objectId}}" 
+                            onclick="${{formBtnOnclick}}" 
+                            class="${{formBtnClass}}" 
+                            title="Открыть форму для внесения изменений">
+                        ${{formBtnText}}
+                    </button>
+                `;
+            }}
+            
+            let mapButtonHTML = '';
+            if (obj.lat && obj.lon) {{
+                mapButtonHTML = `
+                    <button onclick="showOnMap(${{index}})" class="map-btn-compact" title="Показать на карте">
+                        👁️ На карте
+                    </button>
+                `;
+            }}
+            
+            let rfsIdHTML = '-';
+            if (obj.in_reestr === 1) {{
+                rfsIdHTML = '-';
+            }} else if (obj.rfs_id && obj.rfs_id !== '-' && obj.rfs_id !== 'nan') {{
+                rfsIdHTML = `<a href="https://platform.rfs.ru/infrastructure/${{obj.rfs_id}}" target="_blank" class="rfs-id-link">${{obj.rfs_id}}</a>`;
+            }}
+            
+            const detailsHTML = `
+                <div class="details-section">
+                    <div class="details-grid">
+                        <div class="details-item">
+                            <span class="details-label">РФС ID:</span>
+                            <span class="details-value">${{rfsIdHTML}}</span>
+                        </div>
+                        <div class="details-item">
+                            <span class="details-label">📞 Контакт:</span>
+                            <span class="details-value">${{obj.ct}}</span>
+                        </div>
+                        <div class="details-item">
+                            <span class="details-label">👤 Собственник:</span>
+                            <span class="details-value">${{obj.ow}}</span>
+                        </div>
+                        <div class="details-item">
+                            <span class="details-label">🏢 Управляющая:</span>
+                            <span class="details-value">${{obj.mg}}</span>
+                        </div>
+                        <div class="details-item">
+                            <span class="details-label">👥 Пользователь:</span>
+                            <span class="details-value">${{obj.us}}</span>
+                        </div>
+                        <div class="details-item">
+                            <span class="details-label">Тип:</span>
+                            <span class="details-value">${{obj.tp}}</span>
+                        </div>
+                        <div class="details-item">
+                            <span class="details-label">Дисциплина:</span>
+                            <span class="details-value">${{obj.d2}}</span>
+                        </div>
+                        <div class="details-item">
+                            <span class="details-label">Покрытие:</span>
+                            <span class="details-value">${{obj.cv}}</span>
+                        </div>
+                        <div class="details-item">
+                            <span class="details-label">Мест:</span>
+                            <span class="details-value">${{obj.cp}}</span>
+                        </div>
+                        <div class="details-item">
+                            <span class="details-label">Дренаж:</span>
+                            <span class="details-value">${{obj.dr}}</span>
+                        </div>
+                        <div class="details-item">
+                            <span class="details-label">Подогрев:</span>
+                            <span class="details-value">${{obj.ht}}</span>
+                        </div>
+                        <div class="details-item">
+                            <span class="details-label">Табло:</span>
+                            <span class="details-value">${{obj.sc}}</span>
+                        </div>
+                        <div class="details-item">
+                            <span class="details-label">Раздевалки:</span>
+                            <span class="details-value">${{obj.ds}}</span>
+                        </div>
+                        <div class="details-item">
+                            <span class="details-label">Год:</span>
+                            <span class="details-value">${{obj.yr}}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            card.innerHTML = `
+                <div class="row-1">
+                    <div class="full-name">${{obj.fn}}</div>
+                    ${{formButtonHTML}}
+                    ${{mapButtonHTML}}
+                </div>
+                
+                <div class="row-2">
+                    <div class="id-container">
+                        <span>ID: ${{obj.id}}</span>
+                        <span onclick="copyId('${{obj.id}}', '${{objectId}}')" class="copy-icon-small" title="Скопировать ID">📄</span>
+                    </div>
+                    <div class="info-item">
+                        <span>⚽</span>
+                        <span>${{obj.sn}}</span>
+                    </div>
+                    <div class="info-item">
+                        <span>📍</span>
+                        <span>${{obj.ad}}</span>
+                    </div>
+                    <div class="info-item">
+                        <span>📏</span>
+                        <span>${{obj.sz}}</span>
+                    </div>
+                    <div class="color-label-compact">
+                        <span>${{obj.cd}}</span>
+                    </div>
+                </div>
+                
+                <button onclick="toggleDetails(${{index}})" class="toggle-details-btn">
+                    ${{detailsStates[index] ? '▲ Скрыть детали' : '▼ Показать все детали'}}
+                </button>
+                
+                <div id="details-${{index}}" style="display: ${{detailsStates[index] ? 'block' : 'none'}};">
+                    ${{detailsHTML}}
+                    ${{providedDataHTML}}
+                </div>
+            `;
+            
+            return card;
+        }}
+        
+        function toggleDetails(index) {{
+            saveScrollPosition();
+            
+            detailsStates[index] = !detailsStates[index];
+            sessionStorage.setItem(`card_${{index}}_expanded`, detailsStates[index]);
+            
+            const toggleButton = document.querySelector(`[onclick="toggleDetails(${{index}})"]`);
+            const detailsElement = document.getElementById('details-' + index);
+            
+            if (toggleButton && detailsElement) {{
+                toggleButton.textContent = detailsStates[index] ? '▲ Скрыть детали' : '▼ Показать все детали';
+                detailsElement.style.display = detailsStates[index] ? 'block' : 'none';
+                
+                if (detailsStates[index]) {{
+                    setTimeout(() => {{
+                        toggleButton.scrollIntoView({{ behavior: 'smooth', block: 'nearest' }});
+                    }}, 10);
+                }}
+                
+                setTimeout(() => {{
+                    restoreScrollPosition();
+                }}, 20);
+            }}
+        }}
+        
+        function toggleStatus2Details(index) {{
+            saveScrollPosition();
+            
+            detailsStates[index] = !detailsStates[index];
+            sessionStorage.setItem(`card_${{index}}_expanded`, detailsStates[index]);
+            
+            const toggleButton = document.querySelector(`[onclick="toggleStatus2Details(${{index}})"]`);
+            const detailsElement = document.getElementById('details-' + index);
+            
+            if (toggleButton && detailsElement) {{
+                toggleButton.textContent = detailsStates[index] ? '▲ Скрыть предоставленные данные' : '▼ Показать предоставленные данные';
+                detailsElement.style.display = detailsStates[index] ? 'block' : 'none';
+                
+                if (detailsStates[index]) {{
+                    setTimeout(() => {{
+                        toggleButton.scrollIntoView({{ behavior: 'smooth', block: 'nearest' }});
+                    }}, 10);
+                }}
+                
+                setTimeout(() => {{
+                    restoreScrollPosition();
+                }}, 20);
+            }}
+        }}
+        
+        function renderObjects() {{
+            const container = document.getElementById('objects-container');
+            container.innerHTML = '';
+            
+            if (objectsData.length === 0) {{
+                container.innerHTML = '<div class="card"><p style="text-align: center; color: #666;">Объекты не найдены</p></div>';
+                return;
+            }}
+            
+            // Перезагружаем состояния из sessionStorage перед рендерингом
+            try {{
+                const savedButtonStates = sessionStorage.getItem('buttonStates');
+                if (savedButtonStates) {{
+                    buttonStates = JSON.parse(savedButtonStates);
+                }}
+            }} catch (e) {{
+                console.error('Error reloading button states:', e);
+            }}
+            
+            for (let i = 0; i < objectsData.length; i++) {{
+                const obj = objectsData[i];
+                const card = createObjectCard(obj, i);
+                container.appendChild(card);
+                
+                if (i < objectsData.length - 1) {{
+                    const hr = document.createElement('hr');
+                    container.appendChild(hr);
+                }}
+            }}
+            
+            restoreScrollPosition();
+        }}
+        
+        document.addEventListener('DOMContentLoaded', function() {{
+            const container = document.getElementById('objects-container');
+            if (container) {{
+                container.addEventListener('scroll', saveScrollPosition);
+            }}
+            
+            renderObjects();
+        }});
+        
+        if (document.readyState === 'loading') {{
+            document.addEventListener('DOMContentLoaded', renderObjects);
+        }} else {{
+            setTimeout(renderObjects, 100);
+        }}
+    </script>
+</body>
+</html>
         """
         
-        # ИЗМЕНЕНИЕ 4: Уменьшена высота компонента с 9000 до 700
         st.components.v1.html(objects_html, height=700, scrolling=True)
     
     else:
-        # Карта (режим карты) - используем filtered_data_for_display вместо data
         sirota = filtered_data_for_display['Широта']
         dolgota = filtered_data_for_display['Долгота']
         
-        full_name = filtered_data_for_display['Полное (официальное) название объекта'] # 0
-        short_name = filtered_data_for_display['Короткое (спортивное) название объекта'] # 1
-        adres = filtered_data_for_display['Адрес'] # 2
-        contact_name = filtered_data_for_display['Контактное лицо'] # 3
-        owner = filtered_data_for_display['Собственник (ОГРН)'] # 4
-        manager = filtered_data_for_display['Управляющая компания (ОГРН)'] #5
-        user = filtered_data_for_display['Пользователь (ОГРН)'] #6
-        rfs_id= filtered_data_for_display['РФС_ID'] #7
-        type_objectt = filtered_data_for_display['Тип Объекта '] #8
-        disciplyne = filtered_data_for_display['Дисциплина '] #9
-        length = filtered_data_for_display['Длина футбольного поля'] # 10
-        width = filtered_data_for_display['Ширина футбольного поля'] # 11
-        design_feature = filtered_data_for_display['Конструктивная особенность'] # 12
-        type_of_coverage = filtered_data_for_display['Тип покрытия'] # 13
-        capacity = filtered_data_for_display['Количество мест для зрителей'] # 14
+        full_name = filtered_data_for_display['Полное (официальное) название объекта']
+        short_name = filtered_data_for_display['Короткое (спортивное) название объекта']
+        adres = filtered_data_for_display['Адрес']
+        contact_name = filtered_data_for_display['Контактное лицо']
+        owner = filtered_data_for_display['Собственник (ОГРН)']
+        manager = filtered_data_for_display['Управляющая компания (ОГРН)']
+        user = filtered_data_for_display['Пользователь (ОГРН)']
+        rfs_id= filtered_data_for_display['РФС_ID']
+        type_objectt = filtered_data_for_display['Тип Объекта ']
+        disciplyne = filtered_data_for_display['Дисциплина ']
+        length = filtered_data_for_display['Длина футбольного поля']
+        width = filtered_data_for_display['Ширина футбольного поля']
+        design_feature = filtered_data_for_display['Конструктивная особенность']
+        type_of_coverage = filtered_data_for_display['Тип покрытия']
+        capacity = filtered_data_for_display['Количество мест для зрителей']
         capacity = capacity.astype(str)
-        drainage = filtered_data_for_display['Наличие дренажа'] # 15
-        heating = filtered_data_for_display['Наличие подогрева'] # 16
-        scoreboard = filtered_data_for_display['Наличие табло'] # 17
-        dress_room = filtered_data_for_display['Наличие раздевалок'] # 18
-        year = filtered_data_for_display['Год ввода в эксплуатацию/год капитального ремонта'] # 19
+        drainage = filtered_data_for_display['Наличие дренажа']
+        heating = filtered_data_for_display['Наличие подогрева']
+        scoreboard = filtered_data_for_display['Наличие табло']
+        dress_room = filtered_data_for_display['Наличие раздевалок']
+        year = filtered_data_for_display['Год ввода в эксплуатацию/год капитального ремонта']
         year = year.astype(str)
         in_reestr = filtered_data_for_display['Наличие в реестрах'].to_list()
         disp_2 = filtered_data_for_display['Дисциплина_2']
@@ -1862,10 +2751,8 @@ if st_select_region != 'Регионы':
 
         YANDEX_API_KEY = "7fe74d5b-be45-47d1-9fc0-a0765598a4d7"
 
-        # Подготовка данных для карты
         points_data = []
         for i in range(len(sirota)):
-            # Обработка информации для объектов со статусом работы '1' или '2'
             result_string = ""
             if status_of_work.iloc[i] in ('1', '2'):
                 to_slovar = filtered_data_for_display['То, что заполнили РОИВ'].iloc[i].replace('<br>', '|').split('|')
@@ -1909,18 +2796,14 @@ if st_select_region != 'Регионы':
                     if result_parts:
                         result_string = '<br>'.join(result_parts)
             
-            # Определяем цвет точки
             icon_color, _ = get_point_color(str(status_of_work.iloc[i]), in_reestr[i])
             
             current_id_egora = str(int(float(id_egora.iloc[i]))) if pd.notna(id_egora.iloc[i]) and str(id_egora.iloc[i]).replace('.0', '') != 'nan' else ""
             
-            # Подготавливаем РФС_ID с проверкой и заменой NaN на None
             current_rfs_id = None
             if in_reestr[i] == 1:
-                # Если Наличие в реестрах == 1, всегда None
                 current_rfs_id = None
             elif pd.notna(rfs_id.iloc[i]):
-                # Иначе обрабатываем как обычно
                 try:
                     if isinstance(rfs_id.iloc[i], (int, float)):
                         current_rfs_id = str(int(float(rfs_id.iloc[i])))
@@ -1934,7 +2817,6 @@ if st_select_region != 'Регионы':
                 except:
                     current_rfs_id = str(rfs_id.iloc[i]).strip()
             
-            # Преобразуем размеры в целые числа
             length_val = str(length.iloc[i]) if pd.notna(length.iloc[i]) else '-'
             width_val = str(width.iloc[i]) if pd.notna(width.iloc[i]) else '-'
             
@@ -1946,6 +2828,15 @@ if st_select_region != 'Регионы':
             except:
                 pass
             
+            # ===== ИСПРАВЛЕНО: Используем стабильную функцию для генерации ID =====
+            row_dict = {
+                'id_egora': current_id_egora,
+                'РФС_ID': current_rfs_id,
+                'Полное (официальное) название объекта': full_name.iloc[i],
+                'Адрес': adres.iloc[i]
+            }
+            object_id = get_stable_object_id(row_dict, i)
+            
             points_data.append({
                 'lat': float(sirota.iloc[i]) if pd.notna(sirota.iloc[i]) else 0,
                 'lon': float(dolgota.iloc[i]) if pd.notna(dolgota.iloc[i]) else 0,
@@ -1953,7 +2844,7 @@ if st_select_region != 'Регионы':
                 'index': i,
                 'id_egora': current_id_egora,
                 'rfs_id': current_rfs_id,
-                'in_reestr': in_reestr[i] if pd.notna(in_reestr[i]) else None,  # Заменяем NaN на None
+                'in_reestr': in_reestr[i] if pd.notna(in_reestr[i]) else None,
                 'status_of_work': str(status_of_work.iloc[i]) if pd.notna(status_of_work.iloc[i]) else "0",
                 'address': str(adres.iloc[i]).replace('"', '').replace('nan','-') if pd.notna(adres.iloc[i]) else '-',
                 'full_name': str(full_name.iloc[i]).replace('"', '').replace('nan','-') if pd.notna(full_name.iloc[i]) else '-',
@@ -1972,10 +2863,10 @@ if st_select_region != 'Регионы':
                 'scoreboard': '+' if pd.notna(scoreboard.iloc[i]) and scoreboard.iloc[i] == 'Y' else '-',
                 'dressing': '+' if pd.notna(dress_room.iloc[i]) and dress_room.iloc[i] == 'Y' else '-',
                 'year': str(year.iloc[i]).replace('nan','-') if pd.notna(year.iloc[i]) else '-',
-                'provided_data': result_string
+                'provided_data': result_string,
+                'object_id': object_id
             })
 
-        # Центр карты - средние координаты
         if len(sirota) > 0 and not sirota.isna().all():
             if st_select_region == '87 Чукотский автономный округ':
                 center_lat, center_lon = 67.131709, 172.286661
@@ -1985,9 +2876,11 @@ if st_select_region != 'Регионы':
         else:
             center_lat, center_lon = 44.6, 40.1  
 
-        # HTML карты
         zoom = 5
         map_unique_id = st.session_state.map_refresh_key
+        # ===== ИСПРАВЛЕНО: Добавляем версию данных в карту =====
+        data_version = st.session_state.get('data_version', str(int(time.time())))
+        
         map_html = f"""
 <!DOCTYPE html>
 <html>
@@ -2086,15 +2979,16 @@ if st_select_region != 'Регионы':
         }}
         .copy-success {{
             position: fixed;
-            top: 15px;
+            top: 10px;
             right: 15px;
             background: #10b981;
             color: white;
-            padding: 8px 15px;
+            padding: 4px 10px;
             border-radius: 4px;
             z-index: 9999;
             box-shadow: 0 3px 5px rgba(0, 0, 0, 0.1);
             display: none;
+            font-size: 10px;
         }}
         .address-item {{
             margin-bottom: 8px;
@@ -2199,18 +3093,48 @@ if st_select_region != 'Регионы':
     <div id="copy-success" class="copy-success">✓ Скопировано в буфер обмена!</div>
 
     <script>
-        // Передаём данные точек с заменой NaN на null
+        // ===== ИСПРАВЛЕНО: Проверка версии данных =====
+        const DATA_VERSION = '{data_version}';
+        const storedVersion = sessionStorage.getItem('data_version');
+        
+        // Если версия не совпадает, очищаем состояния
+        if (storedVersion !== DATA_VERSION) {{
+            console.log('Data version changed, clearing button states');
+            sessionStorage.removeItem('buttonStates');
+            sessionStorage.setItem('data_version', DATA_VERSION);
+        }}
+        
         const POINTS_DATA = JSON.parse('{safe_json_for_js(points_data)}');
         
-        // Глобальные переменные
         let map;
         let lastClickCoords = null;
         let lastClickAddress = null;
         let placemarks = [];
         let blackPlacemarks = [];
+        let buttonStates = {{}};
         
-        function handleConfirmClick(index) {{
-            const pointData = POINTS_DATA[index];
+        try {{
+            const savedButtonStates = sessionStorage.getItem('buttonStates');
+            if (savedButtonStates) {{
+                buttonStates = JSON.parse(savedButtonStates);
+            }}
+        }} catch (e) {{
+            console.error('Error loading button states for map:', e);
+        }}
+        
+        // ===== ИСПРАВЛЕНО: Функция для поиска точки по ID =====
+        function findPointById(objectId) {{
+            return POINTS_DATA.find(p => p.object_id === objectId);
+        }}
+        
+        // ===== ИСПРАВЛЕНО: Функция обработки клика на карте =====
+        function handleConfirmClick(objectId) {{
+            const pointData = findPointById(objectId);
+            if (!pointData) {{
+                console.error('Point not found:', objectId);
+                return false;
+            }}
+            
             const statusOfWork = pointData.status_of_work || '0';
             
             if (statusOfWork === '1' || statusOfWork === '2') {{
@@ -2220,8 +3144,12 @@ if st_select_region != 'Регионы':
             
             window.open("https://school-eev.bitrix24site.ru/crm_form_drmcv/", "_blank");
             
-            if (placemarks[index]) {{
-                const placemark = placemarks[index];
+            buttonStates[objectId] = true;
+            sessionStorage.setItem('buttonStates', JSON.stringify(buttonStates));
+            
+            // Обновляем точку на карте
+            if (placemarks[pointData.index]) {{
+                const placemark = placemarks[pointData.index];
                 placemark.options.set('iconColor', '#808080');
                 const updatedBalloon = getBalloonContent(pointData, true);
                 placemark.properties.set('balloonContent', updatedBalloon);
@@ -2233,14 +3161,12 @@ if st_select_region != 'Регионы':
         function getBalloonContent(pointData, isChanged = false) {{
             const statusOfWork = pointData.status_of_work || '0';
             const providedData = pointData.provided_data || '';
+            const objectId = pointData.object_id;
             
-            // Создаем ссылку для РФС ID с проверкой наличия в реестрах
             let rfsIdHTML = '-';
             if (pointData.in_reestr === 1) {{
-                // Если Наличие в реестрах == 1, показываем просто "-" без ссылки
                 rfsIdHTML = '-';
             }} else if (pointData.rfs_id && pointData.rfs_id !== '-' && pointData.rfs_id !== 'nan' && pointData.rfs_id !== null) {{
-                // Иначе показываем ссылку
                 rfsIdHTML = `<a href="https://platform.rfs.ru/infrastructure/${{pointData.rfs_id}}" target="_blank" class="rfs-id-link">${{pointData.rfs_id}}</a>`;
             }}
             
@@ -2302,10 +3228,11 @@ if st_select_region != 'Регионы':
             }}
             
             const showConfirmButton = (statusOfWork !== '1' && statusOfWork !== '2');
+            // ===== ИСПРАВЛЕНО: Используем objectId вместо индекса =====
             const confirmButtonSection = showConfirmButton ? `
                 <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #e5e7eb;">
                     <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
-                        <button onclick="handleConfirmClick(${{pointData.index}})" 
+                        <button onclick='handleConfirmClick("${{objectId}}")' 
                                 style="cursor: pointer; background: ${{statusOfWork === '1' || statusOfWork === '2' ? '#9ca3af' : '#10b981'}}; 
                                        border: none; padding: 6px 12px; border-radius: 3px; 
                                        color: white; font-weight: bold; font-size: 11px;
@@ -2369,6 +3296,10 @@ if st_select_region != 'Регионы':
         function handleFieldHereClick(coords) {{
             window.open("https://school-eev.bitrix24site.ru/crm_form_saeda/", "_blank");
             
+            const blackKey = 'black_' + Date.now() + '_' + coords[0].toFixed(6) + '_' + coords[1].toFixed(6);
+            buttonStates[blackKey] = true;
+            sessionStorage.setItem('buttonStates', JSON.stringify(buttonStates));
+            
             const blackPlacemark = new ymaps.Placemark(coords, {{
                 balloonContent: '',
                 hasBalloon: false,
@@ -2380,13 +3311,23 @@ if st_select_region != 'Регионы':
                 draggable: false
             }});
             
-            // Добавляем обработчик клика на черную точку
             blackPlacemark.events.add('click', function(e) {{
                 createAddressInfo(coords);
             }});
             
             map.geoObjects.add(blackPlacemark);
             blackPlacemarks.push(blackPlacemark);
+        }}
+        
+        function showInListFromMap(objectId) {{
+            window.parent.postMessage({{
+                type: 'streamlit:setComponentValue',
+                value: {{ 
+                    single_object_mode: true,
+                    single_object_id: objectId,
+                    view_mode: 'list'
+                }}
+            }}, '*');
         }}
         
         function copyToClipboard(text) {{
@@ -2443,7 +3384,6 @@ if st_select_region != 'Регионы':
                 oldInfo.remove();
             }}
             
-            // Если адрес не предоставлен, геокодируем координаты
             if (!address) {{
                 ymaps.geocode(coords).then(function(res) {{
                     const firstGeoObject = res.geoObjects.get(0);
@@ -2594,6 +3534,18 @@ if st_select_region != 'Регионы':
             
             POINTS_DATA.forEach(point => {{
                 if (point.lat && point.lon && point.lat !== 0 && point.lon !== 0) {{
+                    let pointColor = point.color;
+                    
+                    if (point.status_of_work === '1') {{
+                        pointColor = '#EF4444';
+                    }}
+                    else if (point.status_of_work === '2') {{
+                        pointColor = '#9444EF';
+                    }}
+                    else if (buttonStates[point.object_id]) {{
+                        pointColor = '#808080';
+                    }}
+                    
                     const placemark = new ymaps.Placemark(
                         [point.lat, point.lon],
                         {{
@@ -2606,22 +3558,25 @@ if st_select_region != 'Регионы':
                             originalIconColor: point.color,
                             needsChanges: false,
                             status_of_work: point.status_of_work,
-                            in_reestr: point.in_reestr
+                            in_reestr: point.in_reestr,
+                            object_id: point.object_id
                         }},
                         {{
                             preset: 'islands#circleDotIcon',
-                            iconColor: point.color,
+                            iconColor: pointColor,
                             draggable: false
                         }}
                     );
                     
                     placemark.events.add('click', function(e) {{
                         const target = e.get('target');
-                        const index = target.properties.get('index');
-                        const pointData = POINTS_DATA[index];
+                        const objectId = target.properties.get('object_id');
+                        const pointData = findPointById(objectId);
                         
-                        const balloonContent = getBalloonContent(pointData);
-                        target.properties.set('balloonContent', balloonContent);
+                        if (pointData) {{
+                            const balloonContent = getBalloonContent(pointData);
+                            target.properties.set('balloonContent', balloonContent);
+                        }}
                     }});
                     
                     geoObjects.add(placemark);
@@ -2630,6 +3585,33 @@ if st_select_region != 'Регионы':
             }});
             
             map.geoObjects.add(geoObjects);
+            
+            // Восстанавливаем черные точки
+            for (let key in buttonStates) {{
+                if (key.startsWith('black_')) {{
+                    const parts = key.split('_');
+                    if (parts.length >= 4) {{
+                        const lat = parseFloat(parts[2]);
+                        const lon = parseFloat(parts[3]);
+                        if (!isNaN(lat) && !isNaN(lon)) {{
+                            const blackPlacemark = new ymaps.Placemark([lat, lon], {{
+                                balloonContent: '',
+                                hasBalloon: false,
+                                isBlack: true
+                            }}, {{
+                                preset: 'islands#circleDotIcon',
+                                iconColor: "#000000",
+                                draggable: false
+                            }});
+                            blackPlacemark.events.add('click', function(e) {{
+                                createAddressInfo([lat, lon]);
+                            }});
+                            map.geoObjects.add(blackPlacemark);
+                            blackPlacemarks.push(blackPlacemark);
+                        }}
+                    }}
+                }}
+            }}
 
             map.events.add('click', function(e) {{
                 const coords = e.get('coords');
@@ -2648,32 +3630,27 @@ if st_select_region != 'Регионы':
                 }});
             }});
         }}
-        </script>
-        </body>
-        </html>
+    </script>
+</body>
+</html>
         """
         
-        # Показываем карту
         st.components.v1.html(map_html, height=600, scrolling=False)
     
-    # -------------------------------------------------------------------------------------------------------------
     st.sidebar.markdown("---")
-    # Используем оригинальные данные для статистики (до фильтрации)
     st.sidebar.write(f'Всего объектов: {original_data.shape[0]}')
     st.sidebar.markdown("---")
     st.sidebar.write('Типы точек:')
-    st.sidebar.write(f'🔵 Есть в РОИВ, но нет в ЦП - {original_data[original_data["Наличие в реестрах"] == 1].shape[0]}')  # Синий
-    st.sidebar.write(f'🟡 Есть только в ЦП - {original_data[original_data["Наличие в реестрах"] == 2].shape[0]}')          # Желтый
-    st.sidebar.write(f'🟢 Есть в РОИВ и в ЦП - {original_data[original_data["Наличие в реестрах"] == 3].shape[0]}')       # Зеленый
-    st.sidebar.write(f'''🟣 Добавили новое поле, в стадии рассмотрения - {original_data[original_data["Статус работы"] == '2'].shape[0]}''')  # Фиолетовый
-    st.sidebar.write(f'''🔴 Внесли изменения, в стадии рассмотрения - {original_data[original_data["Статус работы"] == '1'].shape[0]}''')       # Красный
-    st.sidebar.write('⚪ Нажали "Внести изменения", но не отправили анкету')  # Серый
-    st.sidebar.write('⚫ Нажали "Здесь поле", но не отправили анкету')        # Черный
+    st.sidebar.write(f'🔵 Есть в РОИВ, но нет в ЦП - {original_data[original_data["Наличие в реестрах"] == 1].shape[0]}')
+    st.sidebar.write(f'🟡 Есть только в ЦП - {original_data[original_data["Наличие в реестрах"] == 2].shape[0]}')
+    st.sidebar.write(f'🟢 Есть в РОИВ и в ЦП - {original_data[original_data["Наличие в реестрах"] == 3].shape[0]}')
+    st.sidebar.write(f'''🟣 Добавили новое поле, в стадии рассмотрения - {original_data[original_data["Статус работы"] == '2'].shape[0]}''')
+    st.sidebar.write(f'''🔴 Внесли изменения, в стадии рассмотрения - {original_data[original_data["Статус работы"] == '1'].shape[0]}''')
+    st.sidebar.write('⚪ Нажали "Внести изменения", но не отправили анкету')
+    st.sidebar.write('⚫ Нажали "Здесь поле", но не отправили анкету')
 
     st.sidebar.markdown("---")
     st.sidebar.write(f'Дополнительно:')
-    # Используем оригинальные данные для статистики
-    # ЗАМЕНА СТАТИСТИКИ ПО ТИПАМ ПОКРЫТИЙ
     st.sidebar.write(f'Натуральных полей: {original_data[original_data["Тип покрытия"] == "Натуральное"].shape[0]}')
     st.sidebar.write(f'Искусственная трава: {original_data[original_data["Тип покрытия"] == "Искусственная трава"].shape[0]}')
     st.sidebar.write(f'Спортивное (резина, крошка и тп): {original_data[original_data["Тип покрытия"] == "Спортивное (резина, крошка и тп)"].shape[0]}')
