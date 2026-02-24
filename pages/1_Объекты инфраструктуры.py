@@ -1246,7 +1246,7 @@ if st_select_region != 'Регионы':
         .back-button {{
     position: absolute;
     top: 13px;
-    left: 1130px;
+    left: 1140px;
     z-index: 10000;
     background: #3b82f6;
     color: white;
@@ -3761,6 +3761,7 @@ document.querySelector('.map-container').appendChild(backButton);
     st.sidebar.write(f'Доска (паркет): {original_data[original_data["Тип покрытия"] == "Доска (паркет)"].shape[0]}')
     st.sidebar.write(f'Иное: {original_data[original_data["Тип покрытия"] == "Иное"].shape[0]}')
     st.sidebar.write(f'Нет информации: {original_data[original_data["Тип покрытия"] == "Нет информации"].shape[0]}')
+
 
 
 
