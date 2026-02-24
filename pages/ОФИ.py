@@ -144,7 +144,7 @@ st.markdown("""
         color: #FFD700 !important;
     }
     
-    /* ===== ИСПРАВЛЕНО: УСИЛЕННЫЕ СТИЛИ ДЛЯ КОМБОБОКСОВ ===== */
+    /* ===== УСИЛЕННЫЕ СТИЛИ ДЛЯ КОМБОБОКСОВ ===== */
     /* ★★★ ВСЕ КОМБОБОКСЫ - БЕЛЫЙ фон, черный текст, ellipsis, защита от темной темы ★★★ */
     [data-baseweb="select"] {
         background-color: white !important;
@@ -182,18 +182,43 @@ st.markdown("""
         color-scheme: light !important;
     }
     
-    /* Контейнер с текстом */
+    /* Контейнер с текстом - принудительно убираем скроллы */
     [data-baseweb="select"] [role="button"] div {
         overflow: hidden !important;
+        overflow-x: hidden !important;
+        overflow-y: hidden !important;
         text-overflow: ellipsis !important;
         white-space: nowrap !important;
         color: black !important;
         scrollbar-width: none !important; /* Firefox */
         -ms-overflow-style: none !important; /* IE/Edge */
+        max-width: 100% !important;
+        width: 100% !important;
+        display: inline-block !important;
     }
     
-    [data-baseweb="select"] [role="button"] div::-webkit-scrollbar {
-        display: none !important; /* Chrome/Safari */
+    /* Дополнительная защита для всех внутренних элементов */
+    [data-baseweb="select"] [role="button"] div *,
+    [data-baseweb="select"] [role="button"] span,
+    [data-baseweb="select"] [role="button"] span * {
+        overflow: hidden !important;
+        overflow-x: hidden !important;
+        overflow-y: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+        max-width: 100% !important;
+    }
+    
+    /* Скрываем скроллы у всех возможных контейнеров */
+    [data-baseweb="select"] *::-webkit-scrollbar {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+    }
+    
+    [data-baseweb="select"] * {
+        scrollbar-width: none !important;
+        -ms-overflow-style: none !important;
     }
     
     /* Выбранный элемент */
@@ -250,6 +275,32 @@ st.markdown("""
     [data-baseweb="select"] [role="button"] svg {
         fill: #666 !important;
         color: #666 !important;
+    }
+    
+    /* ФИНАЛЬНЫЙ ФИКС - перебиваем все возможные скроллы */
+    .stSelectbox div[data-baseweb="select"] *,
+    div[data-testid="stSelectbox"] div[data-baseweb="select"] *,
+    div[role="combobox"] * {
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+        scrollbar-width: none !important;
+        -ms-overflow-style: none !important;
+    }
+    
+    .stSelectbox div[data-baseweb="select"] *::-webkit-scrollbar,
+    div[data-testid="stSelectbox"] div[data-baseweb="select"] *::-webkit-scrollbar {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+    }
+    
+    /* Фикс для сайдбара */
+    section[data-testid="stSidebar"] [data-baseweb="select"] * {
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+        scrollbar-width: none !important;
     }
     /* ===== КОНЕЦ ИСПРАВЛЕННЫХ СТИЛЕЙ ===== */
     
@@ -425,25 +476,6 @@ st.markdown("""
     }
 </style>
 """, unsafe_allow_html=True)
-
-# ===== Блок очистки sessionStorage с версионированием =====
-if 'force_clear' in st.session_state and st.session_state.force_clear:
-    # Генерируем новую версию данных на основе текущего времени
-    new_version = str(int(time.time()))
-    st.components.v1.html(f"""
-    <script>
-        // Полная очистка sessionStorage
-        console.log('Очищаем sessionStorage перед загрузкой');
-        sessionStorage.clear();
-        
-        // Устанавливаем новую версию данных
-        sessionStorage.setItem('data_version', '{new_version}');
-        sessionStorage.setItem('clean_start', 'true');
-        
-        // Устанавливаем флаг, что это новое обновление
-        sessionStorage.setItem('data_refreshed', 'true');
-    </script>
-    """, height=0)
     # Сбрасываем флаг после очистки
     st.session_state.force_clear = False
     # Сохраняем версию в session_state для последующего использования
@@ -3725,3 +3757,4 @@ if st_select_region != 'Регионы':
     st.sidebar.write(f'Доска (паркет): {original_data[original_data["Тип покрытия"] == "Доска (паркет)"].shape[0]}')
     st.sidebar.write(f'Иное: {original_data[original_data["Тип покрытия"] == "Иное"].shape[0]}')
     st.sidebar.write(f'Нет информации: {original_data[original_data["Тип покрытия"] == "Нет информации"].shape[0]}')
+
