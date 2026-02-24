@@ -1056,14 +1056,6 @@ if st_select_region != 'Регионы':
             filtered_data_for_display['Полное (официальное) название объекта'].astype(str).str.lower().str.contains(search_pattern, na=False, regex=True) |
             filtered_data_for_display['Короткое (спортивное) название объекта'].astype(str).str.lower().str.contains(search_pattern, na=False, regex=True) |
             filtered_data_for_display['Адрес'].astype(str).str.lower().str.contains(search_pattern, na=False, regex=True) |
-            filtered_data_for_display['Контактное лицо'].astype(str).str.lower().str.contains(search_pattern, na=False, regex=True) |
-            filtered_data_for_display['Собственник (ОГРН)'].astype(str).str.lower().str.contains(search_pattern, na=False, regex=True) |
-            filtered_data_for_display['Управляющая компания (ОГРН)'].astype(str).str.lower().str.contains(search_pattern, na=False, regex=True) |
-            filtered_data_for_display['Пользователь (ОГРН)'].astype(str).str.lower().str.contains(search_pattern, na=False, regex=True) |
-            filtered_data_for_display['Тип Объекта '].astype(str).str.lower().str.contains(search_pattern, na=False, regex=True) |
-            filtered_data_for_display['Тип покрытия'].astype(str).str.lower().str.contains(search_pattern, na=False, regex=True) |
-            filtered_data_for_display['Год ввода в эксплуатацию/год капитального ремонта'].astype(str).str.lower().str.contains(search_pattern, na=False, regex=True) |
-            filtered_data_for_display['Дисциплина_2'].astype(str).str.lower().str.contains(search_pattern, na=False, regex=True) |
             filtered_data_for_display['id_egora'].astype(str).str.lower().str.contains(search_pattern, na=False, regex=True) |
             filtered_data_for_display['РФС_ID'].astype(str).str.lower().str.contains(search_pattern, na=False, regex=True) 
         )
@@ -3763,6 +3755,7 @@ if st_select_region != 'Регионы':
     st.sidebar.write(f'Доска (паркет): {original_data[original_data["Тип покрытия"] == "Доска (паркет)"].shape[0]}')
     st.sidebar.write(f'Иное: {original_data[original_data["Тип покрытия"] == "Иное"].shape[0]}')
     st.sidebar.write(f'Нет информации: {original_data[original_data["Тип покрытия"] == "Нет информации"].shape[0]}')
+
 
 
 
