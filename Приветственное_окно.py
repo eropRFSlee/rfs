@@ -389,17 +389,6 @@ def show_instructions():
         """)
         st.image("инструкция/Точка внутри точки 2.png")
     st.markdown("---")
-    st.header("Обратная связь")
-    with st.expander("**Контакты**", expanded=False):
-        st.write("""
-        В случае возникновения любых вопросов, ошибок в функционале или предложений, обращайтесь удобным для Вас способом
-        - Почта: li_ea@rfs.ru
-        - Телефон: +7(950) 284-84-83 / +7(993) 264-84-63
-        - Telegram: https://t.me/eropliya
-        """)
-        st.image("инструкция/qr код.png")
-
-    st.markdown("---")
     st.header("Быстрые вопросы и ответы")
     
     faq_items = [
@@ -440,6 +429,7 @@ def show_instructions():
 
 if __name__ == "__main__":
     show_instructions()
+
 
 
 
