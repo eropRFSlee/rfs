@@ -16,7 +16,7 @@ st.markdown("""
         color: black !important;
     }
     
-    /* Переопределяем золотой цвет для сайдбара */
+    /* Переопределяем белый цвет для сайдбара */
     section[data-testid="stSidebar"] .stMarkdown,
     section[data-testid="stSidebar"] .stMarkdown p,
     section[data-testid="stSidebar"] .stMarkdown span,
@@ -68,12 +68,12 @@ st.markdown("""
     
     /* Кнопки в сайдбаре */
     section[data-testid="stSidebar"] .stButton button {
-        color: #FFD700 !important;
-        border-color: #FFD700 !important;
+        color: white !important;
+        border-color: white !important;
     }
     
     section[data-testid="stSidebar"] .stButton button:hover {
-        background-color: rgba(255, 215, 0, 0.1) !important;
+        background-color: rgba(255, 255, 255, 0.1) !important;
     }
     
     /* Кнопки режима просмотра в сайдбаре */
@@ -92,18 +92,18 @@ st.markdown("""
         background-color: #204171 !important;
     }
     
-    /* ГЛАВНОЕ ОКНО - ЗОЛОТОЙ ТЕКСТ */
+    /* ГЛАВНОЕ ОКНО - БЕЛЫЙ ТЕКСТ */
     .main .block-container {
         background-color: #2a4a80;
-        color: #FFD700 !important;
+        color: white !important;
         border-radius: 10px;
         padding: 2rem;
         margin-top: 1rem;
     }
     
-    /* ВСЕ элементы в основном окне - золотой цвет */
+    /* ВСЕ элементы в основном окне - белый цвет */
     .main .block-container *:not([data-baseweb="select"] *):not([role="listbox"] *):not([role="option"] *):not(section[data-testid="stSidebar"] *) {
-        color: #FFD700 !important;
+        color: white !important;
     }
     
     /* Исключения для некоторых элементов */
@@ -117,7 +117,7 @@ st.markdown("""
     .main .block-container span,
     .main .block-container div:not([data-baseweb="select"]):not([role="listbox"]):not([role="option"]):not(section[data-testid="stSidebar"]),
     .main .block-container label {
-        color: #FFD700 !important;
+        color: white !important;
     }
     
     /* ===== УСИЛЕННЫЕ СТИЛИ ДЛЯ КОМБОБОКСОВ ===== */
@@ -286,16 +286,16 @@ st.markdown("""
     }
     
     .stTextInput label {
-        color: #FFD700 !important;
+        color: white !important;
     }
     
     .stButton button {
-        color: #FFD700 !important;
-        border-color: #FFD700 !important;
+        color: white !important;
+        border-color: white !important;
     }
     
     .stButton button:hover {
-        background-color: rgba(255, 215, 0, 0.1) !important;
+        background-color: rgba(255, 255, 255, 0.1) !important;
     }
     
     .stSpinner + div,
@@ -308,13 +308,13 @@ st.markdown("""
     .element-container .stMarkdown p,
     .element-container .stMarkdown span,
     .element-container .stMarkdown div {
-        color: #FFD700 !important;
+        color: white !important;
     }
     
     div[data-testid="stToast"],
     div[data-testid="stNotification"],
     .st-emotion-cache-1q7spjk {
-        color: #FFD700 !important;
+        color: white !important;
     }
     
     .stAlert *,
@@ -322,14 +322,14 @@ st.markdown("""
     .stWarning *,
     .stSuccess *,
     .stError * {
-        color: #FFD700 !important;
+        color: white !important;
     }
     
     .stInfo,
     .stWarning,
     .stSuccess,
     .stError {
-        border-color: #FFD700 !important;
+        border-color: white !important;
     }
     
     .card {
@@ -385,11 +385,11 @@ st.markdown("""
     }
     
     .stSpinner > div {
-        border-color: #FFD700 transparent transparent transparent !important;
+        border-color: white transparent transparent transparent !important;
     }
     
     .stSpinner + div {
-        color: #FFD700 !important;
+        color: white !important;
     }
     
     .main .block-container {
@@ -471,4 +471,5 @@ st.markdown(
 st.markdown("---")
 # QR-код
 st.image("инструкция/qr код.png")
+
 
