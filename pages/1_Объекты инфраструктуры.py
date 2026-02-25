@@ -2074,7 +2074,7 @@ if st_select_region != 'Регионы':
             const statusOfWork = pointData.sw || '0';
             
             if (statusOfWork === '1' || statusOfWork === '2') {{
-                alert('Внесли изменения, в стадии рассмотрения. Внести изменения нельзя.');
+                alert('Объект на рассмотрении. Внести изменения нельзя.');
                 return false;
             }}
             
@@ -2118,7 +2118,7 @@ if st_select_region != 'Регионы':
             const statusOfWork = pointData.sw || '0';
             
             if (statusOfWork === '1' || statusOfWork === '2') {{
-                alert('Внесли изменения, в стадии рассмотрения. Внести изменения нельзя.');
+                alert('Объект на рассмотрении. Внести изменения нельзя.');
                 return false;
             }}
             
@@ -3276,7 +3276,7 @@ document.querySelector('.map-container').appendChild(backButton);
             const statusOfWork = pointData.status_of_work || '0';
             
             if (statusOfWork === '1' || statusOfWork === '2') {{
-                alert('Внесли изменения, в стадии рассмотрения. Внести изменения нельзя.');
+                alert('Объект на рассмотрении. Внести изменения нельзя.');
                 return false;
             }}
             
@@ -3792,13 +3792,3 @@ document.querySelector('.map-container').appendChild(backButton);
     st.sidebar.write(f'Доска (паркет): {original_data[original_data["Тип покрытия"] == "Доска (паркет)"].shape[0]}')
     st.sidebar.write(f'Иное: {original_data[original_data["Тип покрытия"] == "Иное"].shape[0]}')
     st.sidebar.write(f'Нет информации: {original_data[original_data["Тип покрытия"] == "Нет информации"].shape[0]}')
-
-
-
-
-
-
-
-
-
-
