@@ -188,10 +188,38 @@ st.markdown("""
         color: black !important;
     }
     
+    /* ===== УСИЛЕННЫЕ СТИЛИ ДЛЯ КНОПОК ===== */
+    /* Все кнопки в приложении */
+    .stButton button {
+        color: #FFD700 !important;
+        background-color: transparent !important;
+        border: 1px solid #FFD700 !important;
+        border-radius: 4px !important;
+        padding: 0.5rem 1rem !important;
+        font-weight: normal !important;
+        transition: all 0.3s ease !important;
+    }
+    
+    .stButton button:hover {
+        background-color: rgba(255, 215, 0, 0.1) !important;
+        border-color: #FFD700 !important;
+        color: #FFD700 !important;
+    }
+    
+    .stButton button:active,
+    .stButton button:focus {
+        color: #FFD700 !important;
+        background-color: rgba(255, 215, 0, 0.05) !important;
+        border-color: #FFD700 !important;
+        outline: none !important;
+        box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.2) !important;
+    }
+    
     /* Кнопки в сайдбаре */
     section[data-testid="stSidebar"] .stButton button {
         color: #FFD700 !important;
-        border-color: #FFD700 !important;
+        background-color: transparent !important;
+        border: 1px solid #FFD700 !important;
     }
     
     section[data-testid="stSidebar"] .stButton button:hover {
@@ -202,12 +230,46 @@ st.markdown("""
     section[data-testid="stSidebar"] .stButton button[key="map_btn"],
     section[data-testid="stSidebar"] .stButton button[key="list_btn"] {
         color: black !important;
-        border-color: #ccc !important;
+        background-color: white !important;
+        border: 1px solid #ccc !important;
     }
     
     section[data-testid="stSidebar"] .stButton button[key="map_btn"]:hover,
     section[data-testid="stSidebar"] .stButton button[key="list_btn"]:hover {
         background-color: #f0f0f0 !important;
+        border-color: #999 !important;
+    }
+    
+    section[data-testid="stSidebar"] .stButton button[key="map_btn"]:active,
+    section[data-testid="stSidebar"] .stButton button[key="list_btn"]:active,
+    section[data-testid="stSidebar"] .stButton button[key="map_btn"]:focus,
+    section[data-testid="stSidebar"] .stButton button[key="list_btn"]:focus {
+        background-color: #e0e0e0 !important;
+        border-color: #666 !important;
+        box-shadow: none !important;
+    }
+    
+    /* Кнопка обновления данных */
+    section[data-testid="stSidebar"] .stButton button[key="refresh_all_btn"] {
+        color: #FFD700 !important;
+        background-color: transparent !important;
+        border: 1px solid #FFD700 !important;
+    }
+    
+    section[data-testid="stSidebar"] .stButton button[key="refresh_all_btn"]:hover {
+        background-color: rgba(255, 215, 0, 0.1) !important;
+    }
+    /* ===== КОНЕЦ СТИЛЕЙ ДЛЯ КНОПОК ===== */
+    
+    /* Кнопки в основном окне */
+    .main .block-container .stButton button {
+        color: #FFD700 !important;
+        background-color: transparent !important;
+        border: 1px solid #FFD700 !important;
+    }
+    
+    .main .block-container .stButton button:hover {
+        background-color: rgba(255, 215, 0, 0.1) !important;
     }
     
     .stTextInput input {
@@ -217,15 +279,6 @@ st.markdown("""
     
     .stTextInput label {
         color: #FFD700 !important;
-    }
-    
-    .stButton button {
-        color: #FFD700 !important;
-        border-color: #FFD700 !important;
-    }
-    
-    .stButton button:hover {
-        background-color: rgba(255, 215, 0, 0.1) !important;
     }
     
     .stSpinner + div,
@@ -3666,6 +3719,7 @@ document.querySelector('.map-container').appendChild(backButton);
     st.sidebar.write(f'Доска (паркет): {original_data[original_data["Тип покрытия"] == "Доска (паркет)"].shape[0]}')
     st.sidebar.write(f'Иное: {original_data[original_data["Тип покрытия"] == "Иное"].shape[0]}')
     st.sidebar.write(f'Нет информации: {original_data[original_data["Тип покрытия"] == "Нет информации"].shape[0]}')
+
 
 
 
