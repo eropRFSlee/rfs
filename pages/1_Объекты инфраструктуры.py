@@ -40,7 +40,52 @@ st.markdown("""
         color: black !important;
     }
     
-    /* ===== ИСПРАВЛЕННЫЕ СТИЛИ ДЛЯ КОМБОБОКСОВ ===== */
+    /* Переопределяем золотой цвет для сайдбара */
+    section[data-testid="stSidebar"] .stMarkdown,
+    section[data-testid="stSidebar"] .stMarkdown p,
+    section[data-testid="stSidebar"] .stMarkdown span,
+    section[data-testid="stSidebar"] .stMarkdown div,
+    section[data-testid="stSidebar"] .stMarkdown h1,
+    section[data-testid="stSidebar"] .stMarkdown h2,
+    section[data-testid="stSidebar"] .stMarkdown h3,
+    section[data-testid="stSidebar"] .stMarkdown h4,
+    section[data-testid="stSidebar"] .stMarkdown h5,
+    section[data-testid="stSidebar"] .stMarkdown h6,
+    section[data-testid="stSidebar"] .stWrite,
+    section[data-testid="stSidebar"] .stWrite p,
+    section[data-testid="stSidebar"] .stWrite span,
+    section[data-testid="stSidebar"] .stWrite div,
+    section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"],
+    section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] *,
+    section[data-testid="stSidebar"] .element-container,
+    section[data-testid="stSidebar"] .sidebar-content,
+    section[data-testid="stSidebar"] p,
+    section[data-testid="stSidebar"] span,
+    section[data-testid="stSidebar"] div {
+        color: black !important;
+    }
+    
+    /* Статистика с эмодзи в сайдбаре */
+    section[data-testid="stSidebar"] .stMarkdown p:contains("🔵"),
+    section[data-testid="stSidebar"] .stMarkdown p:contains("🟡"),
+    section[data-testid="stSidebar"] .stMarkdown p:contains("🟢"),
+    section[data-testid="stSidebar"] .stMarkdown p:contains("🟣"),
+    section[data-testid="stSidebar"] .stMarkdown p:contains("🔴"),
+    section[data-testid="stSidebar"] .stMarkdown p:contains("⚪"),
+    section[data-testid="stSidebar"] .stMarkdown p:contains("⚫"),
+    section[data-testid="stSidebar"] .stMarkdown p:contains("Всего объектов"),
+    section[data-testid="stSidebar"] .stMarkdown p:contains("Типы точек"),
+    section[data-testid="stSidebar"] .stMarkdown p:contains("Дополнительно"),
+    section[data-testid="stSidebar"] .stMarkdown p:contains("Натуральных полей"),
+    section[data-testid="stSidebar"] .stMarkdown p:contains("Искусственная трава"),
+    section[data-testid="stSidebar"] .stMarkdown p:contains("Спортивное"),
+    section[data-testid="stSidebar"] .stMarkdown p:contains("Доска"),
+    section[data-testid="stSidebar"] .stMarkdown p:contains("Иное"),
+    section[data-testid="stSidebar"] .stMarkdown p:contains("Нет информации") {
+        color: black !important;
+    }
+    
+    /* ===== НОВЫЕ ПРОСТЫЕ СТИЛИ ДЛЯ КОМБОБОКСОВ ===== */
     /* Принудительно светлая тема для всех комбобоксов */
     .stSelectbox, 
     div[data-testid="stSelectbox"],
@@ -99,12 +144,12 @@ st.markdown("""
         background-color: #e0e0e0 !important;
     }
     
-    /* Метка комбобокса */
-    .stSelectbox label,
-    div[data-testid="stSelectbox"] label {
-        color: #FFD700 !important;
+    /* Стрелка выпадающего списка */
+    [data-baseweb="select"] [role="button"] svg {
+        fill: #666 !important;
+        color: #666 !important;
     }
-    /* ===== КОНЕЦ ИСПРАВЛЕННЫХ СТИЛЕЙ ===== */
+    /* ===== КОНЕЦ НОВЫХ СТИЛЕЙ ДЛЯ КОМБОБОКСОВ ===== */
     
     header {
         background-color: #204171 !important;
@@ -138,6 +183,33 @@ st.markdown("""
         color: #FFD700 !important;
     }
     
+    /* Селектбоксы в сайдбаре */
+    section[data-testid="stSidebar"] [data-baseweb="select"] * {
+        color: black !important;
+    }
+    
+    /* Кнопки в сайдбаре */
+    section[data-testid="stSidebar"] .stButton button {
+        color: #FFD700 !important;
+        border-color: #FFD700 !important;
+    }
+    
+    section[data-testid="stSidebar"] .stButton button:hover {
+        background-color: rgba(255, 215, 0, 0.1) !important;
+    }
+    
+    /* Кнопки режима просмотра в сайдбаре */
+    section[data-testid="stSidebar"] .stButton button[key="map_btn"],
+    section[data-testid="stSidebar"] .stButton button[key="list_btn"] {
+        color: black !important;
+        border-color: #ccc !important;
+    }
+    
+    section[data-testid="stSidebar"] .stButton button[key="map_btn"]:hover,
+    section[data-testid="stSidebar"] .stButton button[key="list_btn"]:hover {
+        background-color: #f0f0f0 !important;
+    }
+    
     .stTextInput input {
         color: #000000 !important;
         background-color: white !important;
@@ -156,7 +228,99 @@ st.markdown("""
         background-color: rgba(255, 215, 0, 0.1) !important;
     }
     
-    /* Остальные стили оставляем как есть... */
+    .stSpinner + div,
+    .stSpinner > div > div,
+    .stAlert,
+    .stInfo,
+    .stWarning,
+    .stSuccess,
+    .stError,
+    .element-container .stMarkdown p,
+    .element-container .stMarkdown span,
+    .element-container .stMarkdown div {
+        color: #FFD700 !important;
+    }
+    
+    div[data-testid="stToast"],
+    div[data-testid="stNotification"],
+    .st-emotion-cache-1q7spjk {
+        color: #FFD700 !important;
+    }
+    
+    .stAlert *,
+    .stInfo *,
+    .stWarning *,
+    .stSuccess *,
+    .stError * {
+        color: #FFD700 !important;
+    }
+    
+    .stInfo,
+    .stWarning,
+    .stSuccess,
+    .stError {
+        border-color: #FFD700 !important;
+    }
+    
+    .card {
+        background-color: rgba(255, 255, 255, 0.9);
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 15px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        color: #000000 !important;
+    }
+    
+    .card * {
+        color: #000000 !important;
+    }
+    
+    .color-indicator {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        margin-right: 8px;
+        vertical-align: middle;
+    }
+    
+    .color-label {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: bold;
+        color: #000000 !important;
+    }
+    
+    .color-blue {
+        background-color: #3B82F6;
+    }
+    
+    .color-yellow {
+        background-color: #FFA500;
+    }
+    
+    .color-green {
+        background-color: #10B981;
+    }
+    
+    .color-purple {
+        background-color: #9444EF;
+    }
+    
+    .color-red {
+        background-color: #EF4444;
+    }
+    
+    .stSpinner > div {
+        border-color: #FFD700 transparent transparent transparent !important;
+    }
+    
+    .stSpinner + div {
+        color: #FFD700 !important;
+    }
     
     .main .block-container {
         overflow-y: auto !important;
@@ -168,6 +332,52 @@ st.markdown("""
     
     iframe {
         max-height: none !important;
+    }
+    
+    /* Скролл только у всего сайдбара, убираем скроллы у внутренних элементов */
+    section[data-testid="stSidebar"] > div:first-child {
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+    }
+    
+    /* Убираем скроллы у всех внутренних элементов */
+    section[data-testid="stSidebar"] .stMarkdown,
+    section[data-testid="stSidebar"] .element-container,
+    section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"],
+    section[data-testid="stSidebar"] .stMarkdown p,
+    section[data-testid="stSidebar"] .stWrite,
+    section[data-testid="stSidebar"] .st-br,
+    section[data-testid="stSidebar"] .st-c0,
+    section[data-testid="stSidebar"] .st-d5 {
+        overflow-y: visible !important;
+        overflow-x: visible !important;
+    }
+    
+    /* Разрешаем скролл только для выпадающих списков */
+    section[data-testid="stSidebar"] [data-baseweb="select"] *,
+    section[data-testid="stSidebar"] [role="listbox"] * {
+        overflow-y: auto !important;
+    }
+    
+    /* Нормальный скролл только у сайдбара */
+    section[data-testid="stSidebar"] > div:first-child {
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+    }
+    
+    /* Убираем скроллы у всех внутренних элементов, КРОМЕ selectbox */
+    section[data-testid="stSidebar"] .stMarkdown,
+    section[data-testid="stSidebar"] .element-container,
+    section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"],
+    section[data-testid="stSidebar"] .stMarkdown p,
+    section[data-testid="stSidebar"] .stWrite {
+        overflow-y: visible !important;
+        overflow-x: visible !important;
+    }
+    
+    /* НЕ ТРОГАЕМ selectbox - оставляем как есть */
+    section[data-testid="stSidebar"] [data-baseweb="select"] {
+        overflow-y: visible !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -3456,6 +3666,7 @@ document.querySelector('.map-container').appendChild(backButton);
     st.sidebar.write(f'Доска (паркет): {original_data[original_data["Тип покрытия"] == "Доска (паркет)"].shape[0]}')
     st.sidebar.write(f'Иное: {original_data[original_data["Тип покрытия"] == "Иное"].shape[0]}')
     st.sidebar.write(f'Нет информации: {original_data[original_data["Тип покрытия"] == "Нет информации"].shape[0]}')
+
 
 
 
