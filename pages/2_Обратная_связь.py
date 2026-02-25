@@ -1,43 +1,6 @@
 import streamlit as st
 
 # Синий фон и белый текст через CSS
-st.markdown("""
-<style>
-    .stApp {
-        background-color: #204171;
-    }
-    
-    /* Весь текст белого цвета */
-    .stApp, .stApp * {
-        color: white !important;
-    }
-    
-    /* Сохраняем белый цвет для ссылок */
-    a {
-        color: white !important;
-    }
-    
-    a:hover {
-        color: #cccccc !important;
-    }
-    
-    /* Кнопки с белой обводкой */
-    .stButton button {
-        color: white !important;
-        border-color: white !important;
-        background-color: transparent !important;
-    }
-    
-    .stButton button:hover {
-        background-color: rgba(255, 255, 255, 0.1) !important;
-    }
-    
-    /* Горизонтальная линия */
-    hr {
-        border-color: white !important;
-    }
-</style>
-""", unsafe_allow_html=True)
 
 st.header("Обратная связь")
 
@@ -58,3 +21,4 @@ st.markdown(
 st.markdown("---")
 # QR-код
 st.image("инструкция/qr код.png")
+
