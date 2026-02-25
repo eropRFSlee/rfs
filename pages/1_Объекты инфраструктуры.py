@@ -85,7 +85,7 @@ st.markdown("""
         color: black !important;
     }
     
-    /* ===== НОВЫЕ ПРОСТЫЕ СТИЛИ ДЛЯ КОМБОБОКСОВ ===== */
+    /* ===== ИСПРАВЛЕННЫЕ СТИЛИ ДЛЯ КОМБОБОКСОВ (без скроллов ВО ВСЕХ БРАУЗЕРАХ) ===== */
     /* Принудительно светлая тема для всех комбобоксов */
     .stSelectbox, 
     div[data-testid="stSelectbox"],
@@ -98,29 +98,66 @@ st.markdown("""
         background-color: white !important;
         border: 1px solid #ccc !important;
         border-radius: 4px !important;
+        width: 100% !important;
+        max-width: 100% !important;
     }
     
     div[data-baseweb="select"] > div {
         background-color: white !important;
+        width: 100% !important;
     }
     
-    /* Кнопка комбобокса */
+    /* Кнопка комбобокса - УБИРАЕМ СКРОЛЛЫ */
     div[data-baseweb="select"] [role="button"] {
         background-color: white !important;
         min-height: 38px !important;
+        width: 100% !important;
+        overflow: hidden !important;
     }
     
-    /* Текст внутри комбобокса */
-    div[data-baseweb="select"] [role="button"] span,
+    /* Контейнер с текстом - обрезаем с многоточием */
     div[data-baseweb="select"] [role="button"] div {
         color: black !important;
         background-color: white !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        padding-right: 24px !important;
     }
     
-    /* Все внутренние элементы */
+    /* Текст внутри */
+    div[data-baseweb="select"] [role="button"] span {
+        color: black !important;
+        background-color: white !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        max-width: 100% !important;
+        display: block !important;
+    }
+    
+    /* Все внутренние элементы - УБИРАЕМ СКРОЛЛЫ ВО ВСЕХ БРАУЗЕРАХ */
     div[data-baseweb="select"] * {
         color: black !important;
         background-color: white !important;
+        /* Для Firefox */
+        scrollbar-width: none !important;
+        /* Для IE/Edge */
+        -ms-overflow-style: none !important;
+    }
+    
+    /* Для Chrome, Safari, Opera, Edge (Chromium) */
+    div[data-baseweb="select"] *::-webkit-scrollbar {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+    }
+    
+    /* Для старых версий Edge */
+    div[data-baseweb="select"] *::-ms-scrollbar {
+        display: none !important;
     }
     
     /* Выпадающий список */
@@ -128,28 +165,64 @@ st.markdown("""
         background-color: white !important;
         border: 1px solid #ccc !important;
         color-scheme: light !important;
+        max-width: 100% !important;
+        max-height: 300px !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        /* Убираем скроллы у выпадающего списка */
+        scrollbar-width: thin !important;
+        -ms-overflow-style: auto !important;
     }
     
-    /* Элементы выпадающего списка */
+    /* Стилизация скролла для выпадающего списка (чтобы был красивым) */
+    [role="listbox"]::-webkit-scrollbar {
+        width: 6px !important;
+        height: 6px !important;
+        display: block !important;
+    }
+    
+    [role="listbox"]::-webkit-scrollbar-track {
+        background: #f1f1f1 !important;
+        border-radius: 3px !important;
+    }
+    
+    [role="listbox"]::-webkit-scrollbar-thumb {
+        background: #888 !important;
+        border-radius: 3px !important;
+    }
+    
+    [role="listbox"]::-webkit-scrollbar-thumb:hover {
+        background: #555 !important;
+    }
+    
+    /* Элементы выпадающего списка - разрешаем перенос текста */
     [role="option"] {
         color: black !important;
         background-color: white !important;
+        white-space: normal !important;
+        word-wrap: break-word !important;
+        padding: 8px 12px !important;
+        border-bottom: 1px solid #f0f0f0 !important;
+        max-width: 100% !important;
     }
     
     [role="option"]:hover {
         background-color: #f0f0f0 !important;
+        color: black !important;
     }
     
     [role="option"][aria-selected="true"] {
         background-color: #e0e0e0 !important;
+        color: black !important;
     }
     
     /* Стрелка выпадающего списка */
     [data-baseweb="select"] [role="button"] svg {
         fill: #666 !important;
         color: #666 !important;
+        flex-shrink: 0 !important;
     }
-    /* ===== КОНЕЦ НОВЫХ СТИЛЕЙ ДЛЯ КОМБОБОКСОВ ===== */
+    /* ===== КОНЕЦ СТИЛЕЙ ДЛЯ КОМБОБОКСОВ ===== */
     
     header {
         background-color: #204171 !important;
@@ -3719,6 +3792,7 @@ document.querySelector('.map-container').appendChild(backButton);
     st.sidebar.write(f'Доска (паркет): {original_data[original_data["Тип покрытия"] == "Доска (паркет)"].shape[0]}')
     st.sidebar.write(f'Иное: {original_data[original_data["Тип покрытия"] == "Иное"].shape[0]}')
     st.sidebar.write(f'Нет информации: {original_data[original_data["Тип покрытия"] == "Нет информации"].shape[0]}')
+
 
 
 
