@@ -2619,7 +2619,7 @@ document.querySelector('.map-container').appendChild(backButton);
             if (statusOfWork !== '1' && statusOfWork !== '2') {{
                 let formBtnClass = 'form-btn-compact';
                 let formBtnText = '✅ Внести изменения';
-                let formBtnOnclick = `handleConfirmClick("${{objectId}}")`;
+                let formBtnOnclick = `handleConfirmClick('${{objectId}}')`;
                 
                 if (wasButtonClicked) {{
                     formBtnClass = 'form-btn-compact form-btn-opened';
@@ -3781,8 +3781,8 @@ document.querySelector('.map-container').appendChild(backButton);
     st.sidebar.write(f'🟢 Есть в РОИВ и в ЦП - {original_data[original_data["Наличие в реестрах"] == 3].shape[0]}')
     st.sidebar.write(f'''🟣 Добавили новое поле, в стадии рассмотрения - {original_data[original_data["Статус работы"] == '2'].shape[0]}''')
     st.sidebar.write(f'''🔴 Внесли изменения, в стадии рассмотрения - {original_data[original_data["Статус работы"] == '1'].shape[0]}''')
-    st.sidebar.write('⚪ Нажали "Внести изменения", но не отправили анкету')
-    st.sidebar.write('⚫ Нажали "Здесь поле", но не отправили анкету')
+    st.sidebar.write('⚪ Нажали кнопку "Внести изменения", форма была открыта')
+    st.sidebar.write('⚫ Нажали кнопку "Здесь футбольное поле", форма была открыта')
 
     st.sidebar.markdown("---")
     st.sidebar.write(f'Дополнительно:')
@@ -3792,4 +3792,5 @@ document.querySelector('.map-container').appendChild(backButton);
     st.sidebar.write(f'Доска (паркет): {original_data[original_data["Тип покрытия"] == "Доска (паркет)"].shape[0]}')
     st.sidebar.write(f'Иное: {original_data[original_data["Тип покрытия"] == "Иное"].shape[0]}')
     st.sidebar.write(f'Нет информации: {original_data[original_data["Тип покрытия"] == "Нет информации"].shape[0]}')
+
 
