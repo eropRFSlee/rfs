@@ -2569,7 +2569,7 @@ document.querySelector('.map-container').appendChild(backButton);
                 if (obj.lat && obj.lon) {{
                     mapButtonHTML = `
                         <button onclick="showOnMap(${{index}})" class="map-btn-purple" title="Показать на карте">
-                            Просмотр а карте
+                            Просмотр на карте
                         </button>
                     `;
                 }}
@@ -3831,3 +3831,4 @@ document.querySelector('.map-container').appendChild(backButton);
     st.sidebar.write(f'Доска (паркет): {original_data[original_data["Тип покрытия"] == "Доска (паркет)"].shape[0]}')
     st.sidebar.write(f'Иное: {original_data[original_data["Тип покрытия"] == "Иное"].shape[0]}')
     st.sidebar.write(f'Нет информации: {original_data[original_data["Тип покрытия"] == "Нет информации"].shape[0]}')
+
