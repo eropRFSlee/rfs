@@ -1783,13 +1783,13 @@ if st_select_region != 'Регионы':
     
     <script>
         const DATA_VERSION = '{data_version}';
-        const storedVersion = sessionStorage.getItem('data_version');
+        const storedVersion = localStorage.getItem('data_version');
         
-        if (storedVersion !== DATA_VERSION || sessionStorage.getItem('data_refreshed') === 'true') {{
+        if (storedVersion !== DATA_VERSION || localStorage.getItem('data_refreshed') === 'true') {{
             console.log('Data version changed or refreshed, clearing button states');
-            sessionStorage.removeItem('buttonStates');
-            sessionStorage.setItem('data_version', DATA_VERSION);
-            sessionStorage.removeItem('data_refreshed');
+            localStorage.removeItem('buttonStates');
+            localStorage.setItem('data_version', DATA_VERSION);
+            localStorage.removeItem('data_refreshed');
         }}
         
         const objectsData = JSON.parse('{safe_json_for_js(objects_data)}');
@@ -1806,7 +1806,7 @@ if st_select_region != 'Регионы':
         let backToMapButton = null;
         
         try {{
-            const savedButtonStates = sessionStorage.getItem('buttonStates');
+            const savedButtonStates = localStorage.getItem('buttonStates');
             if (savedButtonStates) {{
                 buttonStates = JSON.parse(savedButtonStates);
                 console.log('Loaded button states:', Object.keys(buttonStates).length);
@@ -1814,6 +1814,19 @@ if st_select_region != 'Регионы':
         }} catch (e) {{
             console.error('Error loading button states:', e);
         }}
+        
+        // Слушаем изменения в localStorage от других iframe
+        window.addEventListener('storage', function(e) {{
+            if (e.key === 'buttonStates') {{
+                try {{
+                    const newStates = JSON.parse(e.newValue || '{{}}');
+                    buttonStates = newStates;
+                    if (typeof renderObjects === 'function') renderObjects();
+                }} catch (err) {{
+                    console.error('Error updating from storage:', err);
+                }}
+            }}
+        }});
         
         function saveScrollPosition() {{
             const container = document.getElementById('objects-container');
@@ -2041,7 +2054,7 @@ if st_select_region != 'Регионы':
             
             const blackKey = 'black_' + Date.now() + '_' + coords[0].toFixed(6) + '_' + coords[1].toFixed(6);
             buttonStates[blackKey] = true;
-            sessionStorage.setItem('buttonStates', JSON.stringify(buttonStates));
+            localStorage.setItem('buttonStates', JSON.stringify(buttonStates));
             
             if (!currentMap) return;
             
@@ -2081,7 +2094,7 @@ if st_select_region != 'Регионы':
             window.open("https://school-eev.bitrix24site.ru/crm_form_drmcv/", "_blank");
             
             buttonStates[objectId] = true;
-            sessionStorage.setItem('buttonStates', JSON.stringify(buttonStates));
+            localStorage.setItem('buttonStates', JSON.stringify(buttonStates));
             
             const listButton = document.getElementById('form-btn-' + objectId);
             if (listButton) {{
@@ -2125,7 +2138,7 @@ if st_select_region != 'Регионы':
             window.open("https://school-eev.bitrix24site.ru/crm_form_drmcv/", "_blank");
             
             buttonStates[objectId] = true;
-            sessionStorage.setItem('buttonStates', JSON.stringify(buttonStates));
+            localStorage.setItem('buttonStates', JSON.stringify(buttonStates));
             
             const button = document.getElementById('form-btn-' + objectId);
             if (button) {{
@@ -2517,7 +2530,7 @@ document.querySelector('.map-container').appendChild(backButton);
             const url = "https://school-eev.bitrix24site.ru/crm_form_drmcv/";
             
             buttonStates[objectId] = true;
-            sessionStorage.setItem('buttonStates', JSON.stringify(buttonStates));
+            localStorage.setItem('buttonStates', JSON.stringify(buttonStates));
             
             const button = document.getElementById('form-btn-' + objectId);
             if (button) {{
@@ -2599,7 +2612,7 @@ document.querySelector('.map-container').appendChild(backButton);
             }}
             
             if (detailsStates[index] === undefined) {{
-                const savedState = sessionStorage.getItem(`card_${{index}}_expanded`);
+                const savedState = localStorage.getItem(`card_${{index}}_expanded`);
                 detailsStates[index] = savedState === 'true';
             }}
             
@@ -2762,7 +2775,7 @@ document.querySelector('.map-container').appendChild(backButton);
             saveScrollPosition();
             
             detailsStates[index] = !detailsStates[index];
-            sessionStorage.setItem(`card_${{index}}_expanded`, detailsStates[index]);
+            localStorage.setItem(`card_${{index}}_expanded`, detailsStates[index]);
             
             const toggleButton = document.querySelector(`[onclick="toggleDetails(${{index}})"]`);
             const detailsElement = document.getElementById('details-' + index);
@@ -2787,7 +2800,7 @@ document.querySelector('.map-container').appendChild(backButton);
             saveScrollPosition();
             
             detailsStates[index] = !detailsStates[index];
-            sessionStorage.setItem(`card_${{index}}_expanded`, detailsStates[index]);
+            localStorage.setItem(`card_${{index}}_expanded`, detailsStates[index]);
             
             const toggleButton = document.querySelector(`[onclick="toggleStatus2Details(${{index}})"]`);
             const detailsElement = document.getElementById('details-' + index);
@@ -2818,7 +2831,7 @@ document.querySelector('.map-container').appendChild(backButton);
             }}
             
             try {{
-                const savedButtonStates = sessionStorage.getItem('buttonStates');
+                const savedButtonStates = localStorage.getItem('buttonStates');
                 if (savedButtonStates) {{
                     buttonStates = JSON.parse(savedButtonStates);
                 }}
@@ -3236,12 +3249,12 @@ document.querySelector('.map-container').appendChild(backButton);
 
     <script>
         const DATA_VERSION = '{data_version}';
-        const storedVersion = sessionStorage.getItem('data_version');
+        const storedVersion = localStorage.getItem('data_version');
         
         if (storedVersion !== DATA_VERSION) {{
             console.log('Data version changed, clearing button states');
-            sessionStorage.removeItem('buttonStates');
-            sessionStorage.setItem('data_version', DATA_VERSION);
+            localStorage.removeItem('buttonStates');
+            localStorage.setItem('data_version', DATA_VERSION);
         }}
         
         const POINTS_DATA = JSON.parse('{safe_json_for_js(points_data)}');
@@ -3254,12 +3267,38 @@ document.querySelector('.map-container').appendChild(backButton);
         let buttonStates = {{}};
         
         try {{
-            const savedButtonStates = sessionStorage.getItem('buttonStates');
+            const savedButtonStates = localStorage.getItem('buttonStates');
             if (savedButtonStates) {{
                 buttonStates = JSON.parse(savedButtonStates);
             }}
         }} catch (e) {{
             console.error('Error loading button states for map:', e);
+        }}
+        
+        // Слушаем изменения в localStorage от других iframe
+        window.addEventListener('storage', function(e) {{
+            if (e.key === 'buttonStates') {{
+                try {{
+                    buttonStates = JSON.parse(e.newValue || '{{}}');
+                    updateMapColors();
+                }} catch (err) {{
+                    console.error('Error updating from storage:', err);
+                }}
+            }}
+        }});
+        
+        function updateMapColors() {{
+            placemarks.forEach(placemark => {{
+                const objectId = placemark.properties.get('object_id');
+                const pointData = findPointById(objectId);
+                if (pointData) {{
+                    let pointColor = pointData.color;
+                    if (buttonStates[objectId] && pointData.status_of_work !== '1' && pointData.status_of_work !== '2') {{
+                        pointColor = '#808080';
+                    }}
+                    placemark.options.set('iconColor', pointColor);
+                }}
+            }});
         }}
         
         function findPointById(objectId) {{
@@ -3283,7 +3322,7 @@ document.querySelector('.map-container').appendChild(backButton);
             window.open("https://school-eev.bitrix24site.ru/crm_form_drmcv/", "_blank");
             
             buttonStates[objectId] = true;
-            sessionStorage.setItem('buttonStates', JSON.stringify(buttonStates));
+            localStorage.setItem('buttonStates', JSON.stringify(buttonStates));
             
             if (placemarks[pointData.index]) {{
                 const placemark = placemarks[pointData.index];
@@ -3434,7 +3473,7 @@ document.querySelector('.map-container').appendChild(backButton);
             
             const blackKey = 'black_' + Date.now() + '_' + coords[0].toFixed(6) + '_' + coords[1].toFixed(6);
             buttonStates[blackKey] = true;
-            sessionStorage.setItem('buttonStates', JSON.stringify(buttonStates));
+            localStorage.setItem('buttonStates', JSON.stringify(buttonStates));
             
             const blackPlacemark = new ymaps.Placemark(coords, {{
                 balloonContent: '',
@@ -3792,5 +3831,3 @@ document.querySelector('.map-container').appendChild(backButton);
     st.sidebar.write(f'Доска (паркет): {original_data[original_data["Тип покрытия"] == "Доска (паркет)"].shape[0]}')
     st.sidebar.write(f'Иное: {original_data[original_data["Тип покрытия"] == "Иное"].shape[0]}')
     st.sidebar.write(f'Нет информации: {original_data[original_data["Тип покрытия"] == "Нет информации"].shape[0]}')
-
-
