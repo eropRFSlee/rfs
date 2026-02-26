@@ -1228,8 +1228,8 @@ if st_select_region != 'Регионы':
                 'sw': status_of_work,
                 'pd': provided_data,
                 'in_reestr': in_reestr,
-                'lat': float(row['Широта']) if pd.notna(row['Широта']) else None,
-                'lon': float(row['Долгота']) if pd.notna(row['Долгота']) else None,
+                'lat': float(row['Широта']) if pd.notna(row['Широта']) and str(row['Широта']).replace('.','').replace('-','').isdigit() else None,
+                'lon': float(row['Долгота']) if pd.notna(row['Долгота']) and str(row['Долгота']).replace('.','').replace('-','').isdigit() else None,
                 'index': index,
                 'object_id': object_id,
                 'form_opened': False
@@ -2994,8 +2994,8 @@ document.querySelector('.map-container').appendChild(backButton);
             object_id = get_stable_object_id(row_dict, i)
             
             points_data.append({
-                'lat': float(sirota.iloc[i]) if pd.notna(sirota.iloc[i]) else 0,
-                'lon': float(dolgota.iloc[i]) if pd.notna(dolgota.iloc[i]) else 0,
+                'lat': float(sirota.iloc[i]) if pd.notna(sirota.iloc[i]) and str(sirota.iloc[i]).replace('.','').replace('-','').isdigit() else None,
+                'lon': float(dolgota.iloc[i]) if pd.notna(dolgota.iloc[i]) and str(dolgota.iloc[i]).replace('.','').replace('-','').isdigit() else None,
                 'color': icon_color,
                 'index': i,
                 'id_egora': current_id_egora,
@@ -3708,7 +3708,7 @@ document.querySelector('.map-container').appendChild(backButton);
             }});
             
             POINTS_DATA.forEach(point => {{
-                if (point.lat && point.lon && point.lat !== 0 && point.lon !== 0) {{
+                if (point.lat && point.lon && !isNaN(point.lat) && !isNaN(point.lon)) {{
                     let pointColor = point.color;
                     
                     if (point.status_of_work === '1') {{
