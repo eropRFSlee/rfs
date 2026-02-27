@@ -2050,7 +2050,17 @@ if st_select_region != 'Регионы':
         }}
         
         function handleFieldHereClick(coords) {{
-            window.open("https://school-eev.bitrix24site.ru/crm_form_saeda/", "_blank");
+            // Получаем адрес для текущего клика (если есть)
+            let address = '';
+            if (lastClickAddress) {{
+                address = encodeURIComponent(lastClickAddress);
+            }}
+            
+            // Формируем URL с параметрами
+            const coordsStr = coords[0].toFixed(6) + ',' + coords[1].toFixed(6);
+            const url = `https://school-eev.bitrix24site.ru/crm_form_saeda/?number_region=${{REGION_NUMBER}}&Adres=${{address}}&sirota_dolgota=${{coordsStr}}`;
+            
+            window.open(url, "_blank");
             
             const blackKey = 'black_' + Date.now() + '_' + coords[0].toFixed(6) + '_' + coords[1].toFixed(6);
             buttonStates[blackKey] = true;
@@ -2091,7 +2101,9 @@ if st_select_region != 'Регионы':
                 return false;
             }}
             
-            window.open("https://school-eev.bitrix24site.ru/crm_form_drmcv/", "_blank");
+            // Формируем URL с параметром ID объекта
+            const url = `https://school-eev.bitrix24site.ru/crm_form_drmcv/?my_2=${{objectId}}`;
+            window.open(url, "_blank");
             
             buttonStates[objectId] = true;
             localStorage.setItem('buttonStates', JSON.stringify(buttonStates));
@@ -2101,7 +2113,7 @@ if st_select_region != 'Регионы':
                 listButton.textContent = '📋 Форма была открыта';
                 listButton.className = 'form-btn-compact form-btn-opened';
                 listButton.onclick = function() {{
-                    window.open('https://school-eev.bitrix24site.ru/crm_form_drmcv/', '_blank');
+                    window.open(url, '_blank');
                 }};
             }}
             
@@ -2135,7 +2147,9 @@ if st_select_region != 'Регионы':
                 return false;
             }}
             
-            window.open("https://school-eev.bitrix24site.ru/crm_form_drmcv/", "_blank");
+            // Формируем URL с параметром ID объекта
+            const url = `https://school-eev.bitrix24site.ru/crm_form_drmcv/?my_2=${{objectId}}`;
+            window.open(url, "_blank");
             
             buttonStates[objectId] = true;
             localStorage.setItem('buttonStates', JSON.stringify(buttonStates));
@@ -2145,7 +2159,7 @@ if st_select_region != 'Регионы':
                 button.textContent = '📋 Форма была открыта';
                 button.className = 'form-btn-compact form-btn-opened';
                 button.onclick = function() {{
-                    window.open('https://school-eev.bitrix24site.ru/crm_form_drmcv/', '_blank');
+                    window.open(url, '_blank');
                 }};
             }}
             
@@ -2527,7 +2541,8 @@ document.querySelector('.map-container').appendChild(backButton);
                 return false;
             }}
             
-            const url = "https://school-eev.bitrix24site.ru/crm_form_drmcv/";
+            // Формируем URL с параметром ID объекта
+            const url = `https://school-eev.bitrix24site.ru/crm_form_drmcv/?my_2=${{objectId}}`;
             
             buttonStates[objectId] = true;
             localStorage.setItem('buttonStates', JSON.stringify(buttonStates));
@@ -2637,7 +2652,7 @@ document.querySelector('.map-container').appendChild(backButton);
                 if (wasButtonClicked) {{
                     formBtnClass = 'form-btn-compact form-btn-opened';
                     formBtnText = '📋 Форма была открыта';
-                    formBtnOnclick = `window.open('https://school-eev.bitrix24site.ru/crm_form_drmcv/', '_blank')`;
+                    formBtnOnclick = `window.open('https://school-eev.bitrix24site.ru/crm_form_drmcv/?my_2=${{objectId}}', '_blank')`;
                 }}
                 
                 formButtonHTML = `
@@ -3258,6 +3273,7 @@ document.querySelector('.map-container').appendChild(backButton);
         }}
         
         const POINTS_DATA = JSON.parse('{safe_json_for_js(points_data)}');
+        const REGION_NUMBER = {int(st_select_region[0:2])};
         
         let map;
         let lastClickCoords = null;
@@ -3319,7 +3335,9 @@ document.querySelector('.map-container').appendChild(backButton);
                 return false;
             }}
             
-            window.open("https://school-eev.bitrix24site.ru/crm_form_drmcv/", "_blank");
+            // Формируем URL с параметром ID объекта
+            const url = `https://school-eev.bitrix24site.ru/crm_form_drmcv/?my_2=${{objectId}}`;
+            window.open(url, "_blank");
             
             buttonStates[objectId] = true;
             localStorage.setItem('buttonStates', JSON.stringify(buttonStates));
@@ -3469,7 +3487,17 @@ document.querySelector('.map-container').appendChild(backButton);
         }}
         
         function handleFieldHereClick(coords) {{
-            window.open("https://school-eev.bitrix24site.ru/crm_form_saeda/", "_blank");
+            // Получаем адрес для текущего клика (если есть)
+            let address = '';
+            if (lastClickAddress) {{
+                address = encodeURIComponent(lastClickAddress);
+            }}
+            
+            // Формируем URL с параметрами
+            const coordsStr = coords[0].toFixed(6) + ',' + coords[1].toFixed(6);
+            const url = `https://school-eev.bitrix24site.ru/crm_form_saeda/?number_region=${{REGION_NUMBER}}&Adres=${{address}}&sirota_dolgota=${{coordsStr}}`;
+            
+            window.open(url, "_blank");
             
             const blackKey = 'black_' + Date.now() + '_' + coords[0].toFixed(6) + '_' + coords[1].toFixed(6);
             buttonStates[blackKey] = true;
@@ -3543,7 +3571,7 @@ document.querySelector('.map-container').appendChild(backButton);
         }}
         
         function copyRegionNumber() {{
-            copyToClipboard("{int(st_select_region[0:2])}");
+            copyToClipboard(String(REGION_NUMBER));
         }}
         
         function copyEgoraId(egoraId) {{
@@ -3607,7 +3635,7 @@ document.querySelector('.map-container').appendChild(backButton);
                                 </button>
                             </div>
                             <div class="item-content">
-                                {int(st_select_region[0:2])}
+                                ${{REGION_NUMBER}}
                             </div>
                         </div>
                         
@@ -3669,7 +3697,7 @@ document.querySelector('.map-container').appendChild(backButton);
                             </button>
                         </div>
                         <div class="item-content">
-                            {int(st_select_region[0:2])}
+                            ${{REGION_NUMBER}}
                         </div>
                     </div>
                     
@@ -3831,4 +3859,3 @@ document.querySelector('.map-container').appendChild(backButton);
     st.sidebar.write(f'Доска (паркет): {original_data[original_data["Тип покрытия"] == "Доска (паркет)"].shape[0]}')
     st.sidebar.write(f'Иное: {original_data[original_data["Тип покрытия"] == "Иное"].shape[0]}')
     st.sidebar.write(f'Нет информации: {original_data[original_data["Тип покрытия"] == "Нет информации"].shape[0]}')
-
