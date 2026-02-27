@@ -6,6 +6,7 @@ import time
 import uuid
 from io import BytesIO
 import base64
+import re
 
 WEBHOOK = 'https://drlk.rfs.ru/rest/205/b8fz7f8gjkxwstkm/'
 ENTITY_TYPE_ID = 142
@@ -919,18 +920,37 @@ if st_select_region != 'Регионы':
     'Наличие подогрева', 'Наличие табло', 'Наличие раздевалок', 'Год ввода в эксплуатацию/год капитального ремонта', 'Наличие в реестрах',
       'Статус работы', 'Широта и долгота','Дисциплина_2', 'id_egora','То, что заполнили РОИВ'])
     
-    # ИСПРАВЛЕНО: split по запятой с обработкой ошибок
-    coords_split = data['Широта и долгота'].str.split(',', expand=True)
-    if coords_split.shape[1] == 2:
-        data['Широта'] = coords_split[0]
-        data['Долгота'] = coords_split[1]
-    else:
-        # Если где-то нет запятой, создаем колонки с NaN
-        data['Широта'] = coords_split[0] if coords_split.shape[1] >= 1 else None
-        data['Долгота'] = coords_split[1] if coords_split.shape[1] >= 2 else None
-
+    # ===== ИСПРАВЛЕНО: Обработка координат =====
+    # 1. Если есть запятая, заменяем на пробел
+    data['Широта и долгота'] = data['Широта и долгота'].str.replace(',', ' ')
+    
+    # 2. Разбиваем по пробелу
+    coords_split = data['Широта и долгота'].str.split(r'\s+', expand=True)
+    
+    # 3. Проверяем, что получилось 2 числа (без букв)
+    def validate_coords(row):
+        if row.shape[0] >= 2:  # если есть хотя бы 2 элемента
+            # Проверяем, что оба - числа (с помощью регулярного выражения)
+            lat_str = str(row[0]).strip() if pd.notna(row[0]) else ''
+            lon_str = str(row[1]).strip() if pd.notna(row[1]) else ''
+            
+            # Регулярка для проверки числа (целое или десятичное)
+            number_pattern = r'^-?\d*\.?\d+$'
+            
+            if re.match(number_pattern, lat_str) and re.match(number_pattern, lon_str):
+                return pd.Series([lat_str, lon_str])
+        
+        # Если не прошло проверку, возвращаем None
+        return pd.Series([None, None])
+    
+    # Применяем проверку к каждой строке
+    validated_coords = coords_split.apply(validate_coords, axis=1)
+    data['Широта'] = validated_coords[0]
+    data['Долгота'] = validated_coords[1]
+    
     data['Широта'] = pd.to_numeric(data['Широта'], errors='coerce')
     data['Долгота'] = pd.to_numeric(data['Долгота'], errors='coerce')
+    # ===== КОНЕЦ обработки координат =====
 
     all_object = data.shape[0]
     one_object = data[data['Наличие в реестрах'] == 1].shape[0]
