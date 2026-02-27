@@ -919,8 +919,15 @@ if st_select_region != 'Регионы':
     'Наличие подогрева', 'Наличие табло', 'Наличие раздевалок', 'Год ввода в эксплуатацию/год капитального ремонта', 'Наличие в реестрах',
       'Статус работы', 'Широта и долгота','Дисциплина_2', 'id_egora','То, что заполнили РОИВ'])
     
-    # ИСПРАВЛЕНО: split по запятой вместо пробела
-    data[['Широта', 'Долгота']] = data['Широта и долгота'].str.split(',', expand=True)
+    # ИСПРАВЛЕНО: split по запятой с обработкой ошибок
+    coords_split = data['Широта и долгота'].str.split(',', expand=True)
+    if coords_split.shape[1] == 2:
+        data['Широта'] = coords_split[0]
+        data['Долгота'] = coords_split[1]
+    else:
+        # Если где-то нет запятой, создаем колонки с NaN
+        data['Широта'] = coords_split[0] if coords_split.shape[1] >= 1 else None
+        data['Долгота'] = coords_split[1] if coords_split.shape[1] >= 2 else None
 
     data['Широта'] = pd.to_numeric(data['Широта'], errors='coerce')
     data['Долгота'] = pd.to_numeric(data['Долгота'], errors='coerce')
