@@ -653,7 +653,7 @@ def process_data(all_items):
         under_lst.append(all_items[i]['ufCrm6_1768301567690'] if all_items[i]['ufCrm6_1768301567690'] not in ('','N') else '-')
         under_lst.append(all_items[i]['ufCrm6_1767014692'] if all_items[i]['ufCrm6_1767014692'] not in ('','N') else '-')
         under_lst.append(all_items[i]['ufCrm6_1768303689332'] if all_items[i]['ufCrm6_1768303689332'] not in ('','N') else '-')
-        under_lst.append(all_items[i]['ufCrm6_1767018403'].replace(',', ''))
+        under_lst.append(all_items[i]['ufCrm6_1767018403'].replace(',', ' '))
         under_lst.append(all_items[i]['ufCrm6_1768304361743'] if all_items[i]['ufCrm6_1768304361743'] not in ('','N') else '-')
         under_lst.append(all_items[i]['ufCrm6_1768312479608'] if all_items[i]['ufCrm6_1768312479608'] not in ('','N') else '-')
         under_lst.append(all_items[i]['ufCrm6_1768564635'] if all_items[i]['ufCrm6_1768564635'] not in ('','N') else '-')
@@ -922,8 +922,8 @@ if st_select_region != 'Регионы':
     
     # ===== ИСПРАВЛЕНО: Обработка координат =====
     # 1. Если есть запятая, заменяем на пробел
-    data['Широта и долгота'] = data['Широта и долгота'].str.replace(',', ' ')
-    
+
+    print(data)
     # 2. Разбиваем по пробелу
     coords_split = data['Широта и долгота'].str.split(r'\s+', expand=True)
     
