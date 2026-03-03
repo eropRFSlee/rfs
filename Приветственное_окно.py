@@ -170,8 +170,8 @@ def show_instructions():
             "Нажали кнопку добавления объекта, форма была открыта"
         ]
     }
-    
-    st.table(colors_data)
+
+    st.dataframe(colors_data, hide_index=True)
     
     # Раздел 3: Пошаговая инструкция
     st.markdown("---")
@@ -439,6 +439,7 @@ def show_instructions():
 
 if __name__ == "__main__":
     show_instructions()
+
 
 
 
