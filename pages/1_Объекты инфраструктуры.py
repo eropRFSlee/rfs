@@ -2086,7 +2086,7 @@ if st_select_region != 'Регионы':
             
             // Формируем URL с параметрами
             const coordsStr = coords[0].toFixed(6) + ',' + coords[1].toFixed(6);
-            const url = `https://school-eev.bitrix24site.ru/crm_form_saeda/?number_region=${{REGION_NUMBER}}&Adres=${{address}}&sirota_dolgota=${{coordsStr}}`;
+            const url = `https://school-eev.bitrix24site.ru/crm_form_saeda/?number_region=${{REGION_NUMBER}}&Adres=${{address}}&sirota_dolgota=${{coordsStr}}&block=0`;
             
             window.open(url, "_blank");
             
@@ -3523,7 +3523,7 @@ document.querySelector('.map-container').appendChild(backButton);
             
             // Формируем URL с параметрами
             const coordsStr = coords[0].toFixed(6) + ',' + coords[1].toFixed(6);
-            const url = `https://school-eev.bitrix24site.ru/crm_form_saeda/?number_region=${{REGION_NUMBER}}&Adres=${{address}}&sirota_dolgota=${{coordsStr}}`;
+            const url = `https://school-eev.bitrix24site.ru/crm_form_saeda/?number_region=${{REGION_NUMBER}}&Adres=${{address}}&sirota_dolgota=${{coordsStr}}&block=0`;
             
             window.open(url, "_blank");
             
@@ -3887,3 +3887,4 @@ document.querySelector('.map-container').appendChild(backButton);
     st.sidebar.write(f'Доска (паркет): {original_data[original_data["Тип покрытия"] == "Доска (паркет)"].shape[0]}')
     st.sidebar.write(f'Иное: {original_data[original_data["Тип покрытия"] == "Иное"].shape[0]}')
     st.sidebar.write(f'Нет информации: {original_data[original_data["Тип покрытия"] == "Нет информации"].shape[0]}')
+
