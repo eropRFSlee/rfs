@@ -657,6 +657,8 @@ def process_data(all_items):
         under_lst.append(all_items[i]['ufCrm6_1768304361743'] if all_items[i]['ufCrm6_1768304361743'] not in ('','N') else '-')
         under_lst.append(all_items[i]['ufCrm6_1768312479608'] if all_items[i]['ufCrm6_1768312479608'] not in ('','N') else '-')
         under_lst.append(all_items[i]['ufCrm6_1768564635'] if all_items[i]['ufCrm6_1768564635'] not in ('','N') else '-')
+        # НОВОЕ ПОЛЕ: Зал/Не зал
+        under_lst.append(all_items[i]['ufCrm6_1768551104'] if all_items[i]['ufCrm6_1768551104'] not in ('','N') else 'N')
 
         clear_data.append(under_lst)
     
@@ -918,7 +920,7 @@ if st_select_region != 'Регионы':
     'Управляющая компания (ОГРН)', 'Пользователь (ОГРН)', 'Тип Объекта ', 'Дисциплина ','Длина футбольного поля',
     'Ширина футбольного поля', 'Конструктивная особенность', 'Тип покрытия', 'Количество мест для зрителей', 'Наличие дренажа',
     'Наличие подогрева', 'Наличие табло', 'Наличие раздевалок', 'Год ввода в эксплуатацию/год капитального ремонта', 'Наличие в реестрах',
-      'Статус работы', 'Широта и долгота','Дисциплина_2', 'id_egora','То, что заполнили РОИВ'])
+      'Статус работы', 'Широта и долгота','Дисциплина_2', 'id_egora','То, что заполнили РОИВ', 'Зал/Не зал'])  # Добавлено новое поле
     
     # ===== ИСПРАВЛЕНО: Обработка координат =====
     # 1. Если есть запятая, заменяем на пробел
@@ -1042,11 +1044,13 @@ if st_select_region != 'Регионы':
     elif st_select_reestr == '🟢 Есть в РОИВ и в ЦП':
         data = data[(data['Наличие в реестрах'] == 3) & (data['Статус работы'] != '1') & (data['Статус работы'] != '2')]
 
+    # ИЗМЕНЕНО: Фильтрация по дисциплине с учетом нового поля "Зал/Не зал"
     if st_select_desciplyne != 'Все':
         if st_select_desciplyne == '11x11':
             data = data[data['Дисциплина_2'].isin([lst_to_combo[1]])]
         elif st_select_desciplyne == 'Зал':
-            data = data[data['Дисциплина_2'].isin(['Зал'])]
+            # Теперь фильтруем по полю "Зал/Не зал" = 'Y'
+            data = data[data['Зал/Не зал'] == 'Y']
         elif st_select_desciplyne == 'Не указан размер':
             data = data[data['Дисциплина_2'] == 'Не указан размер']
         else:
@@ -1226,6 +1230,11 @@ if st_select_region != 'Регионы':
             except:
                 pass
             
+            # ИЗМЕНЕНО: Определяем тип объекта с учетом поля "Зал/Не зал"
+            object_type = str(row['Тип Объекта ']) if pd.notna(row['Тип Объекта ']) else '-'
+            if pd.notna(row['Зал/Не зал']) and row['Зал/Не зал'] == 'Y':
+                object_type = 'Зал'
+            
             # Используем стабильную функцию для генерации ID
             object_id = get_stable_object_id(row, index)
             
@@ -1237,7 +1246,7 @@ if st_select_region != 'Регионы':
                 'ow': str(row['Собственник (ОГРН)']) if pd.notna(row['Собственник (ОГРН)']) else '-',
                 'mg': str(row['Управляющая компания (ОГРН)']) if pd.notna(row['Управляющая компания (ОГРН)']) else '-',
                 'us': str(row['Пользователь (ОГРН)']) if pd.notna(row['Пользователь (ОГРН)']) else '-',
-                'tp': str(row['Тип Объекта ']) if pd.notna(row['Тип Объекта ']) else '-',
+                'tp': object_type,  # Изменено: используем новую логику
                 'd2': str(row['Дисциплина_2']) if pd.notna(row['Дисциплина_2']) else '-',
                 'ln': length_val,
                 'wd': width_val,
@@ -2948,6 +2957,8 @@ document.querySelector('.map-container').appendChild(backButton);
         id_egora = filtered_data_for_display['id_egora']
         status_of_work = filtered_data_for_display['Статус работы']
         info = filtered_data_for_display['То, что заполнили РОИВ']
+        # Новое поле
+        zal_ne_zal = filtered_data_for_display['Зал/Не зал']
 
         YANDEX_API_KEY = "7fe74d5b-be45-47d1-9fc0-a0765598a4d7"
 
@@ -3028,6 +3039,11 @@ document.querySelector('.map-container').appendChild(backButton);
             except:
                 pass
             
+            # ИЗМЕНЕНО: Определяем тип объекта с учетом поля "Зал/Не зал"
+            object_type = str(type_objectt.iloc[i]).replace('"', '').replace('nan','-') if pd.notna(type_objectt.iloc[i]) else '-'
+            if pd.notna(zal_ne_zal.iloc[i]) and zal_ne_zal.iloc[i] == 'Y':
+                object_type = 'Зал'
+            
             row_dict = {
                 'id_egora': current_id_egora,
                 'РФС_ID': current_rfs_id,
@@ -3052,7 +3068,7 @@ document.querySelector('.map-container').appendChild(backButton);
                 'owner': str(owner.iloc[i]).replace('"', '').replace('nan','-') if pd.notna(owner.iloc[i]) else '-',
                 'manager': str(manager.iloc[i]).replace('"', '').replace('nan','-') if pd.notna(manager.iloc[i]) else '-',
                 'user': str(user.iloc[i]).replace('"', '').replace('nan','-') if pd.notna(user.iloc[i]) else '-',
-                'type': str(type_objectt.iloc[i]).replace('"', '').replace('nan','-') if pd.notna(type_objectt.iloc[i]) else '-',
+                'type': object_type,  # Изменено: используем новую логику
                 'discipline': str(disp_2.iloc[i]).replace('"', '').replace('nan','-') if pd.notna(disp_2.iloc[i]) else '-',
                 'size': f"{length_val}×{width_val}",
                 'coverage': str(type_of_coverage.iloc[i]).replace('"', '').replace('nan','-') if pd.notna(type_of_coverage.iloc[i]) else '-',
@@ -3887,5 +3903,4 @@ document.querySelector('.map-container').appendChild(backButton);
     st.sidebar.write(f'Доска (паркет): {original_data[original_data["Тип покрытия"] == "Доска (паркет)"].shape[0]}')
     st.sidebar.write(f'Иное: {original_data[original_data["Тип покрытия"] == "Иное"].shape[0]}')
     st.sidebar.write(f'Нет информации: {original_data[original_data["Тип покрытия"] == "Нет информации"].shape[0]}')
-
-
+    
