@@ -670,6 +670,10 @@ def get_point_color(status_of_work, in_reestr):
         return '#EF4444', '🔴 Внесли изменения, в стадии рассмотрения'
     elif str(status_of_work) == '2':
         return '#9444EF', '🟣 Добавили новое поле, в стадии рассмотрения'
+    elif str(status_of_work) == '3':
+        return '#00BFFF', '🔵 Объект на карте (новый статус 3)'
+    elif str(status_of_work) == '4':
+        return '#00BFFF', '🔵 Объект на карте (новый статус 4)'
     elif in_reestr == 1:
         return '#3B82F6', '🔵 Есть в РОИВ, но нет в ЦП'
     elif in_reestr == 2:
@@ -683,6 +687,10 @@ def get_color_class(status_of_work, in_reestr):
         return 'color-red', '🔴 Внесли изменения, в стадии рассмотрения'
     elif str(status_of_work) == '2':
         return 'color-purple', '🟣 Добавили новое поле, в стадии рассмотрения'
+    elif str(status_of_work) == '3':
+        return 'color-blue', '🔵 Объект на карте (новый статус 3)'
+    elif str(status_of_work) == '4':
+        return 'color-blue', '🔵 Объект на карте (новый статус 4)'
     elif in_reestr == 1:
         return 'color-blue', '🔵 Есть в РОИВ, но нет в ЦП'
     elif in_reestr == 2:
@@ -2021,18 +2029,19 @@ if st_select_region != 'Регионы':
                 `;
             }}
             
-            const showConfirmButton = (statusOfWork !== '1' && statusOfWork !== '2');
+            // ИЗМЕНЕНО: Добавлена проверка на статусы 3 и 4 - для них кнопка не показывается
+            const showConfirmButton = (statusOfWork !== '1' && statusOfWork !== '2' && statusOfWork !== '3' && statusOfWork !== '4');
             const confirmButtonSection = showConfirmButton ? `
                 <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #e5e7eb;">
                     <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
                         <button onclick='handleConfirmClickFromMap("${{objectId}}")' 
-                                style="cursor: pointer; background: ${{statusOfWork === '1' || statusOfWork === '2' ? '#9ca3af' : '#10b981'}}; 
+                                style="cursor: pointer; background: ${{statusOfWork === '1' || statusOfWork === '2' || statusOfWork === '3' || statusOfWork === '4' ? '#9ca3af' : '#10b981'}}; 
                                        border: none; padding: 6px 12px; border-radius: 3px; 
                                        color: white; font-weight: bold; font-size: 11px;
-                                       ${{statusOfWork === '1' || statusOfWork === '2' ? 'cursor: not-allowed;' : ''}}"
-                                ${{statusOfWork === '1' || statusOfWork === '2' ? 'disabled' : ''}}
-                                title="${{statusOfWork === '1' || statusOfWork === '2' ? 'Объект на рассмотрении, изменения внести нельзя' : 'Внести изменения'}}">
-                            ${{statusOfWork === '1' || statusOfWork === '2' ? '⏳ На рассмотрении' : '✅ Внести изменения'}}
+                                       ${{statusOfWork === '1' || statusOfWork === '2' || statusOfWork === '3' || statusOfWork === '4' ? 'cursor: not-allowed;' : ''}}"
+                                ${{statusOfWork === '1' || statusOfWork === '2' || statusOfWork === '3' || statusOfWork === '4' ? 'disabled' : ''}}
+                                title="${{statusOfWork === '1' || statusOfWork === '2' ? 'Объект на рассмотрении, изменения внести нельзя' : (statusOfWork === '3' || statusOfWork === '4') ? 'Для этого объекта изменения недоступны' : 'Внести изменения'}}">
+                            ${{statusOfWork === '1' || statusOfWork === '2' ? '⏳ На рассмотрении' : (statusOfWork === '3' || statusOfWork === '4') ? '❌ Изменения недоступны' : '✅ Внести изменения'}}
                         </button>
                     </div>
                 </div>
@@ -2133,8 +2142,9 @@ if st_select_region != 'Регионы':
             
             const statusOfWork = pointData.sw || '0';
             
-            if (statusOfWork === '1' || statusOfWork === '2') {{
-                alert('Объект на рассмотрении. Внести изменения нельзя.');
+            // ИЗМЕНЕНО: Добавлена проверка на статусы 3 и 4
+            if (statusOfWork === '1' || statusOfWork === '2' || statusOfWork === '3' || statusOfWork === '4') {{
+                alert('Для этого объекта изменения недоступны.');
                 return false;
             }}
             
@@ -2179,8 +2189,9 @@ if st_select_region != 'Регионы':
             
             const statusOfWork = pointData.sw || '0';
             
-            if (statusOfWork === '1' || statusOfWork === '2') {{
-                alert('Объект на рассмотрении. Внести изменения нельзя.');
+            // ИЗМЕНЕНО: Добавлена проверка на статусы 3 и 4
+            if (statusOfWork === '1' || statusOfWork === '2' || statusOfWork === '3' || statusOfWork === '4') {{
+                alert('Для этого объекта изменения недоступны.');
                 return false;
             }}
             
@@ -2422,6 +2433,10 @@ document.querySelector('.map-container').appendChild(backButton);
             else if (pointData.sw === '2') {{
                 pointColor = '#9444EF';
             }}
+            // ИЗМЕНЕНО: Добавлена проверка на статусы 3 и 4 для голубого цвета
+            else if (pointData.sw === '3' || pointData.sw === '4') {{
+                pointColor = '#00BFFF';
+            }}
             else if (pointData.cl) {{
                 if (pointData.cl.includes('blue')) pointColor = '#3B82F6';
                 else if (pointData.cl.includes('yellow')) pointColor = '#FFA500';
@@ -2430,7 +2445,7 @@ document.querySelector('.map-container').appendChild(backButton);
                 else if (pointData.cl.includes('red')) pointColor = '#EF4444';
             }}
             
-            if (buttonStates[pointData.object_id] && pointData.sw !== '1' && pointData.sw !== '2') {{
+            if (buttonStates[pointData.object_id] && pointData.sw !== '1' && pointData.sw !== '2' && pointData.sw !== '3' && pointData.sw !== '4') {{
                 pointColor = '#808080';
             }}
             
@@ -2574,7 +2589,8 @@ document.querySelector('.map-container').appendChild(backButton);
         function openForm(objectId, statusOfWork) {{
             saveScrollPosition();
             
-            if (statusOfWork === '1' || statusOfWork === '2') {{
+            // ИЗМЕНЕНО: Добавлена проверка на статусы 3 и 4
+            if (statusOfWork === '1' || statusOfWork === '2' || statusOfWork === '3' || statusOfWork === '4') {{
                 return false;
             }}
             
@@ -2680,8 +2696,9 @@ document.querySelector('.map-container').appendChild(backButton);
                 }}
             }}
             
+            // ИЗМЕНЕНО: Добавлена проверка на статусы 3 и 4 - для них кнопка не показывается
             let formButtonHTML = '';
-            if (statusOfWork !== '1' && statusOfWork !== '2') {{
+            if (statusOfWork !== '1' && statusOfWork !== '2' && statusOfWork !== '3' && statusOfWork !== '4') {{
                 let formBtnClass = 'form-btn-compact';
                 let formBtnText = '✅ Внести изменения';
                 let formBtnOnclick = `handleConfirmClick('${{objectId}}')`;
@@ -3353,7 +3370,8 @@ document.querySelector('.map-container').appendChild(backButton);
                 const pointData = findPointById(objectId);
                 if (pointData) {{
                     let pointColor = pointData.color;
-                    if (buttonStates[objectId] && pointData.status_of_work !== '1' && pointData.status_of_work !== '2') {{
+                    // ИЗМЕНЕНО: Добавлена проверка на статусы 3 и 4
+                    if (buttonStates[objectId] && pointData.status_of_work !== '1' && pointData.status_of_work !== '2' && pointData.status_of_work !== '3' && pointData.status_of_work !== '4') {{
                         pointColor = '#808080';
                     }}
                     placemark.options.set('iconColor', pointColor);
@@ -3374,8 +3392,9 @@ document.querySelector('.map-container').appendChild(backButton);
             
             const statusOfWork = pointData.status_of_work || '0';
             
-            if (statusOfWork === '1' || statusOfWork === '2') {{
-                alert('Объект на рассмотрении. Внести изменения нельзя.');
+            // ИЗМЕНЕНО: Добавлена проверка на статусы 3 и 4
+            if (statusOfWork === '1' || statusOfWork === '2' || statusOfWork === '3' || statusOfWork === '4') {{
+                alert('Для этого объекта изменения недоступны.');
                 return false;
             }}
             
@@ -3465,18 +3484,19 @@ document.querySelector('.map-container').appendChild(backButton);
                 `;
             }}
             
-            const showConfirmButton = (statusOfWork !== '1' && statusOfWork !== '2');
+            // ИЗМЕНЕНО: Добавлена проверка на статусы 3 и 4 - для них кнопка не показывается
+            const showConfirmButton = (statusOfWork !== '1' && statusOfWork !== '2' && statusOfWork !== '3' && statusOfWork !== '4');
             const confirmButtonSection = showConfirmButton ? `
                 <div style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #e5e7eb;">
                     <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
                         <button onclick='handleConfirmClick("${{objectId}}")' 
-                                style="cursor: pointer; background: ${{statusOfWork === '1' || statusOfWork === '2' ? '#9ca3af' : '#10b981'}}; 
+                                style="cursor: pointer; background: ${{statusOfWork === '1' || statusOfWork === '2' || statusOfWork === '3' || statusOfWork === '4' ? '#9ca3af' : '#10b981'}}; 
                                        border: none; padding: 6px 12px; border-radius: 3px; 
                                        color: white; font-weight: bold; font-size: 11px;
-                                       ${{statusOfWork === '1' || statusOfWork === '2' ? 'cursor: not-allowed;' : ''}}"
-                                ${{statusOfWork === '1' || statusOfWork === '2' ? 'disabled' : ''}}
-                                title="${{statusOfWork === '1' || statusOfWork === '2' ? 'Объект на рассмотрении, изменения внести нельзя' : 'Внести изменения'}}">
-                            ${{statusOfWork === '1' || statusOfWork === '2' ? '⏳ На рассмотрении' : '✅ Внести изменения'}}
+                                       ${{statusOfWork === '1' || statusOfWork === '2' || statusOfWork === '3' || statusOfWork === '4' ? 'cursor: not-allowed;' : ''}}"
+                                ${{statusOfWork === '1' || statusOfWork === '2' || statusOfWork === '3' || statusOfWork === '4' ? 'disabled' : ''}}
+                                title="${{statusOfWork === '1' || statusOfWork === '2' ? 'Объект на рассмотрении, изменения внести нельзя' : (statusOfWork === '3' || statusOfWork === '4') ? 'Для этого объекта изменения недоступны' : 'Внести изменения'}}">
+                            ${{statusOfWork === '1' || statusOfWork === '2' ? '⏳ На рассмотрении' : (statusOfWork === '3' || statusOfWork === '4') ? '❌ Изменения недоступны' : '✅ Внести изменения'}}
                         </button>
                     </div>
                 </div>
@@ -3788,6 +3808,10 @@ document.querySelector('.map-container').appendChild(backButton);
                     }}
                     else if (point.status_of_work === '2') {{
                         pointColor = '#9444EF';
+                    }}
+                    // ИЗМЕНЕНО: Добавлена проверка на статусы 3 и 4 для голубого цвета
+                    else if (point.status_of_work === '3' || point.status_of_work === '4') {{
+                        pointColor = '#00BFFF';
                     }}
                     else if (buttonStates[point.object_id]) {{
                         pointColor = '#808080';
