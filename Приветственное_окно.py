@@ -1,8 +1,8 @@
 import streamlit as st
-import pandas as pd
 
 def show_video(video_path, width=600):
     """Показывает видео с заданной шириной"""
+    # Используем колонки для центрирования
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         st.video(video_path, muted=True)
@@ -14,27 +14,38 @@ def show_instructions():
         layout="wide"
     )
     
+    # Применяем стили из основного приложения
     st.markdown("""
     <style>
+        /* Основной фон */
         .stApp {
             background-color: #204171;
         }
+        
+        /* Боковая панель */
         section[data-testid="stSidebar"] {
             background-color: white !important;
         }
+        
         section[data-testid="stSidebar"],
         section[data-testid="stSidebar"] * {
             color: black !important;
         }
+        
+        /* Хедер */
         header {
             background-color: #204171 !important;
         }
+        
+        /* Основной контейнер */
         .main .block-container {
             background-color: #2a4a80;
             border-radius: 10px;
             padding: 2rem;
             margin-top: 1rem;
         }
+        
+        /* Золотой цвет для ВСЕГО текста в основном окне */
         .main .block-container,
         .main .block-container *,
         .main .block-container p,
@@ -42,6 +53,8 @@ def show_instructions():
         .main .block-container span {
             color: #FFD700 !important;
         }
+        
+        /* Заголовки остаются белыми */
         .main h1, 
         .main h2, 
         .main h3, 
@@ -49,45 +62,68 @@ def show_instructions():
         h1, h2, h3, h4 {
             color: #FFFFFF !important;
         }
+        
+        /* Инфо-блоки */
         .stAlert,
         .stAlert *,
         .stAlert p,
         .stAlert div {
             color: #FFD700 !important;
         }
+        
+        .stAlert .st-emotion-cache-1h9l8dw {
+            color: #FFD700 !important;
+        }
+        
+        /* Таблицы */
         .stTable,
         .stTable *,
         .stTable td,
         .stTable th {
             color: #FFD700 !important;
         }
+        
+        /* Карточки (expanders) */
         .stExpander {
             background-color: #3a5a92;
             border-radius: 10px !important;
         }
+        
         div[data-testid="stExpander"] div {
             background-color: #3a5a92 !important;
             color: #FFD700 !important;
         }
+        
+        /* Текст внутри expander */
         .streamlit-expanderContent,
         .streamlit-expanderContent *,
         .streamlit-expanderContent p {
             color: #FFD700 !important;
         }
+        
+        /* Кнопки и элементы управления */
         .stButton button {
             color: #000000 !important;
         }
+        
+        /* Разделительная линия */
         hr {
             border-color: #FFD700 !important;
         }
+        
+        /* Все элементы p в основном окне */
         p {
             color: #FFD700 !important;
         }
+        
+        /* Принудительное применение золотого цвета */
         .stMarkdown,
         .stMarkdown p,
         .stMarkdown div {
             color: #FFD700 !important;
         }
+        
+        /* Стили для видео контейнера */
         .video-container {
             max-width: 600px;
             margin: 0 auto;
@@ -96,10 +132,10 @@ def show_instructions():
         }
     </style>
     """, unsafe_allow_html=True)
-    
     st.title("Регистрация субъектов футбола")
     st.write("Объекты футбольной инфраструктуры")
     st.markdown("---")
+    
     
     # Раздел 1: Общая информация
     with st.container():
@@ -114,37 +150,29 @@ def show_instructions():
         - Фильтрация и поиск объектов по различным параметрам
         - Внесение изменений в данные объектов
         - Добавление новых объектов
+        
         """)
     
     # Раздел 2: Легенда цветов
     st.markdown("---")
     st.header("Цветовые обозначения объектов")
     
-    # Создаем DataFrame с цветами и статусами
-    colors_data = pd.DataFrame({
-        "Цвет": [
-            '<span style="color: lightblue;">●</span> Голубой',
-            '<span style="color: blue;">●</span> Синий',
-            '<span style="color: yellow;">●</span> Желтый',
-            '<span style="color: green;">●</span> Зеленый',
-            '<span style="color: purple;">●</span> Фиолетовый',
-            '<span style="color: red;">●</span> Красный',
-            '<span style="color: gray;">●</span> Серый',
-            '<span style="color: black;">●</span> Черный'
-        ],
+    # Таблица с цветами
+    colors_data = {
+        "Цвет": ["🔵 Синий", "🟡 Желтый", "🟢 Зеленый", "🟣 Фиолетовый", "🔴 Красный", "⚪ Серый", "⚫ Черный", "🟠 Оранжевый"],
         "Статус": [
-            "Принято заявление от РОИВ",
             "Есть в РОИВ, но нет в ЦП",
             "Есть только в ЦП",
             "Есть в РОИВ и в ЦП",
             "Добавили новое поле, в стадии рассмотрения",
             "Внесли изменения, в стадии рассмотрения",
             "Нажали кнопку редактирования объекта, форма была открыта",
-            "Нажали кнопку добавления объекта, форма была открыта"
+            "Нажали кнопку добавления объекта, форма была открыта",
+            "Принято заявление от РОИВ"
         ]
-    })
-    
-    st.markdown(colors_data.to_html(escape=False, index=False), unsafe_allow_html=True)
+    }
+
+    st.dataframe(colors_data, hide_index=True)
     
     # Раздел 3: Пошаговая инструкция
     st.markdown("---")
@@ -155,6 +183,7 @@ def show_instructions():
         st.write("""
         Для удобства можно изменить размеры боковой панели или скрыть ее
         """)
+        # Видео с уменьшенным размером
         show_video("инструкция/Боковая панель.mp4")
     
     # Шаг 2
@@ -219,7 +248,13 @@ def show_instructions():
         **⚠️ Фильтры применяются мгновенно и работают в обоих режимах просмотра. Если ни один из объектов не подходит под условия фильтров, отобразится пустая карта и пустой список. При смене режима работы ("Карта" или "Список") фильтры не сохраняются**
         
         """)
+        
         show_video("инструкция/Фильтры.mp4")
+        # Добавьте этот код в нужное место в вашем Streamlit приложении, например, после заголовков или перед списком
+
+        
+
+
     
     # Шаг 4
     with st.expander("**Работа с картой**"):
@@ -263,7 +298,6 @@ def show_instructions():
         st.write("📍 **Расположение**: Внутри области со списком объектов, справа")
         st.write("📏 **Что прокручивает**: Только список объектов и их детали")
         st.image("инструкция/Ползунки.png")
-    
     # Шаг 7
     with st.expander("**Работа с формами**"):
         st.write("""
@@ -275,7 +309,7 @@ def show_instructions():
         - Если вы оставите поле пустым, оно не будет изменено. Если хотите подтвердить всю информацию или опровергнуть существование поля, поставьте галочку в поле "Подтвердить" или "Опровергнуть" соответственно. В данном случае часть полей формы будет скрыта
         - Поле "Ваш e-mail или контакт для обратной связи" - обязательно для заполнения
         - При нажатии "✅ Внести изменения" точка/объект окрасится в серый цвет. ⚠️ При смене режима работы ("Карта" или "Список") серые и черные точки **сохраняются**
-        - Недоступна для красных, фиолетовых и черных точек
+        - Недоступна для красных, фиолетовых, оранжевых и черных точек
         - В красных точках/объектах можно посмотреть, какие изменения были предложены до Вас
         - В конце каждой формы есть поле "Комментарий", где можно написать любую, по вашему мнению, необходимую информацию или замечание
         - Если хотите поменять адрес и координаты объекта, найдите на карте место, где объект **должен находиться** на самом деле, и кликните туда. В появившемся окне нажмите на иконку "📄" рядом с полями "Координаты" и "Адрес", чтобы скопировать правильные значения, вставьте значения в соответсвующие поля анкеты. Желательно выбрать точный адрес с номером улицы
@@ -346,6 +380,10 @@ def show_instructions():
         - Покрытие объектов и их количество
         """)
 
+    
+
+   
+
     # Раздел 5: Часто задаваемые вопросы
     st.markdown("---")
     st.header("Объекты с одинаковым адресом")
@@ -361,7 +399,6 @@ def show_instructions():
         1 адрес - несколько объектов:
         """)
         st.image("инструкция/Точка внутри точки 2.png")
-    
     st.markdown("---")
     st.header("Быстрые вопросы и ответы")
     
@@ -403,3 +440,31 @@ def show_instructions():
 
 if __name__ == "__main__":
     show_instructions()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
