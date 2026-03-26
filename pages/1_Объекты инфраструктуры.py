@@ -72,6 +72,7 @@ st.markdown("""
     section[data-testid="stSidebar"] .stMarkdown p:contains("🟢"),
     section[data-testid="stSidebar"] .stMarkdown p:contains("🟣"),
     section[data-testid="stSidebar"] .stMarkdown p:contains("🔴"),
+    section[data-testid="stSidebar"] .stMarkdown p:contains("🟤"),
     section[data-testid="stSidebar"] .stMarkdown p:contains("⚪"),
     section[data-testid="stSidebar"] .stMarkdown p:contains("⚫"),
     section[data-testid="stSidebar"] .stMarkdown p:contains("Всего объектов"),
@@ -429,6 +430,10 @@ st.markdown("""
         background-color: #FFA500;
     }
     
+    .color-brown {
+        background-color: #8B4513;
+    }
+    
     .color-green {
         background-color: #10B981;
     }
@@ -671,9 +676,9 @@ def get_point_color(status_of_work, in_reestr):
     elif str(status_of_work) == '2':
         return '#9444EF', '🟣 Добавили новое поле, в стадии рассмотрения'
     elif str(status_of_work) == '3':
-        return '#00BFFF', '🔵 Объект на карте (новый статус 3)'
+        return '#8B4513', '🟤 Принято заявление РОИВ'
     elif str(status_of_work) == '4':
-        return '#00BFFF', '🔵 Объект на карте (новый статус 4)'
+        return '#8B4513', '🟤 Принято заявление РОИВ'
     elif in_reestr == 1:
         return '#3B82F6', '🔵 Есть в РОИВ, но нет в ЦП'
     elif in_reestr == 2:
@@ -688,9 +693,9 @@ def get_color_class(status_of_work, in_reestr):
     elif str(status_of_work) == '2':
         return 'color-purple', '🟣 Добавили новое поле, в стадии рассмотрения'
     elif str(status_of_work) == '3':
-        return 'color-blue', '🔵 Объект на карте (новый статус 3)'
+        return 'color-brown', '🟤 Принято заявление РОИВ'
     elif str(status_of_work) == '4':
-        return 'color-blue', '🔵 Объект на карте (новый статус 4)'
+        return 'color-brown', '🟤 Принято заявление РОИВ'
     elif in_reestr == 1:
         return 'color-blue', '🔵 Есть в РОИВ, но нет в ЦП'
     elif in_reestr == 2:
@@ -793,7 +798,7 @@ st_select_region = st.sidebar.selectbox("Выберите свой регион"
     '07 Кабардино-Балкарская Республика',
     '08 Республика Калмыкия',
     '09 Карачаево-Черкесская Республика',
-    '10 Республика Карелия',  # Было "Корелия" -> исправлено на "Карелия"
+    '10 Республика Карелия',
     '11 Республика Коми',
     '12 Республика Марий Эл',
     '13 Республика Мордовия',
@@ -864,9 +869,9 @@ st_select_region = st.sidebar.selectbox("Выберите свой регион"
     '78 Санкт-Петербург',
     '79 Еврейская автономная область',
     '83 Ненецкий автономный округ',
-    '86 Ханты-Мансийский автономный округ',  # У вас было 86? Нужно уточнить
+    '86 Ханты-Мансийский автономный округ',
     '87 Чукотский автономный округ',
-    '89 Ямало-Ненецкий автономный округ'  # Добавил название для 89
+    '89 Ямало-Ненецкий автономный округ'
 ])
 
 if st_select_region != 'Регионы':
@@ -978,6 +983,7 @@ if st_select_region != 'Регионы':
     condition_reestr.append('🟢 Есть в РОИВ и в ЦП')
     condition_reestr.append('🟣 Добавили новое поле, в стадии рассмотрения')
     condition_reestr.append('🔴 Внесли изменения, в стадии рассмотрения')
+    condition_reestr.append('🟤 Принято заявление РОИВ') # Новый фильтр для коричневых точек
     
     conditional_size = []
     
@@ -1046,11 +1052,13 @@ if st_select_region != 'Регионы':
     elif st_select_reestr == '🟣 Добавили новое поле, в стадии рассмотрения':
         data = data[data['Статус работы'] == '2']
     elif st_select_reestr == '🔵 Есть в РОИВ, но нет в ЦП':
-        data = data[(data['Наличие в реестрах'] == 1) & (data['Статус работы'] != '1') & (data['Статус работы'] != '2')]
+        data = data[(data['Наличие в реестрах'] == 1) & (data['Статус работы'] != '1') & (data['Статус работы'] != '2') & (data['Статус работы'] != '3') & (data['Статус работы'] != '4')]
     elif st_select_reestr == '🟡 Есть только в ЦП':
-        data = data[(data['Наличие в реестрах'] == 2) & (data['Статус работы'] != '1') & (data['Статус работы'] != '2')]
+        data = data[(data['Наличие в реестрах'] == 2) & (data['Статус работы'] != '1') & (data['Статус работы'] != '2') & (data['Статус работы'] != '3') & (data['Статус работы'] != '4')]
     elif st_select_reestr == '🟢 Есть в РОИВ и в ЦП':
-        data = data[(data['Наличие в реестрах'] == 3) & (data['Статус работы'] != '1') & (data['Статус работы'] != '2')]
+        data = data[(data['Наличие в реестрах'] == 3) & (data['Статус работы'] != '1') & (data['Статус работы'] != '2') & (data['Статус работы'] != '3') & (data['Статус работы'] != '4')]
+    elif st_select_reestr == '🟤 Принято заявление РОИВ':
+        data = data[(data['Статус работы'] == '3') | (data['Статус работы'] == '4')]
 
     # ИЗМЕНЕНО: Фильтрация по дисциплине с учетом нового поля "Зал/Не зал"
     if st_select_desciplyne != 'Все':
@@ -1123,13 +1131,21 @@ if st_select_region != 'Регионы':
         import re
         search_pattern = re.escape(search_lower)
         
-        search_mask = (
-            filtered_data_for_display['Полное (официальное) название объекта'].astype(str).str.lower().str.contains(search_pattern, na=False, regex=True) |
-            filtered_data_for_display['Короткое (спортивное) название объекта'].astype(str).str.lower().str.contains(search_pattern, na=False, regex=True) |
-            filtered_data_for_display['Адрес'].astype(str).str.lower().str.contains(search_pattern, na=False, regex=True) |
-            filtered_data_for_display['id_egora'].astype(str).str.lower().str.contains(search_pattern, na=False, regex=True) |
-            filtered_data_for_display['РФС_ID'].astype(str).str.lower().str.contains(search_pattern, na=False, regex=True) 
-        )
+        # Проверяем совпадения по ID (строгое равенство)
+        id_egora_match = filtered_data_for_display['id_egora'].astype(str).str.lower() == search_lower
+        rfs_id_match = filtered_data_for_display['РФС_ID'].astype(str).str.lower() == search_lower
+        
+        # Если есть совпадения по любому из ID, используем только их
+        if id_egora_match.any() or rfs_id_match.any():
+            search_mask = id_egora_match | rfs_id_match
+        else:
+            # Если совпадений по ID нет, ищем по названиям и адресу
+            search_mask = (
+                filtered_data_for_display['Полное (официальное) название объекта'].astype(str).str.lower().str.contains(search_pattern, na=False, regex=True) |
+                filtered_data_for_display['Короткое (спортивное) название объекта'].astype(str).str.lower().str.contains(search_pattern, na=False, regex=True) |
+                filtered_data_for_display['Адрес'].astype(str).str.lower().str.contains(search_pattern, na=False, regex=True)
+            )
+        
         filtered_data_for_display = filtered_data_for_display[search_mask]
         
         st.markdown(f'<p style="color: #FFD700;">Найдено объектов по запросу "{st.session_state.search_query}": {len(filtered_data_for_display)}</p>', unsafe_allow_html=True)
@@ -1286,6 +1302,7 @@ if st_select_region != 'Регионы':
         
         data_version = st.session_state.get('data_version', str(int(time.time())))
         
+        # HTML часть остается без изменений, меняем только в JS части цвет
         objects_html = f"""
 <!DOCTYPE html>
 <html>
@@ -1327,14 +1344,14 @@ if st_select_region != 'Регионы':
     background: #3b82f6;
     color: white;
     border: none;
-    padding: 4px 12px;  /* Уменьшил отступы */
-    border-radius: 4px;  /* Прямоугольная с легким скруглением */
+    padding: 4px 12px;
+    border-radius: 4px;
     cursor: pointer;
-    font-weight: normal;  /* Убрал жирность */
-    font-size: 12px;      /* Уменьшил шрифт */
+    font-weight: normal;
+    font-size: 12px;
     box-shadow: 0 2px 5px rgba(0,0,0,0.2);
     transition: background-color 0.2s;
-    height: 28px;         /* Уменьшил высоту */
+    height: 28px;
     line-height: 20px;
 }}
 
@@ -1520,6 +1537,7 @@ if st_select_region != 'Регионы':
         
         .color-blue {{ background-color: #3B82F6; }}
         .color-yellow {{ background-color: #FFA500; }}
+        .color-brown {{ background-color: #8B4513; }}
         .color-green {{ background-color: #10B981; }}
         .color-purple {{ background-color: #9444EF; }}
         .color-red {{ background-color: #EF4444; }}
@@ -2433,13 +2451,14 @@ document.querySelector('.map-container').appendChild(backButton);
             else if (pointData.sw === '2') {{
                 pointColor = '#9444EF';
             }}
-            // ИЗМЕНЕНО: Добавлена проверка на статусы 3 и 4 для голубого цвета
+            // ИЗМЕНЕНО: Добавлена проверка на статусы 3 и 4 для коричневого цвета
             else if (pointData.sw === '3' || pointData.sw === '4') {{
-                pointColor = '#00BFFF';
+                pointColor = '#8B4513';
             }}
             else if (pointData.cl) {{
                 if (pointData.cl.includes('blue')) pointColor = '#3B82F6';
                 else if (pointData.cl.includes('yellow')) pointColor = '#FFA500';
+                else if (pointData.cl.includes('brown')) pointColor = '#8B4513';
                 else if (pointData.cl.includes('green')) pointColor = '#10B981';
                 else if (pointData.cl.includes('purple')) pointColor = '#9444EF';
                 else if (pointData.cl.includes('red')) pointColor = '#EF4444';
@@ -3085,7 +3104,7 @@ document.querySelector('.map-container').appendChild(backButton);
                 'owner': str(owner.iloc[i]).replace('"', '').replace('nan','-') if pd.notna(owner.iloc[i]) else '-',
                 'manager': str(manager.iloc[i]).replace('"', '').replace('nan','-') if pd.notna(manager.iloc[i]) else '-',
                 'user': str(user.iloc[i]).replace('"', '').replace('nan','-') if pd.notna(user.iloc[i]) else '-',
-                'type': object_type,  # Изменено: используем новую логику
+                'type': object_type,
                 'discipline': str(disp_2.iloc[i]).replace('"', '').replace('nan','-') if pd.notna(disp_2.iloc[i]) else '-',
                 'size': f"{length_val}×{width_val}",
                 'coverage': str(type_of_coverage.iloc[i]).replace('"', '').replace('nan','-') if pd.notna(type_of_coverage.iloc[i]) else '-',
@@ -3809,9 +3828,9 @@ document.querySelector('.map-container').appendChild(backButton);
                     else if (point.status_of_work === '2') {{
                         pointColor = '#9444EF';
                     }}
-                    // ИЗМЕНЕНО: Добавлена проверка на статусы 3 и 4 для голубого цвета
+                    // ИЗМЕНЕНО: Добавлена проверка на статусы 3 и 4 для коричневого цвета
                     else if (point.status_of_work === '3' || point.status_of_work === '4') {{
-                        pointColor = '#00BFFF';
+                        pointColor = '#8B4513';
                     }}
                     else if (buttonStates[point.object_id]) {{
                         pointColor = '#808080';
@@ -3916,6 +3935,7 @@ document.querySelector('.map-container').appendChild(backButton);
     st.sidebar.write(f'🟢 Есть в РОИВ и в ЦП - {original_data[original_data["Наличие в реестрах"] == 3].shape[0]}')
     st.sidebar.write(f'''🟣 Добавили новое поле, в стадии рассмотрения - {original_data[original_data["Статус работы"] == '2'].shape[0]}''')
     st.sidebar.write(f'''🔴 Внесли изменения, в стадии рассмотрения - {original_data[original_data["Статус работы"] == '1'].shape[0]}''')
+    st.sidebar.write(f'''🟤 Принято заявление РОИВ - {original_data[(original_data["Статус работы"] == '3') | (original_data["Статус работы"] == '4')].shape[0]}''')
     st.sidebar.write('⚪ Нажали кнопку "Внести изменения", форма была открыта')
     st.sidebar.write('⚫ Нажали кнопку "Здесь футбольное поле", форма была открыта')
 
@@ -3927,4 +3947,3 @@ document.querySelector('.map-container').appendChild(backButton);
     st.sidebar.write(f'Доска (паркет): {original_data[original_data["Тип покрытия"] == "Доска (паркет)"].shape[0]}')
     st.sidebar.write(f'Иное: {original_data[original_data["Тип покрытия"] == "Иное"].shape[0]}')
     st.sidebar.write(f'Нет информации: {original_data[original_data["Тип покрытия"] == "Нет информации"].shape[0]}')
-    
